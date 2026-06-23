@@ -41,95 +41,193 @@ const provider = new GoogleAuthProvider();
 
 
 // =====================
+// LANDING PAGE LOGIN
+// =====================
+
+document
+  .getElementById("heroLogin")
+  ?.addEventListener("click", () => {
+
+    document
+      .getElementById("googleLogin")
+      ?.click();
+
+  });
+
+document
+  .getElementById("landingLogin")
+  ?.addEventListener("click", () => {
+
+    document
+      .getElementById("googleLogin")
+      ?.click();
+
+  });
+
+
+// =====================
 // GOOGLE LOGIN
 // =====================
 
-const loginBtn = document.getElementById("googleLogin");
+const loginBtn =
+  document.getElementById("googleLogin");
 
 if (loginBtn) {
-  loginBtn.addEventListener("click", async () => {
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error(error);
-      alert(error.message);
+
+  loginBtn.addEventListener(
+    "click",
+    async () => {
+
+      try {
+
+        await signInWithPopup(
+          auth,
+          provider
+        );
+
+      } catch (error) {
+
+        console.error(error);
+        alert(error.message);
+
+      }
+
     }
-  });
+  );
+
 }
-
-onAuthStateChanged(auth, async (user) => {
-
-  const userInfo =
-    document.getElementById("userInfo");
-
-  if (!userInfo) return;
-
-  if (user) {
-
-    const userRef =
-      doc(db, "users", user.uid);
-
-    const userSnap =
-      await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-
-      await setDoc(userRef, {
-        displayName: user.displayName,
-        email: user.email,
-        xp: 0,
-        streak: 0,
-        completedLessons: []
-      });
-
-    }
-
-    const data =
-      (await getDoc(userRef)).data();
-
-    userInfo.innerHTML = `
-      <div class="profile-card">
-
-        <img
-          src="${user.photoURL}"
-          width="60"
-          style="border-radius:50%;margin-bottom:10px;"
-        >
-
-        <h3>${data.displayName}</h3>
-
-        <p>${data.email}</p>
-
-        <p>XP: ${data.xp}</p>
-
-        <p>Streak: ${data.streak}</p>
-
-        <button id="logoutBtn">
-          Sign Out
-        </button>
-
-      </div>
-    `;
-
-    document
-      .getElementById("logoutBtn")
-      .addEventListener("click", () => {
-        signOut(auth);
-      });
-
-  } else {
-
-    userInfo.innerHTML = `
-      <p>Not signed in</p>
-    `;
-
-  }
-
-});
 
 
 // =====================
-// COURSE SYSTEM
+// AUTH STATE
+// =====================
+
+onAuthStateChanged(
+  auth,
+  async (user) => {
+
+    const userInfo =
+      document.getElementById("userInfo");
+
+    const profileInfo =
+      document.getElementById("profileInfo");
+
+    if (!userInfo) return;
+
+    if (user) {
+
+      document
+        .getElementById("landingPage")
+        .classList.add("hidden");
+
+      document
+        .getElementById("portal")
+        .classList.remove("hidden");
+
+      const userRef =
+        doc(db, "users", user.uid);
+
+      const userSnap =
+        await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+
+        await setDoc(userRef, {
+          displayName: user.displayName,
+          email: user.email,
+          xp: 0,
+          streak: 0,
+          completedLessons: []
+        });
+
+      }
+
+      const data =
+        (await getDoc(userRef)).data();
+
+      userInfo.innerHTML = `
+        <div class="profile-card">
+
+          <img
+            src="${user.photoURL}"
+            width="60"
+          >
+
+          <h3>
+            ${data.displayName}
+          </h3>
+
+          <p>
+            ${data.email}
+          </p>
+
+        </div>
+      `;
+
+      if (profileInfo) {
+
+        profileInfo.innerHTML = `
+          <img
+            src="${user.photoURL}"
+            width="100"
+            style="
+              border-radius:50%;
+              margin-bottom:15px;
+            "
+          >
+
+          <h2>
+            ${data.displayName}
+          </h2>
+
+          <p>
+            ${data.email}
+          </p>
+
+          <br>
+
+          <p>
+            XP: ${data.xp}
+          </p>
+
+          <p>
+            Streak: ${data.streak}
+          </p>
+
+          <br>
+
+          <button id="logoutBtn">
+            Sign Out
+          </button>
+        `;
+
+        document
+          .getElementById("logoutBtn")
+          ?.addEventListener(
+            "click",
+            () => signOut(auth)
+          );
+
+      }
+
+    } else {
+
+      document
+        .getElementById("landingPage")
+        .classList.remove("hidden");
+
+      document
+        .getElementById("portal")
+        .classList.add("hidden");
+
+    }
+
+  }
+);
+
+
+// =====================
+// COURSES
 // =====================
 
 let courses = [];
@@ -137,34 +235,60 @@ let courses = [];
 fetch("courses.json")
   .then(response => response.json())
   .then(data => {
+
     courses = data;
 
     renderCourses();
     renderFeaturedCourses();
+
   })
   .catch(error => {
-    console.error("Failed to load courses:", error);
+
+    console.error(
+      "Failed to load courses:",
+      error
+    );
+
   });
+
+
+// =====================
+// TABS
+// =====================
 
 function showTab(tabName) {
 
-  document.getElementById("dashboard")
+  document
+    .getElementById("dashboard")
     .classList.add("hidden");
 
-  document.getElementById("courses")
+  document
+    .getElementById("courses")
     .classList.add("hidden");
 
-  document.getElementById("profile")
+  document
+    .getElementById("profile")
     .classList.add("hidden");
 
-  document.getElementById(tabName)
+  document
+    .getElementById(tabName)
     .classList.remove("hidden");
+
 }
+
+
+// =====================
+// FEATURED COURSES
+// =====================
 
 function renderFeaturedCourses() {
 
   const container =
-    document.getElementById("featuredCourses");
+    document.getElementById(
+      "featuredCourses"
+    );
+
+  if (!container) return;
 
   container.innerHTML = "";
 
@@ -173,30 +297,50 @@ function renderFeaturedCourses() {
     container.innerHTML += `
       <div class="course-card">
 
-        <h3>${course.title}</h3>
+        <h3>
+          ${course.title}
+        </h3>
 
-        <p>${course.description}</p>
+        <p>
+          ${course.description}
+        </p>
 
         <div class="progress">
           <div
             class="progress-fill"
-            style="width:${course.progress}%">
+            style="
+              width:${course.progress}%;
+            ">
           </div>
         </div>
 
-        <button onclick="openCourse('${course.id}')">
+        <button
+          onclick="
+            openCourse('${course.id}')
+          ">
           Continue
         </button>
 
       </div>
     `;
+
   });
+
 }
+
+
+// =====================
+// COURSES PAGE
+// =====================
 
 function renderCourses() {
 
   const container =
-    document.getElementById("course-list");
+    document.getElementById(
+      "course-list"
+    );
+
+  if (!container) return;
 
   container.innerHTML = "";
 
@@ -205,35 +349,118 @@ function renderCourses() {
     container.innerHTML += `
       <div class="course-card">
 
-        <h3>${course.title}</h3>
+        <h3>
+          ${course.title}
+        </h3>
 
-        <p>${course.description}</p>
+        <p>
+          ${course.description}
+        </p>
 
         <div class="progress">
           <div
             class="progress-fill"
-            style="width:${course.progress}%">
+            style="
+              width:${course.progress}%;
+            ">
           </div>
         </div>
 
-        <button onclick="openCourse('${course.id}')">
+        <button
+          onclick="
+            openCourse('${course.id}')
+          ">
           Open Course
         </button>
 
       </div>
     `;
+
   });
+
 }
+
+
+// =====================
+// OPEN COURSE
+// =====================
 
 function openCourse(id) {
 
   const course =
-    courses.find(c => c.id === id);
+    courses.find(
+      c => c.id === id
+    );
 
   if (!course) return;
 
-  alert(course.title);
+  let lessonsHTML = "";
+
+  course.lessons.forEach(
+    lesson => {
+
+      const videoId =
+        lesson.url.split("v=")[1];
+
+      lessonsHTML += `
+        <div class="course-card">
+
+          <h3>
+            ${lesson.title}
+          </h3>
+
+          <iframe
+            width="100%"
+            height="400"
+            src="https://www.youtube.com/embed/${videoId}"
+            allowfullscreen>
+          </iframe>
+
+        </div>
+      `;
+
+    }
+  );
+
+  document.getElementById(
+    "courses"
+  ).innerHTML = `
+
+    <h1>
+      ${course.title}
+    </h1>
+
+    <p
+      style="
+        margin-top:10px;
+        margin-bottom:20px;
+      ">
+      ${course.description}
+    </p>
+
+    ${lessonsHTML}
+
+    <button
+      onclick="
+        renderCourses();
+        showTab('courses');
+      "
+      style="
+        margin-top:20px;
+      ">
+      Back
+    </button>
+
+  `;
+
+  showTab("courses");
+
 }
+
+
+// =====================
+// GLOBAL FUNCTIONS
+// =====================
 
 window.showTab = showTab;
 window.openCourse = openCourse;

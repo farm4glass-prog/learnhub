@@ -245,3 +245,23 @@ body {
   }
 
 }
+
+#googleLogin{
+  background:#167db5;
+  color:white;
+  border:none;
+  padding:12px 20px;
+  border-radius:12px;
+  cursor:pointer;
+  font-weight:600;
+  margin-bottom:20px;
+}
+
+#googleLogin:hover{
+  opacity:.9;
+}
+
+#userInfo img{
+  border-radius:50%;
+  margin-bottom:10px;
+}

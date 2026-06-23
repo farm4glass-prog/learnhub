@@ -1,80 +1,157 @@
-function openLesson(id){
+let courses=[];
 
-  const course =
-    courses.find(c => c.id === id);
+fetch("courses.json")
+.then(r=>r.json())
+.then(data=>{
 
-  lessonView.classList.remove("hidden");
+courses=data;
 
-  let lessonsHTML = "";
+renderCourses();
 
-  course.lessons.forEach(lesson => {
+});
 
-    if(lesson.type === "youtube"){
+function renderCourses(){
 
-      const videoId =
-        lesson.url.split("v=")[1];
+const container=
+document.getElementById(
+"course-list"
+);
 
-      const thumb =
-        `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+container.innerHTML="";
 
-      lessonsHTML += `
-      <div class="lesson-card">
+courses.forEach(course=>{
 
-        <img
-          src="${thumb}"
-          class="thumb"
-        >
+container.innerHTML+=`
 
-        <h3>${lesson.title}</h3>
+<div class="course-card">
 
-        <a
-          href="${lesson.url}"
-          target="_blank"
-        >
-          Watch Video →
-        </a>
+<h3>
+${course.emoji}
+${course.title}
+</h3>
 
-      </div>
-      `;
-    }
+<p>
+${course.description}
+</p>
 
-    if(lesson.type === "pdf"){
+<button
+onclick="openCourse(
+'${course.id}'
+)"
+>
+Open Course
+</button>
 
-      lessonsHTML += `
-      <div class="lesson-card">
+</div>
 
-        <h3>
-          📄 ${lesson.title}
-        </h3>
+`;
 
-        <a
-          href="${lesson.url}"
-          target="_blank"
-        >
-          Open PDF →
-        </a>
+});
 
-      </div>
-      `;
-    }
+}
 
-  });
+function openCourse(id){
 
-  lessonView.innerHTML = `
-  <div class="lesson">
+const course=
+courses.find(
+c=>c.id===id
+);
 
-    <h2>
-      ${course.title}
-    </h2>
+let html=`
+<h2>${course.title}</h2>
+`;
 
-    <p>
-      ${course.description}
-    </p>
+course.lessons.forEach(
+lesson=>{
 
-    <br>
+if(
+lesson.type==="youtube"
+){
 
-    ${lessonsHTML}
+const vid=
+lesson.url
+.split("v=")[1];
 
-  </div>
-  `;
+html+=`
+
+<div class="lesson-card">
+
+<img
+class="thumb"
+src="https://img.youtube.com/vi/${vid}/hqdefault.jpg"
+>
+
+<h3>
+${lesson.title}
+</h3>
+
+<a
+href="${lesson.url}"
+target="_blank"
+>
+Watch Video
+</a>
+
+</div>
+
+`;
+
+}
+
+if(
+lesson.type==="pdf"
+){
+
+html+=`
+
+<div class="lesson-card">
+
+<h3>
+📄 ${lesson.title}
+</h3>
+
+<a
+href="${lesson.url}"
+target="_blank"
+>
+Open PDF
+</a>
+
+</div>
+
+`;
+
+}
+
+});
+
+document
+.getElementById(
+"lessonView"
+)
+.innerHTML=html;
+
+}
+
+function showTab(tab){
+
+["dashboard",
+"courses",
+"profile"]
+.forEach(id=>{
+
+document
+.getElementById(id)
+.classList.add(
+"hidden"
+);
+
+});
+
+document
+.getElementById(tab)
+.classList.remove(
+"hidden"
+);
+
 }

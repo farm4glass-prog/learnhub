@@ -1,0 +1,37 @@
+[
+  {
+    "id":"algebra",
+    "title":"Algebra Basics",
+    "description":"Variables, equations and graphs.",
+    "lesson":"Algebra is the language of mathematics.",
+    "quiz":{
+      "question":"What is x in x + 3 = 5?",
+      "options":["1","2","3","4"],
+      "answer":"2"
+    }
+  },
+
+  {
+    "id":"geometry",
+    "title":"Geometry",
+    "description":"Shapes, angles and proofs.",
+    "lesson":"Geometry studies space and shape.",
+    "quiz":{
+      "question":"Angles in a triangle add to?",
+      "options":["90","180","360"],
+      "answer":"180"
+    }
+  },
+
+  {
+    "id":"javascript",
+    "title":"JavaScript",
+    "description":"Learn web programming.",
+    "lesson":"JavaScript powers websites.",
+    "quiz":{
+      "question":"Which keyword creates a variable?",
+      "options":["let","img","css"],
+      "answer":"let"
+    }
+  }
+]

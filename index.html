@@ -1,10 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>Farm4Glass Academy</title>
 
   <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,182 +12,165 @@
 
 <body>
 
-  <!-- SIDEBAR -->
+  <!-- LANDING PAGE -->
 
-  <div class="sidebar">
+  <div id="landingPage">
 
-    <div class="logo">
-      Farm4Glass
-    </div>
+    <nav class="top-nav">
 
-    <button onclick="showTab('dashboard')">
-      Dashboard
-    </button>
-
-    <button onclick="showTab('courses')">
-      Courses
-    </button>
-
-    <button onclick="showTab('profile')">
-      Profile
-    </button>
-
-    <div class="sidebar-footer">
-
-      <div class="sidebar-stat">
-        🔥 14 Day Streak
+      <div class="nav-logo">
+        Farm4Glass Academy
       </div>
 
-      <div class="sidebar-stat">
-        🌾 420 XP
+      <div class="nav-links">
+        <a href="#hero">Home</a>
+        <a href="#about">About Us</a>
+        <button id="landingLogin">Login</button>
       </div>
 
-    </div>
+    </nav>
 
-  </div>
-
-  <!-- MAIN CONTENT -->
-
-<div class="main">
-
-    <button id="googleLogin">
-      Sign in with Google
-    </button>
-
-    <div id="userInfo"></div>
-  
-    <!-- DASHBOARD -->
-<div id="dashboard">
-
-  <div class="hero">
-
-    <h1>
-      Farm4Glass Academy
-    </h1>
-
-    <p>
-      Build competitive DECA skills through structured learning paths.
-    </p>
-
-  </div>
-
-  <div class="stats-grid">
-
-    <div class="stat-card">
-      <div class="stat-label">
-        XP
-      </div>
-
-      <div class="stat-value">
-        0
-      </div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-label">
-        Current Level
-      </div>
-
-      <div class="stat-value">
-        1
-      </div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-label">
-        Streak
-      </div>
-
-      <div class="stat-value">
-        0
-      </div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-label">
-        Lessons Completed
-      </div>
-
-      <div class="stat-value">
-        0
-      </div>
-    </div>
-
-  </div>
-
-  <div class="level-card">
-
-    <h2>
-      Level Progress
-    </h2>
-
-    <p>
-      0 / 100 XP
-    </p>
-
-    <div class="progress">
-      <div
-        class="progress-fill"
-        style="width:0%">
-      </div>
-    </div>
-
-  </div>
-
-  <h2 class="section-title">
-    Continue Learning
-  </h2>
-
-  <div id="featuredCourses"></div>
-
-</div>
-
-    <!-- COURSES PAGE -->
-
-    <div id="courses" class="hidden">
+    <section id="hero" class="landing-hero">
 
       <h1>
+        Learn DECA. Compete Better. Win More.
+      </h1>
+
+      <p>
+        Structured learning paths, exam prep,
+        roleplay mastery, and presentation skills.
+      </p>
+
+      <button id="heroLogin">
+        Get Started
+      </button>
+
+    </section>
+
+    <section id="about" class="about-section">
+
+      <h2>
+        About Farm4Glass Academy
+      </h2>
+
+      <p>
+        Farm4Glass Academy helps DECA members prepare for
+        competitions through guided learning paths,
+        roleplay practice, exam preparation,
+        and presentation development.
+      </p>
+
+    </section>
+
+  </div>
+
+  <!-- STUDENT PORTAL -->
+
+  <div id="portal" class="hidden">
+
+    <div class="sidebar">
+
+      <div class="logo">
+        Farm4Glass
+      </div>
+
+      <button onclick="showTab('dashboard')">
+        Dashboard
+      </button>
+
+      <button onclick="showTab('courses')">
         Courses
-      </h1>
+      </button>
 
-      <div id="course-list"></div>
+      <button onclick="showTab('profile')">
+        Profile
+      </button>
 
     </div>
 
-    <!-- PROFILE PAGE -->
+    <div class="main">
 
-    <div id="profile" class="hidden">
+      <div id="userInfo"></div>
 
-      <h1>
-        Profile
-      </h1>
+      <div id="dashboard">
 
-      <div class="profile-card">
+        <div class="hero">
 
-        <h2>
-          Farm4Glass Learner
+          <h1>
+            Welcome Back
+          </h1>
+
+          <p>
+            Continue your DECA learning journey.
+          </p>
+
+        </div>
+
+        <div class="stats-grid">
+
+          <div class="stat-card">
+            <div class="stat-label">XP</div>
+            <div class="stat-value">0</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-label">Level</div>
+            <div class="stat-value">1</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-label">Streak</div>
+            <div class="stat-value">0</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-label">Lessons</div>
+            <div class="stat-value">0</div>
+          </div>
+
+        </div>
+
+        <h2 class="section-title">
+          Continue Learning
         </h2>
 
-        <p>
-          XP: 420
-        </p>
-
-        <p>
-          Streak: 14 Days
-        </p>
-
-        <p>
-          Rank: Level 7
-        </p>
+        <div id="featuredCourses"></div>
 
       </div>
+
+      <div id="courses" class="hidden">
+
+        <h1>Courses</h1>
+
+        <div id="course-list"></div>
+
+      </div>
+
+      <div id="profile" class="hidden">
+
+        <h1>Profile</h1>
+
+        <div class="profile-card">
+
+          <div id="profileInfo">
+            Sign in with Google
+          </div>
+
+        </div>
+
+      </div>
+
+      <button
+        id="googleLogin"
+        style="display:none;">
+        Login
+      </button>
 
     </div>
 
   </div>
 
-<script type="module" src="script.js"></script>
-  
-</body>
+  <script type="module" src="script.js"></script>
 
+</body>
 </html>

@@ -1,239 +1,247 @@
-let courses = [];
-
-fetch("courses.json")
-.then(response => response.json())
-.then(data => {
-
-    courses = data;
-
-    renderCourses();
-    renderFeaturedCourses();
-
-});
-
-function showTab(tab){
-
-    document
-    .getElementById("dashboard")
-    .classList.add("hidden");
-
-    document
-    .getElementById("courses")
-    .classList.add("hidden");
-
-    document
-    .getElementById("profile")
-    .classList.add("hidden");
-
-    document
-    .getElementById(tab)
-    .classList.remove("hidden");
-
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-function renderFeaturedCourses(){
-
-    const container =
-    document.getElementById(
-        "featuredCourses"
-    );
-
-    container.innerHTML = "";
-
-    courses.forEach(course => {
-
-        container.innerHTML += `
-
-        <div class="course-card">
-
-            <h3>
-                ${course.title}
-            </h3>
-
-            <p>
-                ${course.description}
-            </p>
-
-            <div class="progress">
-
-                <div
-                    class="progress-fill"
-                    style="width:${course.progress}%"
-                >
-                </div>
-
-            </div>
-
-            <button
-                onclick="openCourse('${course.id}')"
-            >
-                Continue
-            </button>
-
-        </div>
-
-        `;
-
-    });
-
+body {
+  font-family: 'Inter', sans-serif;
+  background: #f6f8fc;
+  color: #1e293b;
+  display: flex;
 }
 
-function renderCourses(){
+/* Sidebar */
 
-    const container =
-    document.getElementById(
-        "course-list"
-    );
-
-    container.innerHTML = "";
-
-    courses.forEach(course => {
-
-        container.innerHTML += `
-
-        <div class="course-card">
-
-            <h3>
-                ${course.title}
-            </h3>
-
-            <p>
-                ${course.description}
-            </p>
-
-            <div class="progress">
-
-                <div
-                    class="progress-fill"
-                    style="width:${course.progress}%"
-                >
-                </div>
-
-            </div>
-
-            <button
-                onclick="openCourse('${course.id}')"
-            >
-                Open Course
-            </button>
-
-        </div>
-
-        `;
-
-    });
-
+.sidebar {
+  width: 260px;
+  height: 100vh;
+  background: #167db5;
+  position: fixed;
+  left: 0;
+  top: 0;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
 }
 
-function openCourse(id){
+.logo {
+  color: white;
+  font-size: 30px;
+  font-weight: 800;
+  margin-bottom: 40px;
+}
 
-    const course =
-    courses.find(
-        c => c.id === id
-    );
+.sidebar button {
+  background: rgba(255,255,255,.12);
+  border: none;
+  color: white;
+  padding: 15px;
+  border-radius: 14px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: 0.2s;
+}
 
-    let lessonHTML = "";
+.sidebar button:hover {
+  background: white;
+  color: #167db5;
+}
 
-    course.lessons.forEach(
-        lesson => {
+.sidebar-footer {
+  margin-top: auto;
+}
 
-            if(
-                lesson.type === "youtube"
-            ){
+.sidebar-stat {
+  color: white;
+  background: rgba(255,255,255,.12);
+  padding: 12px;
+  border-radius: 12px;
+  margin-top: 10px;
+}
 
-                const videoId =
-                lesson.url
-                .split("v=")[1];
+/* Main */
 
-                lessonHTML += `
+.main {
+  margin-left: 260px;
+  width: 100%;
+  padding: 40px;
+}
 
-                <div class="continue-card">
+/* Hero Banner */
 
-                    <h3>
-                        ${lesson.title}
-                    </h3>
+.hero {
+  background: linear-gradient(
+    135deg,
+    #167db5,
+    #38bdf8
+  );
+  color: white;
+  padding: 40px;
+  border-radius: 28px;
+  margin-bottom: 30px;
+}
 
-                    <div class="video-container">
+.hero h1 {
+  font-size: 42px;
+  margin-bottom: 10px;
+}
 
-                        <iframe
-                            src="https://www.youtube.com/embed/${videoId}"
-                            allowfullscreen>
-                        </iframe>
+.hero p {
+  font-size: 18px;
+}
 
-                    </div>
+/* Section Titles */
 
-                </div>
+.section-title {
+  font-size: 26px;
+  margin-bottom: 18px;
+  margin-top: 25px;
+}
 
-                `;
+/* Continue Learning */
 
-            }
+.continue-card {
+  background: white;
+  border-radius: 24px;
+  padding: 25px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.06);
+  margin-bottom: 30px;
+}
 
-            if(
-                lesson.type === "pdf"
-            ){
+.continue-card h3 {
+  margin-bottom: 15px;
+}
 
-                lessonHTML += `
+/* Video */
 
-                <div class="course-card">
+.video-container {
+  overflow: hidden;
+  border-radius: 18px;
+}
 
-                    <h3>
-                        ${lesson.title}
-                    </h3>
+.video-container iframe {
+  width: 100%;
+  height: 500px;
+  border: none;
+}
 
-                    <a
-                        href="${lesson.url}"
-                        target="_blank"
-                    >
-                        Open PDF
-                    </a>
+/* Stats */
 
-                </div>
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
 
-                `;
+.stat-card {
+  background: white;
+  border-radius: 24px;
+  padding: 25px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.06);
+}
 
-            }
+.stat-label {
+  color: #64748b;
+  margin-bottom: 10px;
+}
 
-        }
-    );
+.stat-value {
+  font-size: 32px;
+  font-weight: 800;
+}
 
-    document
-    .getElementById("courses")
-    .innerHTML = `
+/* Course Cards */
 
-        <h1>
-            ${course.title}
-        </h1>
+#featuredCourses,
+#course-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(320px,1fr));
+  gap: 20px;
+}
 
-        <p style="
-            margin-top:10px;
-            margin-bottom:25px;
-            color:#64748b;
-        ">
-            ${course.description}
-        </p>
+.course-card {
+  background: white;
+  padding: 24px;
+  border-radius: 24px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.06);
+  transition: .2s;
+}
 
-        ${lessonHTML}
+.course-card:hover {
+  transform: translateY(-5px);
+}
 
-        <button
-            onclick="
-                showTab('courses');
-                renderCourses();
-            "
-            style="
-                margin-top:20px;
-                padding:12px 18px;
-                border:none;
-                border-radius:12px;
-                background:#2563eb;
-                color:white;
-                cursor:pointer;
-            "
-        >
-            Back to Courses
-        </button>
+.course-card h3 {
+  margin-bottom: 10px;
+}
 
-    `;
+.course-card p {
+  color: #64748b;
+  margin-bottom: 15px;
+  line-height: 1.6;
+}
 
-    showTab("courses");
+.course-card button {
+  background: #167db5;
+  color: white;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+/* Progress Bar */
+
+.progress {
+  width: 100%;
+  height: 10px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #167db5;
+}
+
+/* Profile */
+
+.profile-card {
+  background: white;
+  padding: 30px;
+  border-radius: 24px;
+  max-width: 450px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.06);
+}
+
+/* Hidden */
+
+.hidden {
+  display: none;
+}
+
+/* Mobile */
+
+@media(max-width:900px){
+
+  .sidebar{
+    width:100%;
+    height:auto;
+    position:relative;
+  }
+
+  .main{
+    margin-left:0;
+  }
+
+  .video-container iframe{
+    height:280px;
+  }
 
 }

@@ -2,32 +2,42 @@
   {
     "id": "marketing",
     "title": "Marketing Cluster Exam",
-    "emoji": "📈",
-    "description": "Prepare for DECA marketing events.",
-    "xp": 50,
-
+    "description": "Master DECA marketing concepts and prepare for competition.",
+    "progress": 75,
     "lessons": [
       {
         "type": "youtube",
-        "title": "Market Segmentation",
-        "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-      },
-
-      {
-        "type": "pdf",
-        "title": "Marketing Study Guide",
-        "url": "https://example.com/guide.pdf"
+        "title": "Marketing Cluster Exam Overview",
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
       }
     ]
   },
 
   {
-    "id": "finance",
-    "title": "Finance Cluster Exam",
-    "emoji": "💰",
-    "description": "Accounting and finance fundamentals.",
-    "xp": 50,
+    "id": "roleplay",
+    "title": "Roleplay 101",
+    "description": "Learn how to structure and deliver winning DECA roleplays.",
+    "progress": 40,
+    "lessons": [
+      {
+        "type": "youtube",
+        "title": "Introduction to Roleplays",
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+      }
+    ]
+  },
 
-    "lessons": []
+  {
+    "id": "canva",
+    "title": "Canva Basics",
+    "description": "Create polished presentations and visuals for DECA projects.",
+    "progress": 20,
+    "lessons": [
+      {
+        "type": "youtube",
+        "title": "Getting Started with Canva",
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+      }
+    ]
   }
 ]

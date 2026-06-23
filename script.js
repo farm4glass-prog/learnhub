@@ -184,3 +184,6 @@ function openCourse(id) {
 
   showTab("courses");
 }
+
+window.showTab = showTab;
+window.openCourse = openCourse;

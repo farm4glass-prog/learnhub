@@ -2,190 +2,184 @@
 <html lang="en">
 
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Farm4Glass Academy</title>
+  <title>Farm4Glass Academy</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<!-- Sidebar -->
+  <!-- SIDEBAR -->
 
-<div class="sidebar">
+  <div class="sidebar">
 
-  <div class="logo">
-    Farm4Glass
-  </div>
-
-  <button onclick="showTab('dashboard')">
-    Dashboard
-  </button>
-
-  <button onclick="showTab('courses')">
-    Courses
-  </button>
-
-  <button onclick="showTab('profile')">
-    Profile
-  </button>
-
-  <div class="sidebar-footer">
-
-    <div class="sidebar-stat">
-      🔥 14 Day Streak
+    <div class="logo">
+      Farm4Glass
     </div>
 
-    <div class="sidebar-stat">
-      🌾 420 XP
-    </div>
+    <button onclick="showTab('dashboard')">
+      Dashboard
+    </button>
 
-  </div>
-
-</div>
-
-<!-- Main Content -->
-
-<div class="main">
-
-  <!-- DASHBOARD -->
-
-  <div id="dashboard">
-
-    <div class="hero">
-
-      <h1>
-        Welcome Back
-      </h1>
-
-      <p>
-        Continue preparing for your DECA events.
-      </p>
-
-    </div>
-
-    <!-- Continue Learning -->
-
-    <h2 class="section-title">
-      Continue Learning
-    </h2>
-
-    <div class="continue-card">
-
-      <h3>
-        Marketing Cluster Exam
-      </h3>
-
-      <div class="video-container">
-
-        <iframe
-          src="https://www.youtube.com/embed/_eWk3tz2KmE"
-          allowfullscreen>
-        </iframe>
-
-      </div>
-
-    </div>
-
-    <!-- Stats -->
-
-    <h2 class="section-title">
-      Your Progress
-    </h2>
-
-    <div class="stats-grid">
-
-      <div class="stat-card">
-        <div class="stat-label">
-          XP
-        </div>
-
-        <div class="stat-value">
-          420
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-label">
-          Streak
-        </div>
-
-        <div class="stat-value">
-          14
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-label">
-          Rank
-        </div>
-
-        <div class="stat-value">
-          Level 7
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Featured Courses -->
-
-    <h2 class="section-title">
-      Featured Courses
-    </h2>
-
-    <div id="featuredCourses"></div>
-
-  </div>
-
-  <!-- COURSES -->
-
-  <div id="courses" class="hidden">
-
-    <h1>
+    <button onclick="showTab('courses')">
       Courses
-    </h1>
+    </button>
 
-    <div id="course-list"></div>
+    <button onclick="showTab('profile')">
+      Profile
+    </button>
+
+    <div class="sidebar-footer">
+
+      <div class="sidebar-stat">
+        🔥 14 Day Streak
+      </div>
+
+      <div class="sidebar-stat">
+        🌾 420 XP
+      </div>
+
+    </div>
 
   </div>
 
-  <!-- PROFILE -->
+  <!-- MAIN CONTENT -->
 
-  <div id="profile" class="hidden">
+  <div class="main">
 
-    <h1>
-      Profile
-    </h1>
+    <!-- DASHBOARD -->
 
-    <div class="profile-card">
+    <div id="dashboard">
 
-      <h2>
-        Farm4Glass Learner
+      <div class="hero">
+
+        <h1>
+          Welcome Back
+        </h1>
+
+        <p>
+          Continue preparing for your DECA events.
+        </p>
+
+      </div>
+
+      <h2 class="section-title">
+        Continue Learning
       </h2>
 
-      <p>
-        XP: 420
-      </p>
+      <div class="continue-card">
 
-      <p>
-        Streak: 14 Days
-      </p>
+        <h3>
+          Marketing Cluster Exam
+        </h3>
 
-      <p>
-        Rank: Level 7
-      </p>
+        <div class="video-container">
+
+          <iframe
+            src="https://www.youtube.com/embed/_eWk3tz2KmE"
+            allowfullscreen>
+          </iframe>
+
+        </div>
+
+      </div>
+
+      <h2 class="section-title">
+        Your Progress
+      </h2>
+
+      <div class="stats-grid">
+
+        <div class="stat-card">
+          <div class="stat-label">
+            XP
+          </div>
+
+          <div class="stat-value">
+            420
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">
+            Streak
+          </div>
+
+          <div class="stat-value">
+            14
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">
+            Rank
+          </div>
+
+          <div class="stat-value">
+            Level 7
+          </div>
+        </div>
+
+      </div>
+
+      <h2 class="section-title">
+        Featured Courses
+      </h2>
+
+      <div id="featuredCourses"></div>
+
+    </div>
+
+    <!-- COURSES PAGE -->
+
+    <div id="courses" class="hidden">
+
+      <h1>
+        Courses
+      </h1>
+
+      <div id="course-list"></div>
+
+    </div>
+
+    <!-- PROFILE PAGE -->
+
+    <div id="profile" class="hidden">
+
+      <h1>
+        Profile
+      </h1>
+
+      <div class="profile-card">
+
+        <h2>
+          Farm4Glass Learner
+        </h2>
+
+        <p>
+          XP: 420
+        </p>
+
+        <p>
+          Streak: 14 Days
+        </p>
+
+        <p>
+          Rank: Level 7
+        </p>
+
+      </div>
 
     </div>
 
   </div>
 
-</div>
-
-<script src="script.js"></script>
+  <script src="script.js"></script>
 
 </body>
 

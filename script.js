@@ -1,15 +1,77 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBbx0tdGbQBeUmWnTMHdipSLPrp6zo6n6c",
+  authDomain: "farm4glass-142b7.firebaseapp.com",
+  projectId: "farm4glass-142b7",
+  storageBucket: "farm4glass-142b7.firebasestorage.app",
+  messagingSenderId: "1080688954531",
+  appId: "1:1080688954531:web:334be5bdfae4d338e74316",
+  measurementId: "G-27SR58HRSZ"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
 let courses = [];
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  const loginBtn = document.getElementById("googleLogin");
+
+  if (loginBtn) {
+
+    loginBtn.addEventListener("click", async () => {
+
+      try {
+
+        const result =
+          await signInWithPopup(auth, provider);
+
+        const user = result.user;
+
+        document.getElementById("userInfo").innerHTML = `
+          <div class="profile-card">
+            <img src="${user.photoURL}" width="70">
+            <h3>${user.displayName}</h3>
+            <p>${user.email}</p>
+          </div>
+        `;
+
+      } catch (error) {
+
+        console.error(error);
+        alert(error.message);
+
+      }
+
+    });
+
+  }
+
+});
 
 fetch("courses.json")
   .then(response => response.json())
   .then(data => {
+
     courses = data;
 
     renderCourses();
     renderFeaturedCourses();
+
   })
   .catch(error => {
-    console.error("Failed to load courses:", error);
+
+    console.error(error);
+
   });
 
 function showTab(tabName) {
@@ -36,6 +98,8 @@ function renderFeaturedCourses() {
   const container =
     document.getElementById("featuredCourses");
 
+  if (!container) return;
+
   container.innerHTML = "";
 
   courses.forEach(course => {
@@ -61,12 +125,15 @@ function renderFeaturedCourses() {
       </div>
     `;
   });
+
 }
 
 function renderCourses() {
 
   const container =
     document.getElementById("course-list");
+
+  if (!container) return;
 
   container.innerHTML = "";
 
@@ -93,6 +160,7 @@ function renderCourses() {
       </div>
     `;
   });
+
 }
 
 function openCourse(id) {
@@ -129,24 +197,6 @@ function openCourse(id) {
       `;
     }
 
-    if (lesson.type === "pdf") {
-
-      lessonsHTML += `
-        <div class="course-card">
-
-          <h3>${lesson.title}</h3>
-
-          <p>PDF Resource</p>
-
-          <a
-            href="${lesson.url}"
-            target="_blank">
-            Open PDF
-          </a>
-
-        </div>
-      `;
-    }
   });
 
   document.getElementById("courses").innerHTML = `
@@ -167,19 +217,9 @@ function openCourse(id) {
       onclick="
         renderCourses();
         showTab('courses');
-      "
-      style="
-        background:#167db5;
-        color:white;
-        border:none;
-        padding:12px 18px;
-        border-radius:12px;
-        cursor:pointer;
-        margin-top:20px;
       ">
-      ← Back to Courses
+      Back to Courses
     </button>
-
   `;
 
   showTab("courses");

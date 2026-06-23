@@ -1,157 +1,239 @@
-let courses=[];
+let courses = [];
 
 fetch("courses.json")
-.then(r=>r.json())
-.then(data=>{
+.then(response => response.json())
+.then(data => {
 
-courses=data;
+    courses = data;
 
-renderCourses();
+    renderCourses();
+    renderFeaturedCourses();
 
 });
+
+function showTab(tab){
+
+    document
+    .getElementById("dashboard")
+    .classList.add("hidden");
+
+    document
+    .getElementById("courses")
+    .classList.add("hidden");
+
+    document
+    .getElementById("profile")
+    .classList.add("hidden");
+
+    document
+    .getElementById(tab)
+    .classList.remove("hidden");
+
+}
+
+function renderFeaturedCourses(){
+
+    const container =
+    document.getElementById(
+        "featuredCourses"
+    );
+
+    container.innerHTML = "";
+
+    courses.forEach(course => {
+
+        container.innerHTML += `
+
+        <div class="course-card">
+
+            <h3>
+                ${course.title}
+            </h3>
+
+            <p>
+                ${course.description}
+            </p>
+
+            <div class="progress">
+
+                <div
+                    class="progress-fill"
+                    style="width:${course.progress}%"
+                >
+                </div>
+
+            </div>
+
+            <button
+                onclick="openCourse('${course.id}')"
+            >
+                Continue
+            </button>
+
+        </div>
+
+        `;
+
+    });
+
+}
 
 function renderCourses(){
 
-const container=
-document.getElementById(
-"course-list"
-);
+    const container =
+    document.getElementById(
+        "course-list"
+    );
 
-container.innerHTML="";
+    container.innerHTML = "";
 
-courses.forEach(course=>{
+    courses.forEach(course => {
 
-container.innerHTML+=`
+        container.innerHTML += `
 
-<div class="course-card">
+        <div class="course-card">
 
-<h3>
-${course.emoji}
-${course.title}
-</h3>
+            <h3>
+                ${course.title}
+            </h3>
 
-<p>
-${course.description}
-</p>
+            <p>
+                ${course.description}
+            </p>
 
-<button
-onclick="openCourse(
-'${course.id}'
-)"
->
-Open Course
-</button>
+            <div class="progress">
 
-</div>
+                <div
+                    class="progress-fill"
+                    style="width:${course.progress}%"
+                >
+                </div>
 
-`;
+            </div>
 
-});
+            <button
+                onclick="openCourse('${course.id}')"
+            >
+                Open Course
+            </button>
+
+        </div>
+
+        `;
+
+    });
 
 }
 
 function openCourse(id){
 
-const course=
-courses.find(
-c=>c.id===id
-);
+    const course =
+    courses.find(
+        c => c.id === id
+    );
 
-let html=`
-<h2>${course.title}</h2>
-`;
+    let lessonHTML = "";
 
-course.lessons.forEach(
-lesson=>{
+    course.lessons.forEach(
+        lesson => {
 
-if(
-lesson.type==="youtube"
-){
+            if(
+                lesson.type === "youtube"
+            ){
 
-const vid=
-lesson.url
-.split("v=")[1];
+                const videoId =
+                lesson.url
+                .split("v=")[1];
 
-html+=`
+                lessonHTML += `
 
-<div class="lesson-card">
+                <div class="continue-card">
 
-<img
-class="thumb"
-src="https://img.youtube.com/vi/${vid}/hqdefault.jpg"
->
+                    <h3>
+                        ${lesson.title}
+                    </h3>
 
-<h3>
-${lesson.title}
-</h3>
+                    <div class="video-container">
 
-<a
-href="${lesson.url}"
-target="_blank"
->
-Watch Video
-</a>
+                        <iframe
+                            src="https://www.youtube.com/embed/${videoId}"
+                            allowfullscreen>
+                        </iframe>
 
-</div>
+                    </div>
 
-`;
+                </div>
 
-}
+                `;
 
-if(
-lesson.type==="pdf"
-){
+            }
 
-html+=`
+            if(
+                lesson.type === "pdf"
+            ){
 
-<div class="lesson-card">
+                lessonHTML += `
 
-<h3>
-📄 ${lesson.title}
-</h3>
+                <div class="course-card">
 
-<a
-href="${lesson.url}"
-target="_blank"
->
-Open PDF
-</a>
+                    <h3>
+                        ${lesson.title}
+                    </h3>
 
-</div>
+                    <a
+                        href="${lesson.url}"
+                        target="_blank"
+                    >
+                        Open PDF
+                    </a>
 
-`;
+                </div>
 
-}
+                `;
 
-});
+            }
 
-document
-.getElementById(
-"lessonView"
-)
-.innerHTML=html;
+        }
+    );
 
-}
+    document
+    .getElementById("courses")
+    .innerHTML = `
 
-function showTab(tab){
+        <h1>
+            ${course.title}
+        </h1>
 
-["dashboard",
-"courses",
-"profile"]
-.forEach(id=>{
+        <p style="
+            margin-top:10px;
+            margin-bottom:25px;
+            color:#64748b;
+        ">
+            ${course.description}
+        </p>
 
-document
-.getElementById(id)
-.classList.add(
-"hidden"
-);
+        ${lessonHTML}
 
-});
+        <button
+            onclick="
+                showTab('courses');
+                renderCourses();
+            "
+            style="
+                margin-top:20px;
+                padding:12px 18px;
+                border:none;
+                border-radius:12px;
+                background:#2563eb;
+                color:white;
+                cursor:pointer;
+            "
+        >
+            Back to Courses
+        </button>
 
-document
-.getElementById(tab)
-.classList.remove(
-"hidden"
-);
+    `;
+
+    showTab("courses");
 
 }

@@ -1,14 +1,18 @@
 [
   {
     "id": "marketing",
-    "title": "📈 Marketing Cluster Exam Prep",
-    "description": "Master DECA marketing concepts.",
+    "title": "Marketing Cluster Exam",
+    "emoji": "📈",
+    "description": "Prepare for DECA marketing events.",
+    "xp": 50,
+
     "lessons": [
       {
         "type": "youtube",
         "title": "Market Segmentation",
         "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
       },
+
       {
         "type": "pdf",
         "title": "Marketing Study Guide",
@@ -19,14 +23,11 @@
 
   {
     "id": "finance",
-    "title": "💰 Finance Cluster Exam Prep",
-    "description": "Accounting and financial analysis.",
-    "lessons": [
-      {
-        "type": "youtube",
-        "title": "Finance Fundamentals",
-        "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-      }
-    ]
+    "title": "Finance Cluster Exam",
+    "emoji": "💰",
+    "description": "Accounting and finance fundamentals.",
+    "xp": 50,
+
+    "lessons": []
   }
 ]

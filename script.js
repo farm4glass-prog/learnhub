@@ -1,10 +1,21 @@
+// =====================
+// FIREBASE IMPORTS
+// =====================
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  onAuthStateChanged,
+  signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+
+// =====================
+// FIREBASE CONFIG
+// =====================
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbx0tdGbQBeUmWnTMHdipSLPrp6zo6n6c",
@@ -20,76 +31,94 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-let courses = [];
 
-document.addEventListener("DOMContentLoaded", () => {
+// =====================
+// GOOGLE LOGIN
+// =====================
 
-  const loginBtn = document.getElementById("googleLogin");
+const loginBtn = document.getElementById("googleLogin");
 
-  if (loginBtn) {
+if (loginBtn) {
+  loginBtn.addEventListener("click", async () => {
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error(error);
+      alert(error.message);
+    }
+  });
+}
 
-    loginBtn.addEventListener("click", async () => {
+onAuthStateChanged(auth, (user) => {
 
-      try {
+  const userInfo =
+    document.getElementById("userInfo");
 
-        const result =
-          await signInWithPopup(auth, provider);
+  if (!userInfo) return;
 
-        const user = result.user;
+  if (user) {
 
-        document.getElementById("userInfo").innerHTML = `
-          <div class="profile-card">
-            <img src="${user.photoURL}" width="70">
-            <h3>${user.displayName}</h3>
-            <p>${user.email}</p>
-          </div>
-        `;
+    userInfo.innerHTML = `
+      <div class="profile-card">
+        <img
+          src="${user.photoURL}"
+          width="60"
+          style="border-radius:50%;margin-bottom:10px;"
+        >
+        <h3>${user.displayName}</h3>
+        <p>${user.email}</p>
 
-      } catch (error) {
+        <button id="logoutBtn">
+          Sign Out
+        </button>
+      </div>
+    `;
 
-        console.error(error);
-        alert(error.message);
+    document
+      .getElementById("logoutBtn")
+      .addEventListener("click", () => {
+        signOut(auth);
+      });
 
-      }
+  } else {
 
-    });
-
+    userInfo.innerHTML = `
+      <p>Not signed in</p>
+    `;
   }
-
 });
+
+
+// =====================
+// COURSE SYSTEM
+// =====================
+
+let courses = [];
 
 fetch("courses.json")
   .then(response => response.json())
   .then(data => {
-
     courses = data;
 
     renderCourses();
     renderFeaturedCourses();
-
   })
   .catch(error => {
-
-    console.error(error);
-
+    console.error("Failed to load courses:", error);
   });
 
 function showTab(tabName) {
 
-  document
-    .getElementById("dashboard")
+  document.getElementById("dashboard")
     .classList.add("hidden");
 
-  document
-    .getElementById("courses")
+  document.getElementById("courses")
     .classList.add("hidden");
 
-  document
-    .getElementById("profile")
+  document.getElementById("profile")
     .classList.add("hidden");
 
-  document
-    .getElementById(tabName)
+  document.getElementById(tabName)
     .classList.remove("hidden");
 }
 
@@ -97,8 +126,6 @@ function renderFeaturedCourses() {
 
   const container =
     document.getElementById("featuredCourses");
-
-  if (!container) return;
 
   container.innerHTML = "";
 
@@ -125,15 +152,12 @@ function renderFeaturedCourses() {
       </div>
     `;
   });
-
 }
 
 function renderCourses() {
 
   const container =
     document.getElementById("course-list");
-
-  if (!container) return;
 
   container.innerHTML = "";
 
@@ -160,7 +184,6 @@ function renderCourses() {
       </div>
     `;
   });
-
 }
 
 function openCourse(id) {
@@ -170,59 +193,7 @@ function openCourse(id) {
 
   if (!course) return;
 
-  let lessonsHTML = "";
-
-  course.lessons.forEach(lesson => {
-
-    if (lesson.type === "youtube") {
-
-      const videoId =
-        lesson.url.split("v=")[1];
-
-      lessonsHTML += `
-        <div class="continue-card">
-
-          <h3>${lesson.title}</h3>
-
-          <div class="video-container">
-
-            <iframe
-              src="https://www.youtube.com/embed/${videoId}"
-              allowfullscreen>
-            </iframe>
-
-          </div>
-
-        </div>
-      `;
-    }
-
-  });
-
-  document.getElementById("courses").innerHTML = `
-
-    <h1>${course.title}</h1>
-
-    <p style="
-      color:#64748b;
-      margin-top:10px;
-      margin-bottom:20px;
-    ">
-      ${course.description}
-    </p>
-
-    ${lessonsHTML}
-
-    <button
-      onclick="
-        renderCourses();
-        showTab('courses');
-      ">
-      Back to Courses
-    </button>
-  `;
-
-  showTab("courses");
+  alert(course.title);
 }
 
 window.showTab = showTab;

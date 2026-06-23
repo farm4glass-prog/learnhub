@@ -1,0 +1,103 @@
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:system-ui,sans-serif;
+background:#f8fafc;
+color:#111827;
+}
+
+header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:1rem 2rem;
+background:#14bf96;
+color:white;
+}
+
+.logo{
+font-size:1.5rem;
+font-weight:bold;
+}
+
+.controls{
+display:flex;
+gap:10px;
+}
+
+input{
+padding:.75rem;
+border:none;
+border-radius:10px;
+}
+
+button{
+padding:.75rem 1rem;
+border:none;
+border-radius:10px;
+cursor:pointer;
+}
+
+#hero{
+padding:4rem 2rem;
+text-align:center;
+}
+
+#hero h1{
+font-size:3rem;
+margin-bottom:1rem;
+}
+
+#courses{
+display:grid;
+grid-template-columns:
+repeat(auto-fit,minmax(280px,1fr));
+gap:20px;
+padding:2rem;
+}
+
+.card{
+background:white;
+padding:1.5rem;
+border-radius:20px;
+box-shadow:
+0 4px 10px rgba(0,0,0,.08);
+}
+
+.card h3{
+margin-bottom:.5rem;
+}
+
+.card button{
+margin-top:1rem;
+background:#14bf96;
+color:white;
+}
+
+.lesson{
+max-width:800px;
+margin:auto;
+padding:2rem;
+}
+
+.quiz-option{
+display:block;
+margin:.5rem 0;
+}
+
+.hidden{
+display:none;
+}
+
+.dark{
+background:#111827;
+color:white;
+}
+
+.dark .card{
+background:#1f2937;
+}

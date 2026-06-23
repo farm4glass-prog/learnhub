@@ -1,45 +1,93 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LearnFlow</title>
-  <link rel="stylesheet" href="style.css">
+
+<meta charset="UTF-8">
+
+<title>Farm4Glass Academy</title>
+
+<link rel="stylesheet" href="style.css">
+
 </head>
+
 <body>
 
-<nav>
-  <div class="logo">📚 LearnFlow</div>
-  <button>Get Started</button>
-</nav>
+<div class="sidebar">
 
-<section class="hero">
-  <h1>Learn Anything. Grow Every Day.</h1>
-  <p>
-    Interactive lessons, quizzes, and progress tracking inspired by Khan Academy.
-  </p>
-  <button class="cta">Start Learning</button>
-</section>
+<h1>🌾 Farm4Glass</h1>
 
-<section class="courses">
+<button onclick="showTab('dashboard')">
+Dashboard
+</button>
 
-  <div class="card">
-    <h3>Algebra</h3>
-    <p>Master equations and variables.</p>
-  </div>
+<button onclick="showTab('courses')">
+Courses
+</button>
 
-  <div class="card">
-    <h3>Geometry</h3>
-    <p>Understand shapes and proofs.</p>
-  </div>
+<button onclick="showTab('profile')">
+Profile
+</button>
 
-  <div class="card">
-    <h3>JavaScript</h3>
-    <p>Learn modern web development.</p>
-  </div>
+</div>
 
-</section>
+<div class="main">
+
+<div id="dashboard">
+
+<h2>Dashboard</h2>
+
+<div class="stat-grid">
+
+<div class="stat-card">
+🔥 Streak
+<h3 id="streak">
+1
+</h3>
+</div>
+
+<div class="stat-card">
+🌾 XP
+<h3 id="xp">
+0
+</h3>
+</div>
+
+</div>
+
+</div>
+
+<div id="courses" class="hidden">
+
+<h2>Courses</h2>
+
+<div id="course-list">
+</div>
+
+</div>
+
+<div id="profile" class="hidden">
+
+<h2>Profile</h2>
+
+<div class="profile-card">
+
+<h3 id="rank">
+🐣 Chick
+</h3>
+
+<p>
+Farm4Glass Learner
+</p>
+
+</div>
+
+</div>
+
+<div id="lessonView"></div>
+
+</div>
 
 <script src="script.js"></script>
+
 </body>
 </html>

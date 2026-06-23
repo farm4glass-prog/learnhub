@@ -4,6 +4,8 @@
     "title": "Marketing Cluster Exam",
     "description": "Master DECA marketing concepts and prepare for competition.",
     "progress": 75,
+    "level": "Beginner",
+    "duration": "4 Hours",
     "lessons": [
       {
         "type": "youtube",
@@ -12,12 +14,13 @@
       }
     ]
   },
-
   {
     "id": "roleplay",
     "title": "Roleplay 101",
     "description": "Learn how to structure and deliver winning DECA roleplays.",
     "progress": 40,
+    "level": "Intermediate",
+    "duration": "3 Hours",
     "lessons": [
       {
         "type": "youtube",
@@ -26,12 +29,13 @@
       }
     ]
   },
-
   {
     "id": "canva",
     "title": "Canva Basics",
     "description": "Create polished presentations and visuals for DECA projects.",
     "progress": 20,
+    "level": "Beginner",
+    "duration": "2 Hours",
     "lessons": [
       {
         "type": "youtube",

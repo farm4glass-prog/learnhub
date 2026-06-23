@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Farm4Glass Academy</title>
+
+  <title>Farm4Glass</title>
 
   <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -12,165 +14,155 @@
 
 <body>
 
-  <!-- LANDING PAGE -->
+<!-- =========================
+     LANDING PAGE
+========================= -->
 
-  <div id="landingPage">
+<div id="landingPage">
 
-    <nav class="top-nav">
+  <!-- NAV -->
+  <nav class="top-nav">
 
-      <div class="nav-logo">
-        Farm4Glass Academy
-      </div>
-
-      <div class="nav-links">
-        <a href="#hero">Home</a>
-        <a href="#about">About Us</a>
-        <button id="landingLogin">Login</button>
-      </div>
-
-    </nav>
-
-    <section id="hero" class="landing-hero">
-
-      <h1>
-        Learn DECA. Compete Better. Win More.
-      </h1>
-
-      <p>
-        Structured learning paths, exam prep,
-        roleplay mastery, and presentation skills.
-      </p>
-
-      <button id="heroLogin">
-        Get Started
-      </button>
-
-    </section>
-
-    <section id="about" class="about-section">
-
-      <h2>
-        About Farm4Glass Academy
-      </h2>
-
-      <p>
-        Farm4Glass Academy helps DECA members prepare for
-        competitions through guided learning paths,
-        roleplay practice, exam preparation,
-        and presentation development.
-      </p>
-
-    </section>
-
-  </div>
-
-  <!-- STUDENT PORTAL -->
-
-  <div id="portal" class="hidden">
-
-    <div class="sidebar">
-
-      <div class="logo">
-        Farm4Glass
-      </div>
-
-      <button onclick="showTab('dashboard')">
-        Dashboard
-      </button>
-
-      <button onclick="showTab('courses')">
-        Courses
-      </button>
-
-      <button onclick="showTab('profile')">
-        Profile
-      </button>
-
+    <div class="nav-logo">
+      Farm4Glass
     </div>
 
-    <div class="main">
+    <div class="nav-links">
 
-      <div id="userInfo"></div>
+      <a href="#hero">Home</a>
+      <a href="#about">About Us</a>
 
-      <div id="dashboard">
-
-        <div class="hero">
-
-          <h1>
-            Welcome Back
-          </h1>
-
-          <p>
-            Continue your DECA learning journey.
-          </p>
-
-        </div>
-
-        <div class="stats-grid">
-
-          <div class="stat-card">
-            <div class="stat-label">XP</div>
-            <div class="stat-value">0</div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-label">Level</div>
-            <div class="stat-value">1</div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-label">Streak</div>
-            <div class="stat-value">0</div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-label">Lessons</div>
-            <div class="stat-value">0</div>
-          </div>
-
-        </div>
-
-        <h2 class="section-title">
-          Continue Learning
-        </h2>
-
-        <div id="featuredCourses"></div>
-
-      </div>
-
-      <div id="courses" class="hidden">
-
-        <h1>Courses</h1>
-
-        <div id="course-list"></div>
-
-      </div>
-
-      <div id="profile" class="hidden">
-
-        <h1>Profile</h1>
-
-        <div class="profile-card">
-
-          <div id="profileInfo">
-            Sign in with Google
-          </div>
-
-        </div>
-
-      </div>
-
-      <button
-        id="googleLogin"
-        style="display:none;">
+      <button id="landingLogin" class="nav-login-btn">
         Login
       </button>
 
     </div>
 
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero" class="landing-hero">
+
+    <h1>
+      Learn DECA. Compete Better. Win More.
+    </h1>
+
+    <p>
+      Structured learning paths, roleplay practice, and exam mastery.
+    </p>
+
+    <button id="heroLogin">
+      Get Started
+    </button>
+
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" class="about-section">
+
+    <h2>About Farm4Glass</h2>
+
+    <p>
+      Farm4Glass helps DECA students prepare for competitions
+      with structured learning, real exam prep, and skill-building courses.
+    </p>
+
+  </section>
+
+</div>
+
+<!-- =========================
+     PORTAL (HIDDEN UNTIL LOGIN)
+========================= -->
+
+<div id="portal" class="hidden">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <div class="logo">
+      Farm4Glass
+    </div>
+
+    <button onclick="showTab('dashboard')">Dashboard</button>
+    <button onclick="showTab('courses')">Courses</button>
+    <button onclick="showTab('profile')">Profile</button>
+
   </div>
 
-  <script type="module" src="script.js"></script>
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- USER INFO -->
+    <div id="userInfo"></div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard">
+
+      <div class="hero">
+        <h1>Welcome Back</h1>
+        <p>Continue your DECA learning journey.</p>
+      </div>
+
+      <div class="stats-grid">
+
+        <div class="stat-card">
+          <div class="stat-label">XP</div>
+          <div class="stat-value">0</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Level</div>
+          <div class="stat-value">1</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Streak</div>
+          <div class="stat-value">0</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">Lessons</div>
+          <div class="stat-value">0</div>
+        </div>
+
+      </div>
+
+      <h2 class="section-title">Continue Learning</h2>
+
+      <div id="featuredCourses"></div>
+
+    </div>
+
+    <!-- COURSES -->
+    <div id="courses" class="hidden">
+
+      <h1>Courses</h1>
+
+      <div id="course-list"></div>
+
+    </div>
+
+    <!-- PROFILE -->
+    <div id="profile" class="hidden">
+
+      <h1>Profile</h1>
+
+      <div class="profile-card">
+
+        <div id="profileInfo">
+          Not signed in
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script type="module" src="script.js"></script>
 
 </body>
 </html>

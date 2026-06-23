@@ -12,6 +12,13 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
 
 // =====================
 // FIREBASE CONFIG
@@ -29,6 +36,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 
@@ -49,7 +57,7 @@ if (loginBtn) {
   });
 }
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
 
   const userInfo =
     document.getElementById("userInfo");
@@ -58,19 +66,48 @@ onAuthStateChanged(auth, (user) => {
 
   if (user) {
 
+    const userRef =
+      doc(db, "users", user.uid);
+
+    const userSnap =
+      await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+
+      await setDoc(userRef, {
+        displayName: user.displayName,
+        email: user.email,
+        xp: 0,
+        streak: 0,
+        completedLessons: []
+      });
+
+    }
+
+    const data =
+      (await getDoc(userRef)).data();
+
     userInfo.innerHTML = `
       <div class="profile-card">
+
         <img
           src="${user.photoURL}"
           width="60"
           style="border-radius:50%;margin-bottom:10px;"
         >
-        <h3>${user.displayName}</h3>
-        <p>${user.email}</p>
+
+        <h3>${data.displayName}</h3>
+
+        <p>${data.email}</p>
+
+        <p>XP: ${data.xp}</p>
+
+        <p>Streak: ${data.streak}</p>
 
         <button id="logoutBtn">
           Sign Out
         </button>
+
       </div>
     `;
 
@@ -85,7 +122,9 @@ onAuthStateChanged(auth, (user) => {
     userInfo.innerHTML = `
       <p>Not signed in</p>
     `;
+
   }
+
 });
 
 

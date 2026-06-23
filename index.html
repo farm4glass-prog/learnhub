@@ -1,54 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>LearnHub</title>
-
-<link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LearnFlow</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<header>
-    <div class="logo">
-        LearnHub
-    </div>
+<nav>
+  <div class="logo">📚 LearnFlow</div>
+  <button>Get Started</button>
+</nav>
 
-    <div class="controls">
-        <input
-            id="search"
-            placeholder="Search courses..."
-        >
-
-        <button id="themeBtn">
-            🌙
-        </button>
-    </div>
-</header>
-
-<main>
-
-<section id="hero">
-
-<h1>Learn Anything Free</h1>
-
-<p>
-Interactive lessons inspired by Khan Academy
-</p>
-
+<section class="hero">
+  <h1>Learn Anything. Grow Every Day.</h1>
+  <p>
+    Interactive lessons, quizzes, and progress tracking inspired by Khan Academy.
+  </p>
+  <button class="cta">Start Learning</button>
 </section>
 
-<section id="courses">
-</section>
+<section class="courses">
 
-<section id="lessonView" class="hidden">
-</section>
+  <div class="card">
+    <h3>Algebra</h3>
+    <p>Master equations and variables.</p>
+  </div>
 
-</main>
+  <div class="card">
+    <h3>Geometry</h3>
+    <p>Understand shapes and proofs.</p>
+  </div>
+
+  <div class="card">
+    <h3>JavaScript</h3>
+    <p>Learn modern web development.</p>
+  </div>
+
+</section>
 
 <script src="script.js"></script>
-
 </body>
 </html>

@@ -78,6 +78,7 @@ function checkCourseComplete(userData, courses) {
 let currentUser = null;
 let userData = null;
 let courses = [];
+let coursesLoaded = false;
 let currentCourseId = null;
 let currentLesson = null;
 let quizState = {};
@@ -100,31 +101,38 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById("landingPage")?.classList.add("hidden");
     document.getElementById("portal")?.classList.remove("hidden");
 
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
 
-    if (!userSnap.exists()) {
-      await setDoc(userRef, {
-        displayName: user.displayName || "DECA Student",
-        email: user.email,
-        photoURL: user.photoURL || "",
-        chapter: "",
-        xp: 0,
-        streak: 0,
-        bestStreak: 0,
-        lastActiveDate: "",
-        completedLessons: [],
-        completedQuizzes: 0,
-        earnedBadges: [],
-        quizScores: {}
-      });
+      if (!userSnap.exists()) {
+        await setDoc(userRef, {
+          displayName: user.displayName || "DECA Student",
+          email: user.email,
+          photoURL: user.photoURL || "",
+          chapter: "",
+          xp: 0,
+          streak: 0,
+          bestStreak: 0,
+          lastActiveDate: "",
+          completedLessons: [],
+          completedQuizzes: 0,
+          earnedBadges: [],
+          quizScores: {}
+        });
+      }
+
+      const fresh = await getDoc(userRef);
+      userData = fresh.data();
+
+      await updateStreak(userRef);
+      renderAll();
+    } catch (e) {
+      console.error("Failed to load user data:", e);
+      showLoadError(
+        "We couldn't load your profile data. This is usually a Firestore permissions issue — check the browser console for the exact error, and double-check your Firestore Security Rules allow this user to read/write their own document."
+      );
     }
-
-    const fresh = await getDoc(userRef);
-    userData = fresh.data();
-
-    await updateStreak(userRef);
-    renderAll();
   } else {
     currentUser = null;
     userData = null;
@@ -132,6 +140,18 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById("landingPage")?.classList.remove("hidden");
   }
 });
+
+// ========================= ERROR DISPLAY =========================
+function showLoadError(message) {
+  const grid = document.getElementById("courseGrid");
+  if (grid) {
+    grid.innerHTML = `<div class="lb-loading">⚠️ ${message}</div>`;
+  }
+  const dash = document.getElementById("featuredCourses");
+  if (dash) {
+    dash.innerHTML = `<div class="lb-loading">⚠️ ${message}</div>`;
+  }
+}
 
 // ========================= STREAK =========================
 async function updateStreak(userRef) {
@@ -157,7 +177,10 @@ async function updateStreak(userRef) {
 
 // ========================= COURSES LOAD =========================
 fetch("courses.json")
-  .then(r => r.json())
+  .then(r => {
+    if (!r.ok) throw new Error(`courses.json returned ${r.status}`);
+    return r.json();
+  })
   .then(data => {
 
     courses = data.map((course, courseIndex) => ({
@@ -191,12 +214,20 @@ fetch("courses.json")
       }))
     }));
 
+    coursesLoaded = true;
     console.log("Courses loaded:", courses);
 
-    if (userData) renderAll();
+    // Render the course grid as soon as courses are ready, regardless of
+    // whether the user profile has finished loading yet. The grid functions
+    // already guard against userData being null.
+    renderCourseGrid();
+    renderFeaturedCourses();
   })
   .catch(err => {
     console.error("Failed to load courses:", err);
+    showLoadError(
+      "We couldn't load the course catalog (courses.json failed to load). Check that the file exists at the right path and that the browser console doesn't show a 404 or JSON parsing error."
+    );
   });
 
 // ========================= RENDER ALL =========================
@@ -280,7 +311,7 @@ function renderFeaturedCourses() {
   container.innerHTML = "";
 
   courses.slice(0, 5).forEach(course => {
-    const completed = (userData.completedLessons || []).filter(id => course.lessons.some(l => l.id === id)).length;
+    const completed = (userData?.completedLessons || []).filter(id => course.lessons.some(l => l.id === id)).length;
     const pct = course.lessons.length
       ? Math.round((completed / course.lessons.length) * 100)
       : 0;
@@ -357,6 +388,16 @@ function renderCourseGrid() {
   const container = document.getElementById("courseGrid");
   if (!container) return;
 
+  if (!coursesLoaded) {
+    container.innerHTML = `<div class="lb-loading">Loading courses... 🐐</div>`;
+    return;
+  }
+
+  if (!courses.length) {
+    container.innerHTML = `<div class="lb-loading">No courses found. 🌱</div>`;
+    return;
+  }
+
   // Category filters
   const filterContainer = document.getElementById("categoryFilters");
   if (filterContainer && filterContainer.children.length === 0) {
@@ -428,6 +469,10 @@ function renderFilteredCourses(list) {
     `;
     container.appendChild(card);
   });
+
+  if (list.length === 0) {
+    container.innerHTML = `<div class="lb-loading">No courses match your search. 🔍</div>`;
+  }
 }
 
 // ========================= OPEN COURSE =========================
@@ -507,35 +552,40 @@ window.completeLesson = async function(lessonId, xp) {
   const already = (userData.completedLessons || []).includes(lessonId);
   if (already) return;
 
-  const userRef = doc(db, "users", currentUser.uid);
-  const newXP = userData.xp + xp;
-  const oldAnimal = getAnimalForXP(userData.xp);
-  const newAnimal = getAnimalForXP(newXP);
+  try {
+    const userRef = doc(db, "users", currentUser.uid);
+    const newXP = userData.xp + xp;
+    const oldAnimal = getAnimalForXP(userData.xp);
+    const newAnimal = getAnimalForXP(newXP);
 
-  const completed = [...(userData.completedLessons || []), lessonId];
-  await updateDoc(userRef, {
-    xp: newXP,
-    completedLessons: completed
-  });
+    const completed = [...(userData.completedLessons || []), lessonId];
+    await updateDoc(userRef, {
+      xp: newXP,
+      completedLessons: completed
+    });
 
-  userData.xp = newXP;
-  userData.completedLessons = completed;
+    userData.xp = newXP;
+    userData.completedLessons = completed;
 
-  showXPToast(xp);
+    showXPToast(xp);
 
-  // Check level up
-  if (newAnimal.index > oldAnimal.index) {
-    setTimeout(() => showLevelUpModal(newAnimal), 800);
+    // Check level up
+    if (newAnimal.index > oldAnimal.index) {
+      setTimeout(() => showLevelUpModal(newAnimal), 800);
+    }
+
+    // Check badges
+    await checkAndAwardBadges();
+
+    // Refresh UI
+    renderSidebar();
+    document.querySelector("#completeBtn") && (document.querySelector("#completeBtn").disabled = true);
+    document.querySelector("#completeBtn") && (document.querySelector("#completeBtn").textContent = "✓ Completed");
+    renderDashboard();
+  } catch (e) {
+    console.error("Failed to save lesson completion:", e);
+    alert("Couldn't save your progress — check the console for details.");
   }
-
-  // Check badges
-  await checkAndAwardBadges();
-
-  // Refresh UI
-  renderSidebar();
-  document.querySelector("#completeBtn") && (document.querySelector("#completeBtn").disabled = true);
-  document.querySelector("#completeBtn") && (document.querySelector("#completeBtn").textContent = "✓ Completed");
-  renderDashboard();
 };
 
 // ========================= QUIZ ENGINE =========================
@@ -640,33 +690,37 @@ async function renderQuizResults() {
   if (!userData) return;
   const already = (userData.completedLessons || []).includes(lesson.id);
 
-  const userRef = doc(db, "users", currentUser.uid);
-  const newXP = userData.xp + xpEarned;
-  const oldAnimal = getAnimalForXP(userData.xp);
-  const newAnimal = getAnimalForXP(newXP);
+  try {
+    const userRef = doc(db, "users", currentUser.uid);
+    const newXP = userData.xp + xpEarned;
+    const oldAnimal = getAnimalForXP(userData.xp);
+    const newAnimal = getAnimalForXP(newXP);
 
-  const updates = {
-    xp: newXP,
-    completedQuizzes: (userData.completedQuizzes || 0) + 1,
-    [`quizScores.${lesson.id}`]: pct
-  };
+    const updates = {
+      xp: newXP,
+      completedQuizzes: (userData.completedQuizzes || 0) + 1,
+      [`quizScores.${lesson.id}`]: pct
+    };
 
-  if (!already && passed) {
-    updates.completedLessons = [...(userData.completedLessons || []), lesson.id];
-    userData.completedLessons = updates.completedLessons;
+    if (!already && passed) {
+      updates.completedLessons = [...(userData.completedLessons || []), lesson.id];
+      userData.completedLessons = updates.completedLessons;
+    }
+
+    await updateDoc(userRef, updates);
+    userData.xp = newXP;
+    userData.completedQuizzes = (userData.completedQuizzes || 0) + 1;
+
+    showXPToast(xpEarned);
+    if (newAnimal.index > oldAnimal.index) {
+      setTimeout(() => showLevelUpModal(newAnimal), 800);
+    }
+    await checkAndAwardBadges();
+    renderSidebar();
+    renderDashboard();
+  } catch (e) {
+    console.error("Failed to save quiz results:", e);
   }
-
-  await updateDoc(userRef, updates);
-  userData.xp = newXP;
-  userData.completedQuizzes = (userData.completedQuizzes || 0) + 1;
-
-  showXPToast(xpEarned);
-  if (newAnimal.index > oldAnimal.index) {
-    setTimeout(() => showLevelUpModal(newAnimal), 800);
-  }
-  await checkAndAwardBadges();
-  renderSidebar();
-  renderDashboard();
 }
 
 window.retakeQuiz = function() {
@@ -689,19 +743,23 @@ async function checkAndAwardBadges() {
   const newOnes = shouldHave.filter(id => !earned.includes(id));
   if (!newOnes.length) return;
 
-  const updated = [...earned, ...newOnes];
-  await updateDoc(doc(db, "users", currentUser.uid), { earnedBadges: updated });
-  userData.earnedBadges = updated;
+  try {
+    const updated = [...earned, ...newOnes];
+    await updateDoc(doc(db, "users", currentUser.uid), { earnedBadges: updated });
+    userData.earnedBadges = updated;
 
-  // Show first new badge modal
-  const badge = BADGES.find(b => b.id === newOnes[0]);
-  if (badge) {
-    setTimeout(() => {
-      document.getElementById("badgeModalEmoji").textContent = badge.emoji;
-      document.getElementById("badgeModalName").textContent = badge.name;
-      document.getElementById("badgeModalDesc").textContent = badge.desc;
-      document.getElementById("badgeModal").classList.remove("hidden");
-    }, 1200);
+    // Show first new badge modal
+    const badge = BADGES.find(b => b.id === newOnes[0]);
+    if (badge) {
+      setTimeout(() => {
+        document.getElementById("badgeModalEmoji").textContent = badge.emoji;
+        document.getElementById("badgeModalName").textContent = badge.name;
+        document.getElementById("badgeModalDesc").textContent = badge.desc;
+        document.getElementById("badgeModal").classList.remove("hidden");
+      }, 1200);
+    }
+  } catch (e) {
+    console.error("Failed to award badges:", e);
   }
 }
 
@@ -835,14 +893,19 @@ window.saveProfile = async function() {
   const chapter = document.getElementById("editChapter").value.trim();
   if (!name) return alert("Display name can't be empty!");
 
-  await updateDoc(doc(db, "users", currentUser.uid), { displayName: name, chapter });
-  userData.displayName = name;
-  userData.chapter = chapter;
+  try {
+    await updateDoc(doc(db, "users", currentUser.uid), { displayName: name, chapter });
+    userData.displayName = name;
+    userData.chapter = chapter;
 
-  renderSidebar();
-  renderDashboard();
-  renderProfile();
-  alert("✅ Profile saved!");
+    renderSidebar();
+    renderDashboard();
+    renderProfile();
+    alert("✅ Profile saved!");
+  } catch (e) {
+    console.error("Failed to save profile:", e);
+    alert("Couldn't save your profile — check the console for details.");
+  }
 };
 
 // ========================= TABS =========================

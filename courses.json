@@ -1,47 +1,135 @@
 [
   {
-    "id": "marketing",
+    "id": "marketing-cluster",
     "title": "Marketing Cluster Exam",
-    "description": "Master DECA marketing concepts and prepare for competition.",
-    "progress": 75,
-    "level": "Beginner",
-    "duration": "4 Hours",
-    "lessons": [
-      {
-        "type": "youtube",
-        "title": "Marketing Cluster Exam Overview",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
-      }
-    ]
+    "description": "Master marketing concepts and prepare for DECA cluster exams.",
+    "progress": 0,
+    "lessons": []
   },
   {
-    "id": "roleplay",
-    "title": "Roleplay 101",
-    "description": "Learn how to structure and deliver winning DECA roleplays.",
-    "progress": 40,
-    "level": "Intermediate",
-    "duration": "3 Hours",
-    "lessons": [
-      {
-        "type": "youtube",
-        "title": "Introduction to Roleplays",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
-      }
-    ]
+    "id": "finance-cluster",
+    "title": "Finance Cluster Exam",
+    "description": "Learn finance principles and competition strategies.",
+    "progress": 0,
+    "lessons": []
   },
   {
-    "id": "canva",
-    "title": "Canva Basics",
-    "description": "Create polished presentations and visuals for DECA projects.",
-    "progress": 20,
-    "level": "Beginner",
-    "duration": "2 Hours",
-    "lessons": [
-      {
-        "type": "youtube",
-        "title": "Getting Started with Canva",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
-      }
-    ]
+    "id": "hospitality-cluster",
+    "title": "Hospitality & Tourism Cluster Exam",
+    "description": "Prepare for hospitality and tourism cluster exams.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "business-admin-core",
+    "title": "Business Administration Core Exam",
+    "description": "Build a strong foundation in business administration.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "business-management",
+    "title": "Business Management & Administration Cluster Exam",
+    "description": "Develop leadership and management knowledge.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "entrepreneurship-cluster",
+    "title": "Entrepreneurship Cluster Exam",
+    "description": "Learn entrepreneurial concepts and venture creation.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "pfl-cluster",
+    "title": "Personal Financial Literacy Cluster Exam",
+    "description": "Master budgeting, investing, and financial planning.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "branding-basics",
+    "title": "Branding Basics (Canva)",
+    "description": "Learn branding, graphic design, and Canva fundamentals.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "adobe",
+    "title": "Using Adobe",
+    "description": "Introduction to Adobe Creative Cloud tools.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "principles-events",
+    "title": "Principles of Business Administration Events",
+    "description": "Learn strategies for all Principles events.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "individual-series",
+    "title": "Individual Series Events",
+    "description": "Prepare for DECA's individual roleplay events.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "team-decision",
+    "title": "Team Decision Making Events",
+    "description": "Master collaborative roleplay competitions.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "pfl-event",
+    "title": "Personal Financial Literacy Event",
+    "description": "Competition preparation for the PFL event.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "business-operations",
+    "title": "Business Operations Research Events",
+    "description": "Learn research methods and presentation strategies.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "project-management",
+    "title": "Project Management Events",
+    "description": "Develop award-winning project management entries.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "entrepreneurship-events",
+    "title": "Entrepreneurship Events",
+    "description": "Build business plans and startup concepts.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "integrated-marketing",
+    "title": "Integrated Marketing Campaign Events",
+    "description": "Create effective integrated marketing campaigns.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "virtual-business",
+    "title": "Virtual Business Challenge",
+    "description": "Compete successfully in VBC simulations.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "stock-market",
+    "title": "Stock Market Game",
+    "description": "Learn investing and portfolio management strategies.",
+    "progress": 0,
+    "lessons": []
   }
 ]

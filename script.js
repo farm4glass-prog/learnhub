@@ -65,7 +65,13 @@ const BADGES = [
 
 function checkCourseComplete(userData, courses) {
   if (!courses || !userData.completedLessons) return false;
-  return courses.some(c => c.lessons.every(l => userData.completedLessons.includes(l.id)));
+
+  return courses.some(course =>
+    course.lessons.length > 0 &&
+    course.lessons.every(lesson =>
+      userData.completedLessons.includes(lesson.id)
+    )
+  );
 }
 
 // ========================= GLOBALS =========================
@@ -152,8 +158,46 @@ async function updateStreak(userRef) {
 // ========================= COURSES LOAD =========================
 fetch("courses.json")
   .then(r => r.json())
-  .then(data => { courses = data; if (userData) renderAll(); })
-  .catch(e => console.error("Failed to load courses:", e));
+  .then(data => {
+
+    courses = data.map((course, courseIndex) => ({
+      category: "DECA",
+      color: [
+        "#22c55e",
+        "#3b82f6",
+        "#f59e0b",
+        "#ef4444",
+        "#8b5cf6",
+        "#06b6d4"
+      ][courseIndex % 6],
+
+      emoji: [
+        "📈","💰","🏨","🏢","📊",
+        "🚀","💳","🎨","🖌️","📚",
+        "👤","🤝","💵","🔬","📋",
+        "💡","📣","💻","📉"
+      ][courseIndex % 19],
+
+      level: "Beginner",
+      duration: "Self-paced",
+
+      ...course,
+
+      lessons: (course.lessons || []).map((lesson, lessonIndex) => ({
+        id: lesson.id || `${course.id}-lesson-${lessonIndex + 1}`,
+        xp: lesson.xp || 25,
+        duration: lesson.duration || "10 min",
+        ...lesson
+      }))
+    }));
+
+    console.log("Courses loaded:", courses);
+
+    if (userData) renderAll();
+  })
+  .catch(err => {
+    console.error("Failed to load courses:", err);
+  });
 
 // ========================= RENDER ALL =========================
 function renderAll() {
@@ -237,18 +281,20 @@ function renderFeaturedCourses() {
 
   courses.slice(0, 5).forEach(course => {
     const completed = (userData.completedLessons || []).filter(id => course.lessons.some(l => l.id === id)).length;
-    const pct = Math.round((completed / course.lessons.length) * 100);
+    const pct = course.lessons.length
+      ? Math.round((completed / course.lessons.length) * 100)
+      : 0;
 
     const row = document.createElement("div");
     row.className = "pasture-row";
     row.onclick = () => openCourse(course.id);
     row.innerHTML = `
-      <div class="pasture-icon" style="background:${course.color}22;">${course.emoji}</div>
+      <div class="pasture-icon" style="background:${course.color}22;">${course.emoji || "📚"}</div>
       <div class="pasture-info">
         <div class="pasture-title">${course.title}</div>
         <div class="pasture-pct">${pct}% complete</div>
         <div class="pasture-bar-outer">
-          <div class="pasture-bar-inner" style="width:${pct}%;background:${course.color};"></div>
+          <div class="pasture-bar-inner" style="width:${pct}%;background:${course.color || "#22c55e"};"></div>
         </div>
       </div>
       <div class="pasture-arrow">›</div>
@@ -349,8 +395,11 @@ function renderFilteredCourses(list) {
 
   list.forEach(course => {
     const completed = (userData?.completedLessons || []).filter(id => course.lessons.some(l => l.id === id)).length;
-    const pct = Math.round((completed / course.lessons.length) * 100);
-    const levelClass = course.level.toLowerCase().replace(" ", "-");
+    const pct = course.lessons.length
+      ? Math.round((completed / course.lessons.length) * 100)
+      : 0;
+    const level = course.level || "Beginner";
+    const levelClass = level.toLowerCase().replace(/\s+/g, "-");
 
     const card = document.createElement("div");
     card.className = "course-card-new";
@@ -359,14 +408,14 @@ function renderFilteredCourses(list) {
       <div class="cc-top" style="background:${course.color};"></div>
       <div class="cc-body">
         <div class="cc-tags">
-          <span class="cc-category" style="color:${course.color};border-color:${course.color};">${course.category}</span>
+          <span class="cc-category" style="color:${course.color};border-color:${course.color};">${course.category || "DECA"}</span>
           <span class="cc-level ${levelClass}">${course.level}</span>
         </div>
         <div class="cc-title">${course.emoji} ${course.title}</div>
         <div class="cc-desc">${course.description}</div>
         <div class="cc-meta">
           <span>📖 ${course.lessons.length} lessons</span>
-          <span>⏱ ${course.duration}</span>
+          <span>⏱ ${course.duration || "Self-paced"}</span>
         </div>
         <div class="cc-progress-bar">
           <div class="cc-progress-fill" style="width:${pct}%;background:${course.color};"></div>

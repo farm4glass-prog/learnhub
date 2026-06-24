@@ -1,168 +1,362 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>Farm4Glass</title>
-
-  <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
+  <title>Farm4Glass — DECA Learning Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<!-- =========================
-     LANDING PAGE
-========================= -->
-
+<!-- ========================= LANDING PAGE ========================= -->
 <div id="landingPage">
-
-  <!-- NAV -->
   <nav class="top-nav">
-
-    <div class="nav-logo">
-      Farm4Glass
-    </div>
-
+    <div class="nav-logo">🐐 Farm4Glass</div>
     <div class="nav-links">
-
       <a href="#hero">Home</a>
-      <a href="#about">About Us</a>
-
-      <button id="landingLogin" class="nav-login-btn">
-        Login
-      </button>
-
+      <a href="#about">About</a>
+      <a href="#features">Features</a>
+      <button id="landingLogin" class="nav-login-btn">Sign In with Google</button>
     </div>
-
   </nav>
 
-  <!-- HERO -->
   <section id="hero" class="landing-hero">
-
-    <h1>
-      Learn DECA. Compete Better. Win More.
-    </h1>
-
-    <p>
-      Structured learning paths, roleplay practice, and exam mastery.
-    </p>
-
-    <button id="heroLogin">
-      Get Started
-    </button>
-
+    <div class="hero-badge">🏆 DECA Competition Prep</div>
+    <h1>Learn DECA.<br><span class="hero-accent">Win More.</span></h1>
+    <p>Structured learning paths, quizzes, roleplay practice, and a gamified XP system that makes studying actually fun.</p>
+    <div class="hero-btns">
+      <button id="heroLogin" class="btn-primary">Get Started Free →</button>
+      <a href="#features" class="btn-ghost">See Features</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hs"><span>8+</span> Courses</div>
+      <div class="hs"><span>50+</span> Quiz Questions</div>
+      <div class="hs"><span>🐐→🐄</span> Farm Progression</div>
+    </div>
   </section>
 
-  <!-- ABOUT -->
+  <section id="features" class="features-section">
+    <h2>Everything you need to compete</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feat-icon">📚</div>
+        <h3>Structured Courses</h3>
+        <p>Video lessons and quizzes for every DECA cluster event — Marketing, Finance, Business Admin, and more.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">⚡</div>
+        <h3>XP & Leveling</h3>
+        <p>Earn XP for every lesson and quiz. Level up your farm animal from Baby Goat all the way to Champion Bull.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">🔥</div>
+        <h3>Daily Streaks</h3>
+        <p>Build consistency with daily learning streaks. Track your best streak and compete with your chapter.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">🏅</div>
+        <h3>Badges & Achievements</h3>
+        <p>Unlock farm-themed badges for milestones: First Hay Bale, Barn Burner, Monthly Moo, and more.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">📊</div>
+        <h3>Leaderboard</h3>
+        <p>See where you rank against other DECA students in your chapter and across all Farm4Glass users.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon">🎭</div>
+        <h3>Roleplay Practice</h3>
+        <p>Learn proven frameworks and delivery techniques for DECA's 10-minute roleplay events.</p>
+      </div>
+    </div>
+  </section>
+
   <section id="about" class="about-section">
-
-    <h2>About Farm4Glass</h2>
-
-    <p>
-      Farm4Glass helps DECA students prepare for competitions
-      with structured learning, real exam prep, and skill-building courses.
-    </p>
-
+    <div class="about-inner">
+      <div class="about-text">
+        <h2>Built by DECA students, for DECA students</h2>
+        <p>Farm4Glass helps DECA competitors prepare for events with structured courses, real exam prep, and a gamified experience that keeps you coming back every day.</p>
+        <p>Whether you're prepping for Marketing, Finance, Roleplay, or Written Events — we have you covered.</p>
+        <button id="aboutLogin" class="btn-primary">Start Learning →</button>
+      </div>
+      <div class="about-visual">
+        <div class="animal-showcase">
+          <div class="animal-tier"><span>🐣</span><small>Baby</small></div>
+          <div class="arrow">→</div>
+          <div class="animal-tier"><span>🐔</span><small>Chick</small></div>
+          <div class="arrow">→</div>
+          <div class="animal-tier"><span>🐑</span><small>Sheep</small></div>
+          <div class="arrow">→</div>
+          <div class="animal-tier"><span>🐄</span><small>Cow</small></div>
+          <div class="arrow">→</div>
+          <div class="animal-tier"><span>🐂</span><small>Bull</small></div>
+        </div>
+      </div>
+    </div>
   </section>
 
+  <footer class="landing-footer">
+    <p>🐐 Farm4Glass &copy; 2025 — Built for DECA champions</p>
+  </footer>
 </div>
 
-<!-- =========================
-     PORTAL (HIDDEN UNTIL LOGIN)
-========================= -->
-
+<!-- ========================= PORTAL ========================= -->
 <div id="portal" class="hidden">
 
   <!-- SIDEBAR -->
-  <div class="sidebar">
-
-    <div class="logo">
-      Farm4Glass
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🐐</span>
+      <span class="logo-text">Farm4Glass</span>
     </div>
 
-    <button onclick="showTab('dashboard')">Dashboard</button>
-    <button onclick="showTab('courses')">Courses</button>
-    <button onclick="showTab('profile')">Profile</button>
+    <div class="sidebar-nav">
+      <button class="nav-btn active" onclick="showTab('dashboard')" id="nav-dashboard">
+        <span class="nav-icon">🏠</span> Dashboard
+      </button>
+      <button class="nav-btn" onclick="showTab('courses')" id="nav-courses">
+        <span class="nav-icon">📚</span> Courses
+      </button>
+      <button class="nav-btn" onclick="showTab('leaderboard')" id="nav-leaderboard">
+        <span class="nav-icon">📊</span> Leaderboard
+      </button>
+      <button class="nav-btn" onclick="showTab('profile')" id="nav-profile">
+        <span class="nav-icon">👤</span> Profile
+      </button>
+    </div>
 
+    <div class="sidebar-animal" id="sidebarAnimal">
+      <div class="sa-emoji" id="saEmoji">🐣</div>
+      <div class="sa-info">
+        <div class="sa-name" id="saName">Baby Goat</div>
+        <div class="sa-xp" id="saXp">0 / 100 XP</div>
+        <div class="sa-bar"><div class="sa-fill" id="saFill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <button class="logout-btn" id="logoutBtn">
+      <span>↩</span> Log Out
+    </button>
   </div>
 
   <!-- MAIN -->
-  <div class="main">
+  <div class="main" id="mainContent">
 
-    <!-- USER INFO -->
-    <div id="userInfo"></div>
+    <!-- MOBILE HEADER -->
+    <div class="mobile-header">
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
+      <span>🐐 Farm4Glass</span>
+    </div>
 
-    <!-- DASHBOARD -->
-    <div id="dashboard">
-
-      <div class="hero">
-        <h1>Welcome Back</h1>
-        <p>Continue your DECA learning journey.</p>
+    <!-- ===== DASHBOARD ===== -->
+    <div id="dashboard" class="tab-content active">
+      <div class="dash-header">
+        <div>
+          <h1 id="dashGreeting">Howdy! 🌾</h1>
+          <p class="dash-sub">The barn's open — time to level up your DECA game! 🚜</p>
+        </div>
+        <button class="barn-btn" onclick="showTab('courses')">Enter the Barn →</button>
       </div>
 
       <div class="stats-grid">
-
         <div class="stat-card">
-          <div class="stat-label">XP</div>
-          <div class="stat-value">0</div>
+          <div class="stat-icon">🌾</div>
+          <div class="stat-value" id="statXP">0</div>
+          <div class="stat-label">Total XP</div>
         </div>
-
         <div class="stat-card">
-          <div class="stat-label">Level</div>
-          <div class="stat-value">1</div>
+          <div class="stat-icon">🔥</div>
+          <div class="stat-value" id="statStreak">0</div>
+          <div class="stat-label">Day Streak</div>
         </div>
-
         <div class="stat-card">
-          <div class="stat-label">Streak</div>
-          <div class="stat-value">0</div>
+          <div class="stat-icon" id="statAnimalIcon">🐣</div>
+          <div class="stat-value" id="statAnimalName">Baby Goat</div>
+          <div class="stat-label">Farm Level</div>
         </div>
-
         <div class="stat-card">
-          <div class="stat-label">Lessons</div>
-          <div class="stat-value">0</div>
+          <div class="stat-icon">📖</div>
+          <div class="stat-value" id="statLessons">0</div>
+          <div class="stat-label">Lessons Done</div>
         </div>
-
       </div>
 
-      <h2 class="section-title">Continue Learning</h2>
+      <div class="dash-two-col">
+        <div class="dash-left">
+          <!-- ANIMAL CARD -->
+          <div class="animal-card" id="dashAnimalCard">
+            <div class="ac-left">
+              <div class="ac-emoji" id="acEmoji">🐣</div>
+              <div class="ac-info">
+                <div class="ac-name" id="acName">Baby Goat</div>
+                <div class="ac-tagline" id="acTagline">"Just hatched on the farm!"</div>
+                <div class="ac-level" id="acLevel">Level 1</div>
+              </div>
+            </div>
+            <div class="ac-right">
+              <div class="ac-next-label">Next up</div>
+              <div class="ac-next-emoji" id="acNextEmoji">🐔</div>
+              <div class="ac-next-name" id="acNextName">Chick</div>
+            </div>
+          </div>
+          <div class="xp-bar-row">
+            <span>🌾 <span id="acXP">0</span> XP</span>
+            <span id="acXPNeeded">100 XP to evolve</span>
+          </div>
+          <div class="xp-bar-outer"><div class="xp-bar-inner" id="acXPBar" style="width:0%"></div></div>
 
-      <div id="featuredCourses"></div>
+          <h2 class="section-title">🌿 Your Learning Pastures</h2>
+          <div id="featuredCourses"></div>
+        </div>
 
+        <div class="dash-right">
+          <!-- STREAK WIDGET -->
+          <div class="widget">
+            <div class="widget-header">
+              <span>🔥 Daily Streak</span>
+              <span class="widget-badge" id="bestStreakBadge">🏆 Best: 0d</span>
+            </div>
+            <div class="streak-days" id="streakDays"></div>
+            <div class="streak-count-box">
+              <span class="streak-count-num" id="streakNum">0</span>
+              <span>🔥</span>
+            </div>
+            <p class="streak-msg" id="streakMsg">Start your streak today! 🌱</p>
+          </div>
+
+          <!-- BADGES WIDGET -->
+          <div class="widget">
+            <div class="widget-header"><span>🥇 Farm Badges</span></div>
+            <div class="badges-grid" id="dashBadges"></div>
+            <p class="badge-msg" id="badgeMsg">🌱 Complete lessons to earn your first badge!</p>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- COURSES -->
-    <div id="courses" class="hidden">
+    <!-- ===== COURSES ===== -->
+    <div id="courses" class="tab-content hidden">
+      <h1>Course Catalog</h1>
+      <p class="page-sub">Master every DECA competitive event with structured learning pathways</p>
 
-      <h1>Courses</h1>
+      <div class="course-search-row">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="courseSearch" placeholder="Search courses..." oninput="filterCourses()">
+        </div>
+      </div>
 
-      <div id="course-list"></div>
-
+      <div class="category-filters" id="categoryFilters"></div>
+      <div class="course-grid" id="courseGrid"></div>
     </div>
 
-    <!-- PROFILE -->
-    <div id="profile" class="hidden">
+    <!-- ===== LESSON VIEW ===== -->
+    <div id="lessonView" class="tab-content hidden">
+      <div id="lessonViewContent"></div>
+    </div>
 
-      <h1>Profile</h1>
+    <!-- ===== LEADERBOARD ===== -->
+    <div id="leaderboard" class="tab-content hidden">
+      <h1>Leaderboard</h1>
+      <p class="page-sub">See how you stack up against other DECA students</p>
+      <div class="lb-tabs">
+        <button class="lb-tab active" onclick="switchLbTab('xp', this)">🌾 XP Rankings</button>
+        <button class="lb-tab" onclick="switchLbTab('streak', this)">🔥 Streaks</button>
+        <button class="lb-tab" onclick="switchLbTab('lessons', this)">📖 Lessons</button>
+      </div>
+      <div class="leaderboard-list" id="leaderboardList">
+        <div class="lb-loading">Loading rankings... 🐄</div>
+      </div>
+    </div>
 
+    <!-- ===== PROFILE ===== -->
+    <div id="profile" class="tab-content hidden">
+      <h1>Your Profile</h1>
       <div class="profile-card">
-
-        <div id="profileInfo">
-          Not signed in
+        <div class="profile-avatar" id="profileAvatar"></div>
+        <div class="profile-info">
+          <div class="profile-name" id="profileName">—</div>
+          <div class="profile-email" id="profileEmail">—</div>
+          <div class="profile-level" id="profileLevel">Level 1 · 0 XP</div>
         </div>
-
       </div>
 
+      <div class="stats-grid profile-stats">
+        <div class="stat-card">
+          <div class="stat-icon">🌾</div>
+          <div class="stat-value" id="pStatXP">0</div>
+          <div class="stat-label">Total XP</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-value" id="pStatStreak">0</div>
+          <div class="stat-label">Streak</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📖</div>
+          <div class="stat-value" id="pStatLessons">0</div>
+          <div class="stat-label">Lessons</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🏅</div>
+          <div class="stat-value" id="pStatBadges">0</div>
+          <div class="stat-label">Badges</div>
+        </div>
+      </div>
+
+      <div class="widget profile-edit-widget">
+        <h3>Edit Profile</h3>
+        <div class="form-group">
+          <label>Display Name</label>
+          <input type="text" id="editDisplayName" placeholder="Your name">
+        </div>
+        <div class="form-group">
+          <label>DECA Chapter</label>
+          <input type="text" id="editChapter" placeholder="e.g., Los Angeles DECA">
+        </div>
+        <button class="btn-primary" onclick="saveProfile()">💾 Save Changes</button>
+      </div>
+
+      <div class="widget">
+        <div class="widget-header"><span>🥇 Farm Badges</span></div>
+        <div class="badges-grid-large" id="profileBadges"></div>
+      </div>
+
+      <div class="widget">
+        <div class="widget-header"><span>📚 Completed Lessons</span></div>
+        <div id="completedLessonsList" class="completed-list"></div>
+      </div>
     </div>
 
-  </div>
+  </div><!-- /main -->
+</div><!-- /portal -->
 
+<!-- XP TOAST -->
+<div class="xp-toast hidden" id="xpToast">+0 XP 🌾</div>
+
+<!-- LEVEL UP MODAL -->
+<div class="modal-overlay hidden" id="levelUpModal">
+  <div class="modal-box">
+    <div class="modal-emoji" id="modalEmoji">🎉</div>
+    <h2>You Evolved!</h2>
+    <div class="modal-animal" id="modalAnimal">🐔 Chick</div>
+    <p id="modalMsg">Keep studying to evolve again!</p>
+    <button class="btn-primary" onclick="closeModal('levelUpModal')">Let's Go! 🚜</button>
+  </div>
+</div>
+
+<!-- BADGE MODAL -->
+<div class="modal-overlay hidden" id="badgeModal">
+  <div class="modal-box">
+    <div class="modal-emoji" id="badgeModalEmoji">🏅</div>
+    <h2>New Badge Unlocked!</h2>
+    <div class="modal-animal" id="badgeModalName">First Hay Bale</div>
+    <p id="badgeModalDesc">You completed your first lesson!</p>
+    <button class="btn-primary" onclick="closeModal('badgeModal')">Awesome! 🌾</button>
+  </div>
 </div>
 
 <script type="module" src="script.js"></script>
-
 </body>
 </html>

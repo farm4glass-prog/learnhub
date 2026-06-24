@@ -1,633 +1,390 @@
 [
   {
-    "id": "marketing",
-    "title": "Marketing Cluster Exam Prep",
-    "description": "Comprehensive preparation for the DECA Marketing Cluster Exam covering marketing principles, consumer behavior, and strategy.",
-    "category": "Marketing Cluster Exam",
+    "id": "marketing-cluster",
+    "title": "Marketing Cluster Exam",
+    "description": "Master DECA marketing concepts including principles of marketing, consumer behavior, market research, and strategic promotion.",
+    "category": "Cluster Exams",
     "level": "Intermediate",
     "duration": "8h",
     "color": "#e11d48",
     "emoji": "📈",
     "lessons": [
-      {
-        "id": "marketing-1",
-        "type": "youtube",
-        "title": "Marketing Cluster Exam Overview",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
-        "xp": 50,
-        "duration": "12 min"
-      },
-      {
-        "id": "marketing-2",
-        "type": "quiz",
-        "title": "Marketing Fundamentals Quiz",
-        "xp": 100,
-        "duration": "10 min",
+      { "id": "mce-1", "type": "youtube", "title": "Marketing Cluster Overview", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "12 min" },
+      { "id": "mce-2", "type": "quiz", "title": "Marketing Fundamentals Quiz", "xp": 100, "duration": "10 min",
         "questions": [
-          {
-            "q": "What is the marketing mix also known as?",
-            "options": ["The 4 Ps", "The 4 Cs", "The 4 Ws", "The 4 Rs"],
-            "answer": 0,
-            "explanation": "The marketing mix consists of Product, Price, Place, and Promotion — known as the 4 Ps."
-          },
-          {
-            "q": "Which of the following best describes market segmentation?",
-            "options": [
-              "Selling to everyone equally",
-              "Dividing a market into distinct groups with similar needs",
-              "Creating one product for all consumers",
-              "Ignoring customer differences"
-            ],
-            "answer": 1,
-            "explanation": "Market segmentation divides consumers into groups with shared characteristics or needs so businesses can target them more effectively."
-          },
-          {
-            "q": "A SWOT analysis examines:",
-            "options": [
-              "Sales, Wages, Operations, Trends",
-              "Strengths, Weaknesses, Opportunities, Threats",
-              "Strategy, Work, Output, Tactics",
-              "Supply, Wealth, Order, Trade"
-            ],
-            "answer": 1,
-            "explanation": "SWOT stands for Strengths, Weaknesses, Opportunities, and Threats — a strategic planning framework."
-          },
-          {
-            "q": "What does 'brand equity' refer to?",
-            "options": [
-              "The physical assets of a brand",
-              "The value a brand adds to a product beyond its functional benefits",
-              "The number of products a brand sells",
-              "The total revenue of a company"
-            ],
-            "answer": 1,
-            "explanation": "Brand equity is the premium value a recognizable brand name adds to a product compared to a generic equivalent."
-          },
-          {
-            "q": "Which pricing strategy involves setting a high initial price and lowering it over time?",
-            "options": ["Penetration pricing", "Competitive pricing", "Price skimming", "Cost-plus pricing"],
-            "answer": 2,
-            "explanation": "Price skimming starts high to capture early adopters willing to pay a premium, then lowers prices to reach a broader market."
-          }
-        ]
-      },
-      {
-        "id": "marketing-3",
-        "type": "youtube",
-        "title": "Consumer Behavior & Decision Making",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
-        "xp": 50,
-        "duration": "15 min"
-      },
-      {
-        "id": "marketing-4",
-        "type": "quiz",
-        "title": "Advanced Marketing Quiz",
-        "xp": 100,
-        "duration": "10 min",
-        "questions": [
-          {
-            "q": "What is the primary goal of relationship marketing?",
-            "options": [
-              "Maximizing single transaction profits",
-              "Building long-term customer loyalty",
-              "Reducing advertising costs",
-              "Expanding product lines"
-            ],
-            "answer": 1,
-            "explanation": "Relationship marketing focuses on building long-term connections with customers to encourage repeat business and loyalty."
-          },
-          {
-            "q": "Which distribution channel goes directly from producer to consumer?",
-            "options": ["Indirect channel", "Retail channel", "Direct channel", "Wholesale channel"],
-            "answer": 2,
-            "explanation": "A direct channel means the producer sells straight to the consumer without intermediaries like wholesalers or retailers."
-          },
-          {
-            "q": "What is 'positioning' in marketing?",
-            "options": [
-              "Where you place ads",
-              "How consumers perceive your product relative to competitors",
-              "The physical location of your store",
-              "Your supply chain setup"
-            ],
-            "answer": 1,
-            "explanation": "Positioning defines how a brand wants to be perceived in consumers' minds compared to competing products."
-          }
+          { "q": "What are the 4 Ps of the marketing mix?", "options": ["Product, Price, Place, Promotion", "People, Process, Price, Product", "Planning, Pricing, Placement, Publicity", "Product, Profit, Place, People"], "answer": 0, "explanation": "The 4 Ps — Product, Price, Place, and Promotion — form the core marketing mix framework." },
+          { "q": "Which of the following best describes market segmentation?", "options": ["Selling to everyone equally", "Dividing a market into distinct groups with similar needs", "Creating one product for all consumers", "Ignoring customer differences"], "answer": 1, "explanation": "Market segmentation divides consumers into groups so businesses can target them more effectively." },
+          { "q": "What does 'brand equity' refer to?", "options": ["The physical assets of a brand", "The value a brand adds beyond functional benefits", "Total revenue of a company", "Number of products a brand sells"], "answer": 1, "explanation": "Brand equity is the premium value a recognizable brand name adds to a product." },
+          { "q": "Price skimming involves:", "options": ["Starting low and raising prices", "Setting a high initial price and lowering it over time", "Matching competitor prices exactly", "Pricing based only on cost"], "answer": 1, "explanation": "Price skimming starts high to capture early adopters, then lowers prices to reach a broader market." },
+          { "q": "What is a SWOT analysis?", "options": ["Sales, Wages, Operations, Trends", "Strengths, Weaknesses, Opportunities, Threats", "Strategy, Work, Output, Tactics", "Supply, Wealth, Order, Trade"], "answer": 1, "explanation": "SWOT stands for Strengths, Weaknesses, Opportunities, and Threats — a core strategic planning tool." }
         ]
       }
     ]
   },
   {
-    "id": "finance",
-    "title": "Finance Cluster Exam Prep",
+    "id": "finance-cluster",
+    "title": "Finance Cluster Exam",
     "description": "Deep dive into financial analysis, accounting, banking, insurance, and securities for DECA Finance events.",
-    "category": "Finance Cluster Exam",
+    "category": "Cluster Exams",
     "level": "Intermediate",
     "duration": "7h",
     "color": "#d97706",
     "emoji": "💰",
     "lessons": [
-      {
-        "id": "finance-1",
-        "type": "youtube",
-        "title": "Finance Cluster Overview",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
-        "xp": 50,
-        "duration": "14 min"
-      },
-      {
-        "id": "finance-2",
-        "type": "quiz",
-        "title": "Financial Fundamentals Quiz",
-        "xp": 100,
-        "duration": "10 min",
+      { "id": "fce-1", "type": "youtube", "title": "Finance Cluster Overview", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "14 min" },
+      { "id": "fce-2", "type": "quiz", "title": "Financial Fundamentals Quiz", "xp": 100, "duration": "10 min",
         "questions": [
-          {
-            "q": "Which financial statement shows a company's revenues and expenses over a period?",
-            "options": ["Balance Sheet", "Cash Flow Statement", "Income Statement", "Equity Statement"],
-            "answer": 2,
-            "explanation": "The Income Statement (also called Profit & Loss) shows revenues, costs, and expenses during a specific period."
-          },
-          {
-            "q": "What does ROI stand for?",
-            "options": ["Rate of Interest", "Return on Investment", "Risk of Inflation", "Revenue Over Income"],
-            "answer": 1,
-            "explanation": "ROI (Return on Investment) measures the profitability of an investment relative to its cost."
-          },
-          {
-            "q": "A bond is best described as:",
-            "options": [
-              "Ownership stake in a company",
-              "A loan made by an investor to a borrower",
-              "A type of mutual fund",
-              "A government tax"
-            ],
-            "answer": 1,
-            "explanation": "A bond is a fixed-income instrument where an investor lends money to an entity (corporate or governmental) for a defined period at a set interest rate."
-          },
-          {
-            "q": "What is compound interest?",
-            "options": [
-              "Interest calculated only on the principal",
-              "Interest calculated on both principal and accumulated interest",
-              "A fixed monthly fee",
-              "Interest paid to the bank"
-            ],
-            "answer": 1,
-            "explanation": "Compound interest is earned on both the original principal AND the interest already accumulated, causing exponential growth."
-          },
-          {
-            "q": "Which ratio measures a company's ability to pay short-term obligations?",
-            "options": ["Debt-to-equity ratio", "Current ratio", "Price-to-earnings ratio", "Gross margin ratio"],
-            "answer": 1,
-            "explanation": "The current ratio (current assets ÷ current liabilities) measures short-term liquidity — the ability to pay upcoming bills."
-          }
-        ]
-      },
-      {
-        "id": "finance-3",
-        "type": "youtube",
-        "title": "Banking & Insurance Concepts",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
-        "xp": 50,
-        "duration": "16 min"
-      },
-      {
-        "id": "finance-4",
-        "type": "quiz",
-        "title": "Investments & Securities Quiz",
-        "xp": 100,
-        "duration": "10 min",
-        "questions": [
-          {
-            "q": "Diversification in investing means:",
-            "options": [
-              "Putting all money in one stock",
-              "Spreading investments across different assets to reduce risk",
-              "Only buying bonds",
-              "Investing in foreign markets"
-            ],
-            "answer": 1,
-            "explanation": "Diversification reduces risk by spreading investments across different asset types, sectors, or geographies."
-          },
-          {
-            "q": "What is the primary function of the Federal Reserve?",
-            "options": [
-              "Collecting taxes",
-              "Managing monetary policy and regulating banks",
-              "Setting stock prices",
-              "Distributing government bonds"
-            ],
-            "answer": 1,
-            "explanation": "The Federal Reserve (the Fed) controls U.S. monetary policy, regulates banks, and aims to maintain economic stability."
-          }
+          { "q": "Which financial statement shows revenues and expenses over a period?", "options": ["Balance Sheet", "Cash Flow Statement", "Income Statement", "Equity Statement"], "answer": 2, "explanation": "The Income Statement shows revenues, costs, and expenses during a specific period." },
+          { "q": "What does ROI stand for?", "options": ["Rate of Interest", "Return on Investment", "Risk of Inflation", "Revenue Over Income"], "answer": 1, "explanation": "ROI measures the profitability of an investment relative to its cost." },
+          { "q": "What is compound interest?", "options": ["Interest on principal only", "Interest on both principal and accumulated interest", "A fixed monthly fee", "Interest paid to the bank"], "answer": 1, "explanation": "Compound interest earns on both the original principal AND accumulated interest." },
+          { "q": "A bond is best described as:", "options": ["Ownership stake in a company", "A loan made by an investor to a borrower", "A type of mutual fund", "A government tax"], "answer": 1, "explanation": "A bond is a fixed-income instrument where an investor lends money to an entity for a set period." },
+          { "q": "The current ratio measures:", "options": ["Profitability", "Short-term ability to pay obligations", "Long-term debt", "Revenue growth"], "answer": 1, "explanation": "The current ratio (current assets ÷ current liabilities) measures short-term liquidity." }
         ]
       }
     ]
   },
   {
-    "id": "business-admin",
-    "title": "Business Administration Exam Prep",
-    "description": "Cover business law, management, operations, strategic planning, and HR concepts for DECA Business Admin events.",
-    "category": "Business Admin Exam",
+    "id": "hospitality-tourism",
+    "title": "Hospitality & Tourism Cluster Exam",
+    "description": "Explore lodging, food service, travel, tourism operations, and customer experience management for DECA Hospitality events.",
+    "category": "Cluster Exams",
     "level": "Intermediate",
     "duration": "6h",
+    "color": "#0891b2",
+    "emoji": "✈️",
+    "lessons": [
+      { "id": "htce-1", "type": "youtube", "title": "Hospitality & Tourism Overview", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "12 min" },
+      { "id": "htce-2", "type": "quiz", "title": "Hospitality Fundamentals Quiz", "xp": 100, "duration": "10 min",
+        "questions": [
+          { "q": "What is the primary goal of hospitality management?", "options": ["Maximizing facility size", "Delivering exceptional guest experiences", "Reducing staff costs", "Expanding globally"], "answer": 1, "explanation": "Hospitality management centers on creating memorable, positive guest experiences." },
+          { "q": "RevPAR in the hotel industry stands for:", "options": ["Revenue Per Available Room", "Rate of Value Per Assigned Room", "Revenue Per Allocated Resource", "Return Value Per Annual Rate"], "answer": 0, "explanation": "RevPAR (Revenue Per Available Room) is a key hotel performance metric combining occupancy and rate." },
+          { "q": "Which of the following is a 'front-of-house' role in food service?", "options": ["Line cook", "Dishwasher", "Server", "Sous chef"], "answer": 2, "explanation": "Front-of-house roles interact directly with guests — servers, hosts, and bartenders." },
+          { "q": "What does 'yield management' refer to in tourism?", "options": ["Farm-to-table food sourcing", "Adjusting prices based on demand to maximize revenue", "Staff scheduling", "Tour guide training"], "answer": 1, "explanation": "Yield management dynamically adjusts pricing based on demand, timing, and inventory." }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "business-admin-core",
+    "title": "Business Administration Core Cluster Exam",
+    "description": "Cover foundational business concepts including communication, economics, financial literacy, and professional development.",
+    "category": "Cluster Exams",
+    "level": "Beginner",
+    "duration": "5h",
     "color": "#7c3aed",
     "emoji": "🏢",
     "lessons": [
-      {
-        "id": "ba-1",
-        "type": "youtube",
-        "title": "Business Administration Overview",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
-        "xp": 50,
-        "duration": "13 min"
-      },
-      {
-        "id": "ba-2",
-        "type": "quiz",
-        "title": "Management & Leadership Quiz",
-        "xp": 100,
-        "duration": "10 min",
+      { "id": "bac-1", "type": "youtube", "title": "Business Administration Core Overview", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "13 min" },
+      { "id": "bac-2", "type": "quiz", "title": "Business Core Concepts Quiz", "xp": 100, "duration": "10 min",
         "questions": [
-          {
-            "q": "Which management style involves employees in decision-making?",
-            "options": ["Autocratic", "Laissez-faire", "Democratic", "Transactional"],
-            "answer": 2,
-            "explanation": "Democratic (participative) management involves team members in decisions, increasing engagement and ownership."
-          },
-          {
-            "q": "What does 'span of control' refer to in management?",
-            "options": [
-              "Budget allocated to a manager",
-              "Number of employees a manager directly supervises",
-              "Geographic area a manager covers",
-              "Manager's level of authority"
-            ],
-            "answer": 1,
-            "explanation": "Span of control is the number of subordinates a manager can directly and effectively supervise."
-          },
-          {
-            "q": "Which of the following is a characteristic of an LLC?",
-            "options": [
-              "Unlimited personal liability",
-              "Must have at least 100 shareholders",
-              "Limited liability protection with flexible management",
-              "Can only be owned by one person"
-            ],
-            "answer": 2,
-            "explanation": "An LLC (Limited Liability Company) combines limited personal liability with the flexibility of a partnership structure."
-          },
-          {
-            "q": "What is the purpose of a business plan?",
-            "options": [
-              "To satisfy tax requirements",
-              "To outline goals, strategies, and financial projections for a business",
-              "To register with the government",
-              "To hire employees"
-            ],
-            "answer": 1,
-            "explanation": "A business plan is a formal document describing the company's objectives, strategies, market analysis, and financial forecasts."
-          }
-        ]
-      },
-      {
-        "id": "ba-3",
-        "type": "quiz",
-        "title": "Business Law & Ethics Quiz",
-        "xp": 100,
-        "duration": "10 min",
-        "questions": [
-          {
-            "q": "A contract requires which of the following elements to be valid?",
-            "options": [
-              "Notarization",
-              "Offer, acceptance, and consideration",
-              "At least two witnesses",
-              "Written documentation only"
-            ],
-            "answer": 1,
-            "explanation": "A valid contract requires an offer, acceptance, and consideration (something of value exchanged by both parties)."
-          },
-          {
-            "q": "Which ethical framework focuses on the outcomes of actions?",
-            "options": ["Deontological ethics", "Virtue ethics", "Consequentialism", "Divine command theory"],
-            "answer": 2,
-            "explanation": "Consequentialism (including utilitarianism) judges actions by their results — the greatest good for the greatest number."
-          }
+          { "q": "Which economic system relies on supply and demand with minimal government intervention?", "options": ["Command economy", "Traditional economy", "Market economy", "Mixed economy"], "answer": 2, "explanation": "A market economy is driven by supply and demand with private ownership and minimal government control." },
+          { "q": "What is the purpose of a business's mission statement?", "options": ["Define financial targets", "Declare the organization's core purpose and values", "List product offerings", "Describe employee benefits"], "answer": 1, "explanation": "A mission statement defines why an organization exists and what it stands for." },
+          { "q": "Professional communication in business should be:", "options": ["Casual and emoji-heavy", "Clear, concise, and audience-appropriate", "As long as possible", "Informal to build rapport"], "answer": 1, "explanation": "Professional communication adapts to the audience, is clear, concise, and respects context." },
+          { "q": "GDP stands for:", "options": ["General Domestic Pricing", "Gross Domestic Product", "Government Debt Payment", "Global Distribution Platform"], "answer": 1, "explanation": "GDP (Gross Domestic Product) measures the total value of goods and services produced in a country." }
         ]
       }
     ]
   },
   {
-    "id": "roleplay",
-    "title": "Roleplay 101: Master the 10-Minute Presentation",
-    "description": "Learn proven frameworks, body language techniques, and response strategies for DECA roleplay events.",
-    "category": "Roleplay 101",
-    "level": "Beginner",
-    "duration": "4h",
+    "id": "business-mgmt-admin",
+    "title": "Business Management & Administration Cluster Exam",
+    "description": "Study management principles, organizational behavior, human resources, operations, and strategic leadership.",
+    "category": "Cluster Exams",
+    "level": "Intermediate",
+    "duration": "6h",
     "color": "#059669",
-    "emoji": "🎭",
+    "emoji": "📋",
     "lessons": [
-      {
-        "id": "rp-1",
-        "type": "youtube",
-        "title": "Introduction to DECA Roleplays",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
-        "xp": 50,
-        "duration": "10 min"
-      },
-      {
-        "id": "rp-2",
-        "type": "quiz",
-        "title": "Roleplay Structure & Strategy Quiz",
-        "xp": 100,
-        "duration": "8 min",
+      { "id": "bma-1", "type": "youtube", "title": "Business Management Overview", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "13 min" },
+      { "id": "bma-2", "type": "quiz", "title": "Management & Leadership Quiz", "xp": 100, "duration": "10 min",
         "questions": [
-          {
-            "q": "How long do you have to prepare before a DECA roleplay begins?",
-            "options": ["5 minutes", "10 minutes", "15 minutes", "20 minutes"],
-            "answer": 1,
-            "explanation": "DECA competitors typically get 10 minutes of preparation time before presenting their roleplay to the judge."
-          },
-          {
-            "q": "What does the acronym STAR stand for in presentation frameworks?",
-            "options": [
-              "Situation, Task, Action, Result",
-              "Strategy, Tactics, Analysis, Resolution",
-              "Sales, Teamwork, Approach, Revenue",
-              "Subject, Theme, Argument, Recap"
-            ],
-            "answer": 0,
-            "explanation": "The STAR method (Situation, Task, Action, Result) is a structured way to present problem-solving scenarios clearly."
-          },
-          {
-            "q": "When is it appropriate to ask clarifying questions during a roleplay?",
-            "options": [
-              "Never — just make assumptions",
-              "Only at the end",
-              "At the beginning to ensure you understand the scenario",
-              "Constantly throughout"
-            ],
-            "answer": 2,
-            "explanation": "Asking 1–2 clarifying questions at the start shows professionalism and ensures you address the right problem."
-          },
-          {
-            "q": "Which of the following BEST demonstrates professionalism during a roleplay?",
-            "options": [
-              "Speaking as fast as possible to cover more content",
-              "Maintaining eye contact, confident posture, and structured delivery",
-              "Reading directly from your notes",
-              "Avoiding pauses at all costs"
-            ],
-            "answer": 1,
-            "explanation": "Judges evaluate professional presence — eye contact, posture, poise, and organized delivery all contribute to your score."
-          }
+          { "q": "Which management style involves employees in decision-making?", "options": ["Autocratic", "Laissez-faire", "Democratic", "Transactional"], "answer": 2, "explanation": "Democratic management involves team members in decisions, increasing engagement." },
+          { "q": "'Span of control' refers to:", "options": ["Budget allocated to a manager", "Number of employees a manager directly supervises", "Geographic area covered", "Manager's authority level"], "answer": 1, "explanation": "Span of control is the number of subordinates a manager can directly and effectively supervise." },
+          { "q": "What is a key function of Human Resources?", "options": ["Product development", "Recruiting, training, and managing employees", "Setting sales targets", "Managing inventory"], "answer": 1, "explanation": "HR handles recruiting, onboarding, training, compensation, and employee relations." },
+          { "q": "SMART goals are:", "options": ["Simple, Meaningful, Actionable, Realistic, Timely", "Specific, Measurable, Achievable, Relevant, Time-bound", "Strategic, Manageable, Adaptable, Resourced, Tracked", "Shared, Motivated, Aligned, Reviewed, Tested"], "answer": 1, "explanation": "SMART goals are Specific, Measurable, Achievable, Relevant, and Time-bound." }
         ]
-      },
-      {
-        "id": "rp-3",
-        "type": "youtube",
-        "title": "Body Language & Delivery Techniques",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
-        "xp": 50,
-        "duration": "12 min"
       }
     ]
   },
   {
-    "id": "canva",
-    "title": "Canva Masterclass: Design for DECA",
-    "description": "Master visual design principles and create stunning presentations, marketing materials, and project displays.",
-    "category": "Canva Masterclass",
+    "id": "entrepreneurship-cluster",
+    "title": "Entrepreneurship Cluster Exam",
+    "description": "Learn startup fundamentals, opportunity recognition, business planning, funding, and entrepreneurial mindset for DECA Entrepreneurship events.",
+    "category": "Cluster Exams",
+    "level": "Intermediate",
+    "duration": "7h",
+    "color": "#dc2626",
+    "emoji": "🚀",
+    "lessons": [
+      { "id": "ece-1", "type": "youtube", "title": "Entrepreneurship Cluster Overview", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "14 min" },
+      { "id": "ece-2", "type": "quiz", "title": "Entrepreneurship Fundamentals Quiz", "xp": 100, "duration": "10 min",
+        "questions": [
+          { "q": "What is a 'value proposition'?", "options": ["The price of a product", "A clear statement of why a customer should choose your product", "A type of business loan", "A marketing slogan"], "answer": 1, "explanation": "A value proposition explains the unique benefit a product or service delivers to customers." },
+          { "q": "Bootstrapping a business means:", "options": ["Getting a bank loan", "Funding the business with personal savings and revenue", "Seeking venture capital", "Issuing stock"], "answer": 1, "explanation": "Bootstrapping means self-funding — using personal savings or business revenue without outside investment." },
+          { "q": "A 'pivot' in entrepreneurship refers to:", "options": ["Hiring a new CEO", "Fundamentally changing business strategy based on feedback", "Expanding to new markets", "Filing for bankruptcy"], "answer": 1, "explanation": "A pivot is a strategic shift in product, market, or business model based on learning from the market." },
+          { "q": "Which document outlines a startup's goals, strategies, and financials?", "options": ["NDA", "Term sheet", "Business plan", "Equity agreement"], "answer": 2, "explanation": "A business plan is a formal document describing objectives, strategies, and financial projections." }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "personal-financial-literacy-cluster",
+    "title": "Personal Financial Literacy Cluster Exam",
+    "description": "Master budgeting, saving, investing, credit, taxes, and financial planning for the DECA Personal Financial Literacy Cluster Exam.",
+    "category": "Cluster Exams",
+    "level": "Beginner",
+    "duration": "5h",
+    "color": "#16a34a",
+    "emoji": "💳",
+    "lessons": [
+      { "id": "pflce-1", "type": "youtube", "title": "Personal Finance Fundamentals", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "11 min" },
+      { "id": "pflce-2", "type": "quiz", "title": "Personal Finance Quiz", "xp": 100, "duration": "10 min",
+        "questions": [
+          { "q": "What is the 50/30/20 budgeting rule?", "options": ["50% savings, 30% wants, 20% needs", "50% needs, 30% wants, 20% savings", "50% investing, 30% needs, 20% fun", "50% taxes, 30% savings, 20% spending"], "answer": 1, "explanation": "The 50/30/20 rule allocates 50% to needs, 30% to wants, and 20% to savings or debt repayment." },
+          { "q": "A credit score measures:", "options": ["Your total net worth", "Your creditworthiness based on borrowing history", "Your annual income", "Your bank account balance"], "answer": 1, "explanation": "A credit score reflects how reliably you repay debts, affecting loan eligibility and interest rates." },
+          { "q": "What is an emergency fund?", "options": ["A government program", "3–6 months of expenses saved for unexpected events", "A high-risk investment", "A type of credit card"], "answer": 1, "explanation": "An emergency fund covers 3–6 months of expenses to handle unexpected job loss, medical bills, or repairs." },
+          { "q": "Compound interest benefits investors because:", "options": ["It reduces taxes", "Interest earns interest, growing wealth exponentially", "It lowers risk", "Banks pay more fees"], "answer": 1, "explanation": "Compound interest means you earn returns on both principal and previously earned interest." }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "branding-canva",
+    "title": "Branding Basics (Canva)",
+    "description": "Master visual branding and design principles using Canva to create stunning DECA presentations, logos, and marketing materials.",
+    "category": "Skills",
     "level": "Beginner",
     "duration": "3h",
     "color": "#0ea5e9",
     "emoji": "🎨",
     "lessons": [
-      {
-        "id": "canva-1",
-        "type": "youtube",
-        "title": "Getting Started with Canva",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
-        "xp": 50,
-        "duration": "11 min"
-      },
-      {
-        "id": "canva-2",
-        "type": "quiz",
-        "title": "Design Principles Quiz",
-        "xp": 75,
-        "duration": "8 min",
+      { "id": "bc-1", "type": "youtube", "title": "Getting Started with Canva", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "11 min" },
+      { "id": "bc-2", "type": "quiz", "title": "Design & Branding Quiz", "xp": 75, "duration": "8 min",
         "questions": [
-          {
-            "q": "What does the design principle 'contrast' help with?",
-            "options": [
-              "Making everything the same size",
-              "Highlighting differences to guide viewer attention",
-              "Using only one color",
-              "Centering all elements"
-            ],
-            "answer": 1,
-            "explanation": "Contrast uses differences in color, size, or style to draw attention to key elements and improve readability."
-          },
-          {
-            "q": "What is 'white space' in design?",
-            "options": [
-              "A white background",
-              "Empty space around design elements that improves readability",
-              "A blank slide",
-              "The margin of a page"
-            ],
-            "answer": 1,
-            "explanation": "White space (negative space) is intentional empty space that reduces clutter and helps the viewer focus on what matters."
-          },
-          {
-            "q": "For DECA presentations, which font pairing is most professional?",
-            "options": [
-              "Comic Sans + Papyrus",
-              "A clean sans-serif headline with a readable body font",
-              "All text in the same decorative script",
-              "Random fonts for each slide"
-            ],
-            "answer": 1,
-            "explanation": "Professional presentations use a strong, clean headline font paired with a legible body font — typically both sans-serif or a serif/sans-serif combo."
-          }
-        ]
-      },
-      {
-        "id": "canva-3",
-        "type": "youtube",
-        "title": "Advanced Layouts & Brand Kits",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
-        "xp": 50,
-        "duration": "14 min"
-      }
-    ]
-  },
-  {
-    "id": "prepared-events",
-    "title": "Prepared Events Academy",
-    "description": "Step-by-step guidance for Written Events, Business Plans, and Community Service Projects for DECA.",
-    "category": "Prepared Events Academy",
-    "level": "Advanced",
-    "duration": "10h",
-    "color": "#dc2626",
-    "emoji": "📝",
-    "lessons": [
-      {
-        "id": "pe-1",
-        "type": "youtube",
-        "title": "Introduction to Prepared Events",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
-        "xp": 50,
-        "duration": "15 min"
-      },
-      {
-        "id": "pe-2",
-        "type": "quiz",
-        "title": "Written Event Fundamentals Quiz",
-        "xp": 100,
-        "duration": "10 min",
-        "questions": [
-          {
-            "q": "What is the maximum page limit for most DECA written events?",
-            "options": ["5 pages", "10 pages", "30 pages", "No limit"],
-            "answer": 2,
-            "explanation": "Most DECA written events have a 30-page maximum including all sections, appendices, and bibliography."
-          },
-          {
-            "q": "An executive summary in a written event should:",
-            "options": [
-              "Be at least 5 pages long",
-              "Contain only financial data",
-              "Briefly summarize the entire project for a quick overview",
-              "Be written last but placed at the end"
-            ],
-            "answer": 2,
-            "explanation": "An executive summary provides a concise overview of the entire project — typically 1 page — and is placed at the beginning."
-          },
-          {
-            "q": "Which section of a business plan describes how the business will make money?",
-            "options": ["Mission statement", "SWOT analysis", "Revenue model / Financial plan", "Market analysis"],
-            "answer": 2,
-            "explanation": "The financial plan / revenue model section outlines pricing, projected revenues, costs, and how the business achieves profitability."
-          }
+          { "q": "What does 'contrast' do in design?", "options": ["Makes everything the same size", "Highlights differences to guide viewer attention", "Uses only one color", "Centers all elements"], "answer": 1, "explanation": "Contrast uses differences in color, size, or style to draw attention and improve readability." },
+          { "q": "Brand consistency means:", "options": ["Using the same logo color on every product", "Maintaining uniform visual identity, tone, and messaging across all channels", "Copying competitor branding", "Changing your logo regularly"], "answer": 1, "explanation": "Brand consistency builds recognition and trust by maintaining a unified identity across all touchpoints." },
+          { "q": "White space in design:", "options": ["Is wasted space", "Improves readability and focus by reducing visual clutter", "Must be colored white", "Only applies to print"], "answer": 1, "explanation": "White space (negative space) reduces clutter and helps viewers focus on what matters." }
         ]
       }
     ]
   },
   {
-    "id": "leadership",
-    "title": "Leadership Development",
-    "description": "Build leadership skills for DECA chapter officers and aspiring leaders in business and community.",
-    "category": "Leadership Development",
+    "id": "using-adobe",
+    "title": "Using Adobe",
+    "description": "Learn Adobe creative tools including Photoshop, Illustrator, and Express to produce professional-quality visuals for DECA projects.",
+    "category": "Skills",
     "level": "Beginner",
-    "duration": "5h",
-    "color": "#8b5cf6",
-    "emoji": "🌟",
+    "duration": "4h",
+    "color": "#f97316",
+    "emoji": "🖌️",
     "lessons": [
-      {
-        "id": "lead-1",
-        "type": "youtube",
-        "title": "What Makes a Great Leader?",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
-        "xp": 50,
-        "duration": "12 min"
-      },
-      {
-        "id": "lead-2",
-        "type": "quiz",
-        "title": "Leadership Styles & Skills Quiz",
-        "xp": 100,
-        "duration": "10 min",
+      { "id": "ua-1", "type": "youtube", "title": "Adobe Creative Suite Introduction", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "13 min" },
+      { "id": "ua-2", "type": "quiz", "title": "Adobe Tools Quiz", "xp": 75, "duration": "8 min",
         "questions": [
-          {
-            "q": "Which leadership theory focuses on exchanging rewards for performance?",
-            "options": ["Transformational leadership", "Servant leadership", "Transactional leadership", "Laissez-faire leadership"],
-            "answer": 2,
-            "explanation": "Transactional leadership is based on a system of rewards and consequences — leaders motivate through exchange."
-          },
-          {
-            "q": "Active listening includes:",
-            "options": [
-              "Interrupting to share your opinion",
-              "Checking your phone while someone speaks",
-              "Giving full attention, asking questions, and reflecting back",
-              "Waiting for your turn to talk"
-            ],
-            "answer": 2,
-            "explanation": "Active listening means fully concentrating on the speaker, understanding their message, and responding thoughtfully."
-          },
-          {
-            "q": "Emotional intelligence (EQ) in leadership refers to:",
-            "options": [
-              "Your IQ score",
-              "Technical business knowledge",
-              "The ability to recognize, understand, and manage emotions in yourself and others",
-              "Financial analysis skills"
-            ],
-            "answer": 2,
-            "explanation": "EQ involves self-awareness, empathy, and social skills — crucial for effective leadership and team collaboration."
-          }
+          { "q": "Adobe Illustrator is primarily used for:", "options": ["Video editing", "Vector graphics and logo design", "Photo retouching", "Audio production"], "answer": 1, "explanation": "Illustrator creates vector-based graphics — scalable designs ideal for logos, icons, and illustrations." },
+          { "q": "What is the difference between raster and vector graphics?", "options": ["Raster uses math formulas; vector uses pixels", "Vector scales without quality loss; raster is pixel-based", "They are the same thing", "Raster is only for print"], "answer": 1, "explanation": "Vector graphics scale infinitely without losing quality; raster images are pixel-based and can blur when enlarged." },
+          { "q": "Adobe Express is best suited for:", "options": ["Complex photo manipulation", "Quick, professional social media and presentation graphics", "3D modeling", "Video color grading"], "answer": 1, "explanation": "Adobe Express is a simplified tool for quickly creating polished graphics, flyers, and social content." }
         ]
       }
     ]
   },
   {
-    "id": "chapter-officer",
-    "title": "Chapter Officer Training",
-    "description": "Everything DECA chapter officers need to run meetings, plan events, and grow their chapter.",
-    "category": "Chapter Officer Training",
-    "level": "Intermediate",
+    "id": "principles-business-admin",
+    "title": "Principles of Business Administration Events",
+    "description": "Prepare for DECA's Principles of Business Administration competitive events with scenario-based strategies and key concepts.",
+    "category": "Competitive Events",
+    "level": "Beginner",
     "duration": "4h",
-    "color": "#f59e0b",
-    "emoji": "🏅",
+    "color": "#8b5cf6",
+    "emoji": "📌",
     "lessons": [
-      {
-        "id": "co-1",
-        "type": "youtube",
-        "title": "Your Role as a Chapter Officer",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
-        "xp": 50,
-        "duration": "10 min"
-      },
-      {
-        "id": "co-2",
-        "type": "quiz",
-        "title": "Chapter Management Quiz",
-        "xp": 100,
-        "duration": "8 min",
+      { "id": "pba-1", "type": "youtube", "title": "Principles Events Overview", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "10 min" },
+      { "id": "pba-2", "type": "quiz", "title": "Principles of Business Admin Quiz", "xp": 100, "duration": "10 min",
         "questions": [
-          {
-            "q": "Which document records the official proceedings of a meeting?",
-            "options": ["Agenda", "Minutes", "Bylaws", "Resolution"],
-            "answer": 1,
-            "explanation": "Meeting minutes are the official written record of what was discussed, decided, and assigned during a meeting."
-          },
-          {
-            "q": "A chapter's bylaws serve to:",
-            "options": [
-              "List upcoming events",
-              "Record financial transactions",
-              "Define the rules and governance structure of the organization",
-              "Track member attendance"
-            ],
-            "answer": 2,
-            "explanation": "Bylaws are the foundational governing document that defines how an organization is structured and how it operates."
-          },
-          {
-            "q": "What is parliamentary procedure used for?",
-            "options": [
-              "Creating marketing campaigns",
-              "Conducting meetings in an orderly and fair manner",
-              "Managing chapter finances",
-              "Planning competitive events"
-            ],
-            "answer": 1,
-            "explanation": "Parliamentary procedure (like Robert's Rules of Order) provides structured rules for running fair, organized meetings."
-          }
+          { "q": "What is the main focus of Principles of Business Administration events?", "options": ["Advanced financial modeling", "Foundational business concepts for newer DECA members", "International business strategy", "Sports marketing"], "answer": 1, "explanation": "Principles events are designed for members newer to DECA, covering foundational business concepts." },
+          { "q": "In a DECA roleplay scenario, judges play the role of:", "options": ["A competitor", "A customer, supervisor, or business owner", "A fellow team member", "A government official"], "answer": 1, "explanation": "DECA judges act as business characters — customers, supervisors, or managers — in roleplay scenarios." },
+          { "q": "Which skill is most important in Principles events?", "options": ["Advanced spreadsheet modeling", "Clear, confident communication of basic business concepts", "Coding ability", "Foreign language fluency"], "answer": 1, "explanation": "Strong verbal communication and foundational business knowledge are key to succeeding in Principles events." }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "individual-series",
+    "title": "Individual Series Events",
+    "description": "Master DECA's Individual Series events — one-on-one roleplay scenarios and written exams across all career clusters.",
+    "category": "Competitive Events",
+    "level": "Intermediate",
+    "duration": "5h",
+    "color": "#e11d48",
+    "emoji": "🎯",
+    "lessons": [
+      { "id": "ise-1", "type": "youtube", "title": "Individual Series Events Guide", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "12 min" },
+      { "id": "ise-2", "type": "quiz", "title": "Individual Series Strategy Quiz", "xp": 100, "duration": "10 min",
+        "questions": [
+          { "q": "Individual Series events consist of:", "options": ["A group project only", "A written exam and a roleplay scenario", "An oral presentation only", "A portfolio submission"], "answer": 1, "explanation": "Individual Series events combine a 100-question written exam with a 10-minute roleplay scenario." },
+          { "q": "How long do you have to prepare before a roleplay?", "options": ["5 minutes", "10 minutes", "15 minutes", "20 minutes"], "answer": 1, "explanation": "DECA competitors get 10 minutes of preparation time before presenting their roleplay to the judge." },
+          { "q": "The best strategy when you don't know a roleplay answer is to:", "options": ["Make something up confidently", "Apply logical business reasoning and communicate your thought process", "Stay silent", "Ask the judge for the answer"], "answer": 1, "explanation": "Judges value logical thinking and professional reasoning even if you lack specific knowledge." }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "team-decision-making",
+    "title": "Team Decision Making Events",
+    "description": "Learn strategies for DECA's Team Decision Making events — collaborative case studies with a partner across multiple business categories.",
+    "category": "Competitive Events",
+    "level": "Intermediate",
+    "duration": "5h",
+    "color": "#d97706",
+    "emoji": "🤝",
+    "lessons": [
+      { "id": "tdm-1", "type": "youtube", "title": "Team Decision Making Overview", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "11 min" },
+      { "id": "tdm-2", "type": "quiz", "title": "Team Decision Making Quiz", "xp": 100, "duration": "10 min",
+        "questions": [
+          { "q": "In Team Decision Making events, teams consist of:", "options": ["1 person", "2 people", "3–5 people", "Any number"], "answer": 1, "explanation": "TDM events are specifically designed for 2-person teams collaborating on a case study." },
+          { "q": "What is the preparation time for Team Decision Making events?", "options": ["5 minutes", "15 minutes", "30 minutes", "1 hour"], "answer": 2, "explanation": "Teams receive 30 minutes to read and prepare their case study response." },
+          { "q": "Effective team collaboration in a TDM event means:", "options": ["One person does all the talking", "Both members contribute equally and complement each other", "Disagreeing loudly with your partner", "Reading from notes the entire time"], "answer": 1, "explanation": "Judges look for balanced contributions, clear teamwork, and complementary roles between partners." }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "personal-financial-literacy-event",
+    "title": "Personal Financial Literacy Event",
+    "description": "Prepare specifically for the DECA Personal Financial Literacy competitive event — budgeting simulations, credit scenarios, and investment analysis.",
+    "category": "Competitive Events",
+    "level": "Beginner",
+    "duration": "4h",
+    "color": "#16a34a",
+    "emoji": "💵",
+    "lessons": [
+      { "id": "pfle-1", "type": "youtube", "title": "Personal Financial Literacy Event Guide", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "10 min" },
+      { "id": "pfle-2", "type": "quiz", "title": "Financial Literacy Event Quiz", "xp": 100, "duration": "10 min",
+        "questions": [
+          { "q": "What is a W-4 form used for?", "options": ["Filing annual taxes", "Telling your employer how much tax to withhold", "Applying for a loan", "Opening a bank account"], "answer": 1, "explanation": "A W-4 tells your employer how much federal income tax to withhold from each paycheck." },
+          { "q": "What does APR stand for?", "options": ["Annual Percentage Rate", "Average Payment Ratio", "Asset Protection Rate", "Annual Profit Return"], "answer": 0, "explanation": "APR (Annual Percentage Rate) represents the yearly cost of borrowing money, including interest and fees." },
+          { "q": "An IRA is a type of:", "options": ["Business loan", "Individual retirement account with tax advantages", "Insurance policy", "Government grant"], "answer": 1, "explanation": "An IRA (Individual Retirement Account) is a tax-advantaged savings account for retirement." }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "business-operations-research",
+    "title": "Business Operations Research Events",
+    "description": "Tackle DECA's Business Operations Research events — in-depth written reports analyzing real business operations and proposing solutions.",
+    "category": "Competitive Events",
+    "level": "Advanced",
+    "duration": "8h",
+    "color": "#0891b2",
+    "emoji": "🔍",
+    "lessons": [
+      { "id": "bore-1", "type": "youtube", "title": "Business Operations Research Overview", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "14 min" },
+      { "id": "bore-2", "type": "quiz", "title": "Operations Research Quiz", "xp": 100, "duration": "10 min",
+        "questions": [
+          { "q": "Business Operations Research events require:", "options": ["A verbal roleplay only", "A written report analyzing a real business and an oral presentation", "A multiple choice exam only", "A group marketing campaign"], "answer": 1, "explanation": "BOR events involve a detailed written report on a real business operation plus an oral defense." },
+          { "q": "Primary research in a business report means:", "options": ["Citing Wikipedia", "Original data collected by the researcher (surveys, interviews, observations)", "Using only government statistics", "Copying competitor reports"], "answer": 1, "explanation": "Primary research is original data you collect yourself — surveys, interviews, experiments, or observations." },
+          { "q": "An executive summary should:", "options": ["Be placed at the end of a report", "Briefly summarize the entire report in 1 page for a quick overview", "Contain only financial charts", "Be at least 5 pages long"], "answer": 1, "explanation": "An executive summary gives a concise overview of the entire project — typically 1 page — placed at the beginning." }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "project-management",
+    "title": "Project Management Events",
+    "description": "Learn project planning, execution, stakeholder communication, and performance measurement for DECA Project Management Events.",
+    "category": "Competitive Events",
+    "level": "Advanced",
+    "duration": "6h",
+    "color": "#7c3aed",
+    "emoji": "📅",
+    "lessons": [
+      { "id": "pme-1", "type": "youtube", "title": "Project Management Fundamentals", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "13 min" },
+      { "id": "pme-2", "type": "quiz", "title": "Project Management Quiz", "xp": 100, "duration": "10 min",
+        "questions": [
+          { "q": "What does a Gantt chart show?", "options": ["Financial statements", "Project tasks, timelines, and dependencies", "Team salaries", "Customer satisfaction scores"], "answer": 1, "explanation": "A Gantt chart visually displays project tasks, their duration, and how they overlap or depend on each other." },
+          { "q": "A project's 'scope' refers to:", "options": ["The project budget", "The defined boundaries of what the project will and won't deliver", "Team size", "Meeting schedule"], "answer": 1, "explanation": "Scope defines the specific work, deliverables, features, and boundaries of a project." },
+          { "q": "A stakeholder is:", "options": ["Only the project manager", "Anyone who has an interest in or is affected by the project", "Only paying customers", "External consultants only"], "answer": 1, "explanation": "Stakeholders include anyone with a stake in the project's outcome — clients, team members, executives, end users." }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "entrepreneurship-events",
+    "title": "Entrepreneurship Events",
+    "description": "Prepare for DECA Entrepreneurship competitive events — developing business concepts, innovation pitches, and startup plans.",
+    "category": "Competitive Events",
+    "level": "Advanced",
+    "duration": "7h",
+    "color": "#dc2626",
+    "emoji": "💡",
+    "lessons": [
+      { "id": "ee-1", "type": "youtube", "title": "Entrepreneurship Events Guide", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "14 min" },
+      { "id": "ee-2", "type": "quiz", "title": "Entrepreneurship Events Quiz", "xp": 100, "duration": "10 min",
+        "questions": [
+          { "q": "What is a minimum viable product (MVP)?", "options": ["The most expensive version of a product", "A basic version of a product to test the concept with real users", "A finished product ready for sale", "A prototype for internal use only"], "answer": 1, "explanation": "An MVP is the simplest version of a product that allows you to test core assumptions with real customers." },
+          { "q": "What does a pitch deck typically include?", "options": ["Only financial projections", "Problem, solution, market, team, financials, and ask", "Employee handbook", "Tax documents"], "answer": 1, "explanation": "A pitch deck covers the problem, solution, market opportunity, team, business model, and funding ask." },
+          { "q": "Total Addressable Market (TAM) represents:", "options": ["Your current customer base", "The total revenue opportunity if you captured 100% of the market", "Your first year revenue target", "The cost to acquire one customer"], "answer": 1, "explanation": "TAM is the total market demand for a product or service — the maximum potential revenue." }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "integrated-marketing",
+    "title": "Integrated Marketing Campaign Events",
+    "description": "Create comprehensive multi-channel marketing campaigns for DECA's Integrated Marketing Campaign competitive events.",
+    "category": "Competitive Events",
+    "level": "Advanced",
+    "duration": "8h",
+    "color": "#e11d48",
+    "emoji": "📣",
+    "lessons": [
+      { "id": "imc-1", "type": "youtube", "title": "Integrated Marketing Campaign Overview", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "15 min" },
+      { "id": "imc-2", "type": "quiz", "title": "IMC Strategy Quiz", "xp": 100, "duration": "10 min",
+        "questions": [
+          { "q": "An integrated marketing campaign ensures:", "options": ["Separate messages on each platform", "A consistent, unified message across all marketing channels", "Using only digital advertising", "Minimizing marketing spend"], "answer": 1, "explanation": "IMC delivers a cohesive message across TV, social, print, email, and other channels for maximum impact." },
+          { "q": "Which metric measures how many people saw an ad?", "options": ["Click-through rate", "Conversion rate", "Impressions", "Bounce rate"], "answer": 2, "explanation": "Impressions count the total number of times an ad was displayed, regardless of clicks." },
+          { "q": "A target audience is defined by:", "options": ["The company's employees", "Demographic, psychographic, and behavioral characteristics of ideal customers", "The media outlet used", "The advertising budget"], "answer": 1, "explanation": "A target audience is a specific group defined by age, interests, behaviors, and demographics that a campaign aims to reach." }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "virtual-business-challenge",
+    "title": "Virtual Business Challenge",
+    "description": "Practice managing a virtual business simulation — pricing, inventory, marketing, and financial decisions in a competitive environment.",
+    "category": "Simulations",
+    "level": "Intermediate",
+    "duration": "5h",
+    "color": "#0891b2",
+    "emoji": "💻",
+    "lessons": [
+      { "id": "vbc-1", "type": "youtube", "title": "Virtual Business Challenge Introduction", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "11 min" },
+      { "id": "vbc-2", "type": "quiz", "title": "Virtual Business Strategy Quiz", "xp": 100, "duration": "10 min",
+        "questions": [
+          { "q": "In a business simulation, increasing price while holding costs constant will:", "options": ["Always increase sales volume", "Increase profit margin per unit but may reduce volume", "Have no effect on profit", "Decrease profit margin"], "answer": 1, "explanation": "Higher prices increase margin per unit but can reduce demand — the key is finding the optimal price point." },
+          { "q": "Inventory turnover measures:", "options": ["How often you reorder supplies", "How many times inventory is sold and replaced in a period", "Employee productivity", "Customer return rates"], "answer": 1, "explanation": "Inventory turnover shows how efficiently a business sells through its stock — higher is generally better." },
+          { "q": "Break-even point is when:", "options": ["Revenue equals profit", "Total revenue equals total costs", "Costs are zero", "Sales volume is maximized"], "answer": 1, "explanation": "Break-even is the point where total revenue exactly covers total costs — neither profit nor loss." }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "stock-market-game",
+    "title": "Stock Market Game",
+    "description": "Learn investing fundamentals — stocks, bonds, diversification, market analysis, and portfolio management — through the DECA Stock Market Game.",
+    "category": "Simulations",
+    "level": "Intermediate",
+    "duration": "5h",
+    "color": "#16a34a",
+    "emoji": "📊",
+    "lessons": [
+      { "id": "smg-1", "type": "youtube", "title": "Stock Market Basics", "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE", "xp": 50, "duration": "12 min" },
+      { "id": "smg-2", "type": "quiz", "title": "Stock Market Game Quiz", "xp": 100, "duration": "10 min",
+        "questions": [
+          { "q": "What is a stock?", "options": ["A government bond", "A share of ownership in a company", "A type of bank account", "A business loan"], "answer": 1, "explanation": "A stock represents a share of ownership in a company, entitling the holder to a portion of profits and assets." },
+          { "q": "Diversification in investing means:", "options": ["Putting all money in one stock", "Spreading investments across different assets to reduce risk", "Only buying bonds", "Timing the market perfectly"], "answer": 1, "explanation": "Diversification reduces risk by spreading investments across different asset types, sectors, or geographies." },
+          { "q": "A bull market refers to:", "options": ["A falling market with widespread pessimism", "A rising market with investor confidence and increasing prices", "A stable, flat market", "A market with high volatility"], "answer": 1, "explanation": "A bull market is characterized by rising prices and optimistic investor sentiment." },
+          { "q": "P/E ratio stands for:", "options": ["Profit and Equity", "Price-to-Earnings ratio", "Portfolio Evaluation", "Principal and Enterprise"], "answer": 1, "explanation": "The Price-to-Earnings (P/E) ratio compares a company's stock price to its earnings per share — a key valuation metric." }
         ]
       }
     ]

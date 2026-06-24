@@ -7,6 +7,28 @@
     "lessons": [
       {
         "title": "Unit 1: Business Law",
+        "resources": [
+          {
+            "title": "Lesson Video",
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+          },
+          {
+            "title": "Business Law Study Guide",
+            "type": "article",
+            "url": "https://docs.google.com/document/d/1Wex51oeM2vDpEykrbhQXYyqgshZBTPsDlKhoyINKeOk/edit?usp=sharing"
+          },
+          {
+            "question": "What is a contract?",
+            "choices": [
+              "A legal agreement",
+              "A business plan",
+              "A marketing strategy",
+              "A sales pitch"
+          ],
+          "answer": 0
+          }
+        ]
         "type": "youtube",
         "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
       },

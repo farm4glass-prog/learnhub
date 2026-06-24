@@ -2,108 +2,1428 @@
   {
     "id": "marketing",
     "title": "Marketing Cluster Exam",
-    "description": "Master the key concepts tested on the DECA Marketing Cluster Exam. This course has organized all of the units by the 2026-2027 DECA Exam Blueprints.",
+    "description": "Master the key concepts tested on the DECA Marketing Cluster Exam. Organized by the 2026-2027 DECA blueprint.",
     "progress": 0,
     "lessons": [
       {
         "title": "Unit 1: Business Law",
-        "type": "youtube",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+          },
+          {
+            "title": "Business Law Article",
+            "type": "article",
+            "content": "Business Law is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how business law affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of business law helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Business Law Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes business law?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is business law important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of business law is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 2: Channel Management",
-        "type": "youtube",
-        "url": "https://youtu.be/cIgvNlEUplg?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/cIgvNlEUplg?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Channel Management Article",
+            "type": "article",
+            "content": "Channel Management is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how channel management affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of channel management helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Channel Management Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes channel management?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is channel management important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of channel management is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 3: Communications",
-        "type": "youtube",
-        "url": "https://youtu.be/B7tJkVPK_DA?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/B7tJkVPK_DA?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Communications Article",
+            "type": "article",
+            "content": "Communications is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how communications affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of communications helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Communications Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes communications?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is communications important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of communications is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 4: Customer Relations",
-        "type": "youtube",
-        "url": "https://youtu.be/GGaRv1ZPlzs?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/GGaRv1ZPlzs?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Customer Relations Article",
+            "type": "article",
+            "content": "Customer Relations is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how customer relations affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of customer relations helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Customer Relations Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes customer relations?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is customer relations important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of customer relations is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 5: Economics",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Economics Article",
+            "type": "article",
+            "content": "Economics is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how economics affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of economics helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Economics Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes economics?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is economics important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of economics is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 6: Emotional Intelligence",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Emotional Intelligence Article",
+            "type": "article",
+            "content": "Emotional Intelligence is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how emotional intelligence affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of emotional intelligence helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Emotional Intelligence Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes emotional intelligence?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is emotional intelligence important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of emotional intelligence is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 7: Entrepreneurship",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Entrepreneurship Article",
+            "type": "article",
+            "content": "Entrepreneurship is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how entrepreneurship affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of entrepreneurship helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Entrepreneurship Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes entrepreneurship?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is entrepreneurship important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of entrepreneurship is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 8: Financial Analysis",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Financial Analysis Article",
+            "type": "article",
+            "content": "Financial Analysis is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how financial analysis affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of financial analysis helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Financial Analysis Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes financial analysis?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is financial analysis important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of financial analysis is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 9: Human Resource Management",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Human Resource Management Article",
+            "type": "article",
+            "content": "Human Resource Management is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how human resource management affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of human resource management helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Human Resource Management Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes human resource management?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is human resource management important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of human resource management is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 10: Information Management",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Information Management Article",
+            "type": "article",
+            "content": "Information Management is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how information management affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of information management helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Information Management Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes information management?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is information management important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of information management is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 11: Market Planning",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Market Planning Article",
+            "type": "article",
+            "content": "Market Planning is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how market planning affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of market planning helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Market Planning Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes market planning?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is market planning important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of market planning is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 12: Marketing",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Marketing Article",
+            "type": "article",
+            "content": "Marketing is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how marketing affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of marketing helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Marketing Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes marketing?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is marketing important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of marketing is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 13: Marketing-Information Management",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Marketing-Information Management Article",
+            "type": "article",
+            "content": "Marketing-Information Management is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how marketing-information management affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of marketing-information management helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Marketing-Information Management Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes marketing-information management?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is marketing-information management important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of marketing-information management is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 14: Operations",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Operations Article",
+            "type": "article",
+            "content": "Operations is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how operations affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of operations helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Operations Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes operations?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is operations important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of operations is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 15: Pricing",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Pricing Article",
+            "type": "article",
+            "content": "Pricing is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how pricing affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of pricing helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Pricing Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes pricing?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is pricing important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of pricing is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 16: Product/Service Management",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Product/Service Management Article",
+            "type": "article",
+            "content": "Product/Service Management is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how product/service management affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of product/service management helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Product/Service Management Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes product/service management?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is product/service management important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of product/service management is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 17: Professional Development",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Professional Development Article",
+            "type": "article",
+            "content": "Professional Development is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how professional development affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of professional development helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Professional Development Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes professional development?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is professional development important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of professional development is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 18: Promotion",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Promotion Article",
+            "type": "article",
+            "content": "Promotion is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how promotion affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of promotion helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Promotion Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes promotion?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is promotion important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of promotion is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 19: Selling",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Selling Article",
+            "type": "article",
+            "content": "Selling is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how selling affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of selling helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Selling Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes selling?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is selling important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of selling is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       },
       {
         "title": "Unit 20: Strategic Management",
-        "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "resources": [
+          {
+            "title": "Video Lesson",
+            "type": "youtube",
+            "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+          },
+          {
+            "title": "Strategic Management Article",
+            "type": "article",
+            "content": "Strategic Management is an important performance indicator area within DECA marketing exams. Students should understand key terminology, practical business applications, ethical decision making, and how strategic management affects organizational success. In competitive events, concepts from this unit often appear in role-plays, case studies, and cluster exam questions. Focus on definitions, real-world examples, common business scenarios, and how managers use these concepts to improve performance. When studying, connect classroom knowledge to customer needs, business objectives, and strategic decision making. Strong mastery of strategic management helps competitors analyze situations, justify recommendations, and communicate professionally."
+          },
+          {
+            "title": "Strategic Management Quiz",
+            "type": "quiz",
+            "questions": [
+              {
+                "question": "Which statement best describes strategic management?",
+                "choices": [
+                  "A key business function",
+                  "A tax form",
+                  "A payroll system",
+                  "A government agency"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Why is strategic management important in business?",
+                "choices": [
+                  "It supports decision making",
+                  "It eliminates competition",
+                  "It replaces management",
+                  "It guarantees profit"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "What is the best study strategy for DECA cluster exams?",
+                "choices": [
+                  "Practice scenarios",
+                  "Memorize random facts",
+                  "Skip vocabulary",
+                  "Ignore performance indicators"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Business decisions should generally be:",
+                "choices": [
+                  "Ethical and informed",
+                  "Random",
+                  "Secretive",
+                  "Impulsive"
+                ],
+                "answer": 0
+              },
+              {
+                "question": "Knowledge of strategic management is most useful when:",
+                "choices": [
+                  "Analyzing business situations",
+                  "Avoiding customers",
+                  "Ignoring data",
+                  "Reducing communication"
+                ],
+                "answer": 0
+              }
+            ]
+          }
+        ]
       }
     ]
   },

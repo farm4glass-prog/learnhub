@@ -1,8 +1,3 @@
-```javascript
-// =====================
-// FIREBASE IMPORTS
-// =====================
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
@@ -21,9 +16,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
-// =====================
-// FIREBASE CONFIG
-// =====================
+// FIREBASE
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbx0tdGbQBeUmWnTMHdipSLPrp6zo6n6c",
@@ -41,50 +34,35 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 
-// =====================
 // LOGIN
-// =====================
 
 async function loginWithGoogle() {
-
   try {
-
-    await signInWithPopup(
-      auth,
-      provider
-    );
-
+    await signInWithPopup(auth, provider);
   } catch (error) {
-
     console.error(error);
     alert(error.message);
-
   }
-
 }
 
-const landingLogin =
-  document.getElementById("landingLogin");
+document
+  .getElementById("landingLogin")
+  ?.addEventListener("click", loginWithGoogle);
 
-const heroLogin =
-  document.getElementById("heroLogin");
-
-landingLogin?.addEventListener(
-  "click",
-  loginWithGoogle
-);
-
-heroLogin?.addEventListener(
-  "click",
-  loginWithGoogle
-);
+document
+  .getElementById("heroLogin")
+  ?.addEventListener("click", loginWithGoogle);
 
 
-// =====================
 // AUTH STATE
-// =====================
 
 onAuthStateChanged(auth, async (user) => {
+
+  const landingPage =
+    document.getElementById("landingPage");
+
+  const portal =
+    document.getElementById("portal");
 
   const userInfo =
     document.getElementById("userInfo");
@@ -92,17 +70,10 @@ onAuthStateChanged(auth, async (user) => {
   const profileInfo =
     document.getElementById("profileInfo");
 
-  if (!userInfo) return;
-
   if (user) {
 
-    document
-      .getElementById("landingPage")
-      ?.classList.add("hidden");
-
-    document
-      .getElementById("portal")
-      ?.classList.remove("hidden");
+    landingPage?.classList.add("hidden");
+    portal?.classList.remove("hidden");
 
     const userRef =
       doc(db, "users", user.uid);
@@ -122,28 +93,25 @@ onAuthStateChanged(auth, async (user) => {
 
     }
 
-    const data =
+    const userData =
       (await getDoc(userRef)).data();
 
-    userInfo.innerHTML = `
-      <div class="profile-card">
+    if (userInfo) {
 
-        <img
-          src="${user.photoURL}"
-          width="60"
-          style="border-radius:50%;"
-        >
+      userInfo.innerHTML = `
+        <div class="profile-card">
+          <img
+            src="${user.photoURL}"
+            width="60"
+            style="border-radius:50%;"
+          >
 
-        <h3>
-          ${data.displayName}
-        </h3>
+          <h3>${userData.displayName}</h3>
 
-        <p>
-          ${data.email}
-        </p>
-
-      </div>
-    `;
+          <p>${userData.email}</p>
+        </div>
+      `;
+    }
 
     if (profileInfo) {
 
@@ -151,29 +119,18 @@ onAuthStateChanged(auth, async (user) => {
         <img
           src="${user.photoURL}"
           width="100"
-          style="
-            border-radius:50%;
-            margin-bottom:15px;
-          "
+          style="border-radius:50%;margin-bottom:15px;"
         >
 
-        <h2>
-          ${data.displayName}
-        </h2>
+        <h2>${userData.displayName}</h2>
 
-        <p>
-          ${data.email}
-        </p>
+        <p>${userData.email}</p>
 
         <br>
 
-        <p>
-          XP: ${data.xp}
-        </p>
+        <p>XP: ${userData.xp}</p>
 
-        <p>
-          Streak: ${data.streak}
-        </p>
+        <p>Streak: ${userData.streak}</p>
 
         <br>
 
@@ -184,39 +141,27 @@ onAuthStateChanged(auth, async (user) => {
 
       document
         .getElementById("logoutBtn")
-        ?.addEventListener(
-          "click",
-          async () => {
+        ?.addEventListener("click", async () => {
 
-            await signOut(auth);
+          await signOut(auth);
 
-          }
-        );
-
+        });
     }
 
   } else {
 
-    document
-      .getElementById("portal")
-      ?.classList.add("hidden");
+    portal?.classList.add("hidden");
+    landingPage?.classList.remove("hidden");
 
-    document
-      .getElementById("landingPage")
-      ?.classList.remove("hidden");
-
-    userInfo.innerHTML = `
-      <p>Not signed in</p>
-    `;
-
+    if (userInfo) {
+      userInfo.innerHTML = "";
+    }
   }
 
 });
 
 
-// =====================
 // COURSES
-// =====================
 
 let courses = [];
 
@@ -240,9 +185,7 @@ fetch("courses.json")
   });
 
 
-// =====================
 // TABS
-// =====================
 
 function showTab(tabName) {
 
@@ -261,20 +204,15 @@ function showTab(tabName) {
   document
     .getElementById(tabName)
     ?.classList.remove("hidden");
-
 }
 
 
-// =====================
 // FEATURED COURSES
-// =====================
 
 function renderFeaturedCourses() {
 
   const container =
-    document.getElementById(
-      "featuredCourses"
-    );
+    document.getElementById("featuredCourses");
 
   if (!container) return;
 
@@ -302,22 +240,16 @@ function renderFeaturedCourses() {
 
       </div>
     `;
-
   });
-
 }
 
 
-// =====================
-// COURSES PAGE
-// =====================
+// ALL COURSES
 
 function renderCourses() {
 
   const container =
-    document.getElementById(
-      "course-list"
-    );
+    document.getElementById("course-list");
 
   if (!container) return;
 
@@ -345,63 +277,46 @@ function renderCourses() {
 
       </div>
     `;
-
   });
-
 }
 
 
-// =====================
 // OPEN COURSE
-// =====================
 
 function openCourse(id) {
 
   const course =
-    courses.find(
-      c => c.id === id
-    );
+    courses.find(c => c.id === id);
 
   if (!course) return;
 
   let lessonsHTML = "";
 
-  course.lessons.forEach(
-    lesson => {
+  course.lessons.forEach(lesson => {
 
-      const videoId =
-        lesson.url.split("v=")[1];
+    const videoId =
+      lesson.url.split("v=")[1];
 
-      lessonsHTML += `
-        <div class="course-card">
+    lessonsHTML += `
+      <div class="course-card">
 
-          <h3>
-            ${lesson.title}
-          </h3>
+        <h3>${lesson.title}</h3>
 
-          <iframe
-            width="100%"
-            height="400"
-            src="https://www.youtube.com/embed/${videoId}"
-            allowfullscreen>
-          </iframe>
+        <iframe
+          width="100%"
+          height="400"
+          src="https://www.youtube.com/embed/${videoId}"
+          allowfullscreen>
+        </iframe>
 
-        </div>
-      `;
+      </div>
+    `;
+  });
 
-    }
-  );
-
-  document.getElementById(
-    "courses"
-  ).innerHTML = `
-
+  document.getElementById("courses").innerHTML = `
     <h1>${course.title}</h1>
 
-    <p style="
-      margin-top:10px;
-      margin-bottom:20px;
-    ">
+    <p style="margin:15px 0;">
       ${course.description}
     </p>
 
@@ -411,24 +326,16 @@ function openCourse(id) {
       onclick="
         renderCourses();
         showTab('courses');
-      "
-      style="
-        margin-top:20px;
       ">
-      Back
+      Back to Courses
     </button>
-
   `;
 
   showTab("courses");
-
 }
 
 
-// =====================
-// GLOBAL FUNCTIONS
-// =====================
+// GLOBAL
 
 window.showTab = showTab;
 window.openCourse = openCourse;
-```

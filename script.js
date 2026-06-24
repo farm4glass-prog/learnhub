@@ -1,3 +1,4 @@
+```javascript
 // =====================
 // FIREBASE IMPORTS
 // =====================
@@ -41,189 +42,176 @@ const provider = new GoogleAuthProvider();
 
 
 // =====================
-// LANDING PAGE LOGIN
+// LOGIN
 // =====================
 
-document
-  .getElementById("heroLogin")
-  ?.addEventListener("click", () => {
+async function loginWithGoogle() {
 
-    document
-      .getElementById("googleLogin")
-      ?.click();
+  try {
 
-  });
+    await signInWithPopup(
+      auth,
+      provider
+    );
 
-document
-  .getElementById("landingLogin")
-  ?.addEventListener("click", () => {
+  } catch (error) {
 
-    document
-      .getElementById("googleLogin")
-      ?.click();
+    console.error(error);
+    alert(error.message);
 
-  });
-
-
-// =====================
-// GOOGLE LOGIN
-// =====================
-
-const loginBtn =
-  document.getElementById("googleLogin");
-
-if (loginBtn) {
-
-  loginBtn.addEventListener(
-    "click",
-    async () => {
-
-      try {
-
-        await signInWithPopup(
-          auth,
-          provider
-        );
-
-      } catch (error) {
-
-        console.error(error);
-        alert(error.message);
-
-      }
-
-    }
-  );
+  }
 
 }
+
+const landingLogin =
+  document.getElementById("landingLogin");
+
+const heroLogin =
+  document.getElementById("heroLogin");
+
+landingLogin?.addEventListener(
+  "click",
+  loginWithGoogle
+);
+
+heroLogin?.addEventListener(
+  "click",
+  loginWithGoogle
+);
 
 
 // =====================
 // AUTH STATE
 // =====================
 
-onAuthStateChanged(
-  auth,
-  async (user) => {
+onAuthStateChanged(auth, async (user) => {
 
-    const userInfo =
-      document.getElementById("userInfo");
+  const userInfo =
+    document.getElementById("userInfo");
 
-    const profileInfo =
-      document.getElementById("profileInfo");
+  const profileInfo =
+    document.getElementById("profileInfo");
 
-    if (!userInfo) return;
+  if (!userInfo) return;
 
-    if (user) {
+  if (user) {
 
-      document
-        .getElementById("landingPage")
-        .classList.add("hidden");
+    document
+      .getElementById("landingPage")
+      ?.classList.add("hidden");
 
-      document
-        .getElementById("portal")
-        .classList.remove("hidden");
+    document
+      .getElementById("portal")
+      ?.classList.remove("hidden");
 
-      const userRef =
-        doc(db, "users", user.uid);
+    const userRef =
+      doc(db, "users", user.uid);
 
-      const userSnap =
-        await getDoc(userRef);
+    const userSnap =
+      await getDoc(userRef);
 
-      if (!userSnap.exists()) {
+    if (!userSnap.exists()) {
 
-        await setDoc(userRef, {
-          displayName: user.displayName,
-          email: user.email,
-          xp: 0,
-          streak: 0,
-          completedLessons: []
-        });
-
-      }
-
-      const data =
-        (await getDoc(userRef)).data();
-
-      userInfo.innerHTML = `
-        <div class="profile-card">
-
-          <img
-            src="${user.photoURL}"
-            width="60"
-          >
-
-          <h3>
-            ${data.displayName}
-          </h3>
-
-          <p>
-            ${data.email}
-          </p>
-
-        </div>
-      `;
-
-      if (profileInfo) {
-
-        profileInfo.innerHTML = `
-          <img
-            src="${user.photoURL}"
-            width="100"
-            style="
-              border-radius:50%;
-              margin-bottom:15px;
-            "
-          >
-
-          <h2>
-            ${data.displayName}
-          </h2>
-
-          <p>
-            ${data.email}
-          </p>
-
-          <br>
-
-          <p>
-            XP: ${data.xp}
-          </p>
-
-          <p>
-            Streak: ${data.streak}
-          </p>
-
-          <br>
-
-          <button id="logoutBtn">
-            Sign Out
-          </button>
-        `;
-
-        document
-          .getElementById("logoutBtn")
-          ?.addEventListener(
-            "click",
-            () => signOut(auth)
-          );
-
-      }
-
-    } else {
-
-      document
-        .getElementById("landingPage")
-        .classList.remove("hidden");
-
-      document
-        .getElementById("portal")
-        .classList.add("hidden");
+      await setDoc(userRef, {
+        displayName: user.displayName,
+        email: user.email,
+        xp: 0,
+        streak: 0,
+        completedLessons: []
+      });
 
     }
 
+    const data =
+      (await getDoc(userRef)).data();
+
+    userInfo.innerHTML = `
+      <div class="profile-card">
+
+        <img
+          src="${user.photoURL}"
+          width="60"
+          style="border-radius:50%;"
+        >
+
+        <h3>
+          ${data.displayName}
+        </h3>
+
+        <p>
+          ${data.email}
+        </p>
+
+      </div>
+    `;
+
+    if (profileInfo) {
+
+      profileInfo.innerHTML = `
+        <img
+          src="${user.photoURL}"
+          width="100"
+          style="
+            border-radius:50%;
+            margin-bottom:15px;
+          "
+        >
+
+        <h2>
+          ${data.displayName}
+        </h2>
+
+        <p>
+          ${data.email}
+        </p>
+
+        <br>
+
+        <p>
+          XP: ${data.xp}
+        </p>
+
+        <p>
+          Streak: ${data.streak}
+        </p>
+
+        <br>
+
+        <button id="logoutBtn">
+          Sign Out
+        </button>
+      `;
+
+      document
+        .getElementById("logoutBtn")
+        ?.addEventListener(
+          "click",
+          async () => {
+
+            await signOut(auth);
+
+          }
+        );
+
+    }
+
+  } else {
+
+    document
+      .getElementById("portal")
+      ?.classList.add("hidden");
+
+    document
+      .getElementById("landingPage")
+      ?.classList.remove("hidden");
+
+    userInfo.innerHTML = `
+      <p>Not signed in</p>
+    `;
+
   }
-);
+
+});
 
 
 // =====================
@@ -260,19 +248,19 @@ function showTab(tabName) {
 
   document
     .getElementById("dashboard")
-    .classList.add("hidden");
+    ?.classList.add("hidden");
 
   document
     .getElementById("courses")
-    .classList.add("hidden");
+    ?.classList.add("hidden");
 
   document
     .getElementById("profile")
-    .classList.add("hidden");
+    ?.classList.add("hidden");
 
   document
     .getElementById(tabName)
-    .classList.remove("hidden");
+    ?.classList.remove("hidden");
 
 }
 
@@ -297,27 +285,18 @@ function renderFeaturedCourses() {
     container.innerHTML += `
       <div class="course-card">
 
-        <h3>
-          ${course.title}
-        </h3>
+        <h3>${course.title}</h3>
 
-        <p>
-          ${course.description}
-        </p>
+        <p>${course.description}</p>
 
         <div class="progress">
           <div
             class="progress-fill"
-            style="
-              width:${course.progress}%;
-            ">
+            style="width:${course.progress}%">
           </div>
         </div>
 
-        <button
-          onclick="
-            openCourse('${course.id}')
-          ">
+        <button onclick="openCourse('${course.id}')">
           Continue
         </button>
 
@@ -349,27 +328,18 @@ function renderCourses() {
     container.innerHTML += `
       <div class="course-card">
 
-        <h3>
-          ${course.title}
-        </h3>
+        <h3>${course.title}</h3>
 
-        <p>
-          ${course.description}
-        </p>
+        <p>${course.description}</p>
 
         <div class="progress">
           <div
             class="progress-fill"
-            style="
-              width:${course.progress}%;
-            ">
+            style="width:${course.progress}%">
           </div>
         </div>
 
-        <button
-          onclick="
-            openCourse('${course.id}')
-          ">
+        <button onclick="openCourse('${course.id}')">
           Open Course
         </button>
 
@@ -426,15 +396,12 @@ function openCourse(id) {
     "courses"
   ).innerHTML = `
 
-    <h1>
-      ${course.title}
-    </h1>
+    <h1>${course.title}</h1>
 
-    <p
-      style="
-        margin-top:10px;
-        margin-bottom:20px;
-      ">
+    <p style="
+      margin-top:10px;
+      margin-bottom:20px;
+    ">
       ${course.description}
     </p>
 
@@ -464,3 +431,4 @@ function openCourse(id) {
 
 window.showTab = showTab;
 window.openCourse = openCourse;
+```

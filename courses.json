@@ -37,7 +37,18 @@
     "title": "Finance Cluster Exam",
     "description": "Prepare for DECA finance competitions.",
     "progress": 0,
-    "lessons": []
+    "lessons": [
+      {
+        "title": "Unit 1: Business Law",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+      },
+      {
+        "title": "Unit 2: Communications",
+        "type": "youtube",
+        "url": "https://youtu.be/Zh4Jd78X0dQ?list=PL4aR3Sy4aIL_6UFvdAhCpyb-dlo2FIxZw"
+      }
+    ]
   },
   {
     "id": "hospitality",

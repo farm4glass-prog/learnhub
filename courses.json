@@ -1,179 +1,161 @@
 [
-{
-"id": "marketing",
-"title": "Marketing Cluster Exam",
-"description": "Master DECA marketing concepts and prepare for competition.",
-"progress": 0,
-"lessons": [
-{
-"title": "Unit 1: Business Law",
-"type": "youtube",
-"url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
-},
-{
-"title": "Unit 2: Channel Management",
-"type": "youtube",
-"url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
-},
-{
-"title": "Unit 3: Communications",
-"type": "youtube",
-"url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
-},
-{
-"title": "Unit 4: Customer Relations",
-"type": "youtube",
-"url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
-},
-{
-"title": "Unit 5: Economics",
-"type": "youtube",
-"url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
-}
-]
-},
-
-{
-"id": "finance",
-"title": "Finance Cluster Exam",
-"description": "Prepare for DECA finance competitions.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "hospitality",
-"title": "Hospitality + Tourism Cluster Exam",
-"description": "Prepare for hospitality and tourism events.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "business-admin-core",
-"title": "Business Administration Core Cluster Exam",
-"description": "Master DECA core business concepts.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "business-management",
-"title": "Business Management + Administration Cluster Exam",
-"description": "Business management competition preparation.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "entrepreneurship-cluster",
-"title": "Entrepreneurship Cluster Exam",
-"description": "Entrepreneurship exam preparation.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "pfl-cluster",
-"title": "Personal Financial Literacy Cluster Exam",
-"description": "Financial literacy preparation.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "branding-basics",
-"title": "Branding Basics (Canva)",
-"description": "Learn Canva and branding fundamentals.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "adobe",
-"title": "Using Adobe",
-"description": "Adobe Creative Cloud fundamentals.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "principles",
-"title": "Principles of Business Administration Events",
-"description": "Prepare for principles events.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "individual-series",
-"title": "Individual Series Events",
-"description": "Individual series event preparation.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "team-decision",
-"title": "Team Decision Making Events",
-"description": "Team decision making preparation.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "pfl-event",
-"title": "Personal Financial Literacy Event",
-"description": "PFL event preparation.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "business-research",
-"title": "Business Operations Research Events",
-"description": "Research event preparation.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "project-management",
-"title": "Project Management Events",
-"description": "Project management competition prep.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "entrepreneurship-events",
-"title": "Entrepreneurship Events",
-"description": "Entrepreneurship event preparation.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "integrated-marketing",
-"title": "Integrated Marketing Campaign Events",
-"description": "Integrated marketing preparation.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "virtual-business",
-"title": "Virtual Business Challenge",
-"description": "Virtual Business Challenge preparation.",
-"progress": 0,
-"lessons": []
-},
-
-{
-"id": "stock-market",
-"title": "Stock Market Game",
-"description": "Stock Market Game preparation.",
-"progress": 0,
-"lessons": []
-}
+  {
+    "id": "marketing",
+    "title": "Marketing Cluster Exam",
+    "description": "Master DECA marketing concepts and prepare for competition.",
+    "progress": 0,
+    "lessons": [
+      {
+        "title": "Unit 1: Business Law",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+      },
+      {
+        "title": "Unit 2: Channel Management",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+      },
+      {
+        "title": "Unit 3: Communications",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+      },
+      {
+        "title": "Unit 4: Customer Relations",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+      },
+      {
+        "title": "Unit 5: Economics",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+      }
+    ]
+  },
+  {
+    "id": "finance",
+    "title": "Finance Cluster Exam",
+    "description": "Prepare for DECA finance competitions.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "hospitality",
+    "title": "Hospitality + Tourism Cluster Exam",
+    "description": "Prepare for hospitality and tourism events.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "business-admin-core",
+    "title": "Business Administration Core Cluster Exam",
+    "description": "Master DECA core business concepts.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "business-management",
+    "title": "Business Management + Administration Cluster Exam",
+    "description": "Business management competition preparation.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "entrepreneurship-cluster",
+    "title": "Entrepreneurship Cluster Exam",
+    "description": "Entrepreneurship exam preparation.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "pfl-cluster",
+    "title": "Personal Financial Literacy Cluster Exam",
+    "description": "Financial literacy preparation.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "branding-basics",
+    "title": "Branding Basics (Canva)",
+    "description": "Learn Canva and branding fundamentals.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "adobe",
+    "title": "Using Adobe",
+    "description": "Adobe Creative Cloud fundamentals.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "principles",
+    "title": "Principles of Business Administration Events",
+    "description": "Prepare for principles events.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "individual-series",
+    "title": "Individual Series Events",
+    "description": "Individual series event preparation.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "team-decision",
+    "title": "Team Decision Making Events",
+    "description": "Team decision making preparation.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "pfl-event",
+    "title": "Personal Financial Literacy Event",
+    "description": "PFL event preparation.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "business-research",
+    "title": "Business Operations Research Events",
+    "description": "Research event preparation.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "project-management",
+    "title": "Project Management Events",
+    "description": "Project management competition prep.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "entrepreneurship-events",
+    "title": "Entrepreneurship Events",
+    "description": "Entrepreneurship event preparation.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "integrated-marketing",
+    "title": "Integrated Marketing Campaign Events",
+    "description": "Integrated marketing preparation.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "virtual-business",
+    "title": "Virtual Business Challenge",
+    "description": "Virtual Business Challenge preparation.",
+    "progress": 0,
+    "lessons": []
+  },
+  {
+    "id": "stock-market",
+    "title": "Stock Market Game",
+    "description": "Stock Market Game preparation.",
+    "progress": 0,
+    "lessons": []
+  }
 ]

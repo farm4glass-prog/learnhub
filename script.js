@@ -910,11 +910,17 @@ window.saveProfile = async function() {
 
 // ========================= TABS =========================
 window.showTab = function(tabName) {
-  document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach(el => {
+    el.classList.remove("active");
+    el.classList.add("hidden");
+  });
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
 
   const el = document.getElementById(tabName);
-  if (el) el.classList.add("active");
+  if (el) {
+    el.classList.add("active");
+    el.classList.remove("hidden");
+  }
 
   const navBtn = document.getElementById(`nav-${tabName}`);
   if (navBtn) navBtn.classList.add("active");

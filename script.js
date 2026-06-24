@@ -19,6 +19,12 @@ const firebaseConfig = {
   measurementId: "G-27SR58HRSZ"
 };
 
+const ADMIN_EMAILS = ["farm4glass@gmail.com"];
+
+function isAdmin(user) {
+  return user && ADMIN_EMAILS.includes(user.email);
+}
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -98,6 +104,10 @@ document.getElementById("aboutLogin")?.addEventListener("click", loginWithGoogle
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
+    if (user && isAdmin(user)) {
+      console.log("Admin logged in");
+      document.getElementById("adminBtn")?.classList.remove("hidden");
+  }
     document.getElementById("landingPage")?.classList.add("hidden");
     document.getElementById("portal")?.classList.remove("hidden");
 
@@ -958,3 +968,57 @@ function showLevelUpModal(animal) {
 window.closeModal = function(id) {
   document.getElementById(id)?.classList.add("hidden");
 };
+
+window.createCourse = async function () {
+  if (!isAdmin(currentUser)) return;
+
+  const title = document.getElementById("courseTitle").value;
+  const desc = document.getElementById("courseDesc").value;
+
+  const ref = doc(collection(db, "courses"));
+
+  await setDoc(ref, {
+    id: ref.id,
+    title,
+    description: desc,
+    category: "DECA",
+    lessons: []
+  });
+
+  alert("Course created!");
+};
+
+window.addLesson = async function () {
+  if (!isAdmin(currentUser)) return;
+
+  const courseId = document.getElementById("lessonCourseId").value;
+  const title = document.getElementById("lessonTitle").value;
+  const url = document.getElementById("lessonUrl").value;
+  const xp = Number(document.getElementById("lessonXp").value);
+
+  const courseRef = doc(db, "courses", courseId);
+  const snap = await getDoc(courseRef);
+
+  if (!snap.exists()) {
+    alert("Course not found");
+    return;
+  }
+
+  const course = snap.data();
+
+  const newLesson = {
+    id: `${courseId}-lesson-${Date.now()}`,
+    title,
+    type: "youtube",
+    url,
+    xp
+  };
+
+  await updateDoc(courseRef, {
+    lessons: [...(course.lessons || []), newLesson]
+  });
+
+  alert("Lesson added!");
+};
+
+

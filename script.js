@@ -29,7 +29,7 @@ const ANIMALS = [
   { emoji: "🐣", name: "Baby Goat",    tagline: "Just hatched on the farm!",           xpNeeded: 100,  level: 1 },
   { emoji: "🐔", name: "Chick",        tagline: "Finding your feed!",                  xpNeeded: 250,  level: 2 },
   { emoji: "🐑", name: "Lamb",         tagline: "Flocking to knowledge!",              xpNeeded: 500,  level: 3 },
-  { emoji: "🐐", name: "Goat",         tagline: "Climbing the competition mountain!",  xpNeeded: 900,  level: 4 },
+  { img: "/assets/animals/goat.png", name: "Goat",         tagline: "Climbing the competition mountain!",  xpNeeded: 900,  level: 4 },
   { emoji: "🐄", name: "Cow",          tagline: "Mooo-ving up in the world!",          xpNeeded: 1500, level: 5 },
   { emoji: "🐂", name: "Bull",         tagline: "Unstoppable on the DECA stage!",      xpNeeded: 2500, level: 6 },
   { emoji: "🏆", name: "Champion",     tagline: "The farm's greatest legend!",         xpNeeded: Infinity, level: 7 }

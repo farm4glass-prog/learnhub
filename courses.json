@@ -2,7 +2,7 @@
   {
     "id": "marketing",
     "title": "Marketing Cluster Exam",
-    "description": "Master DECA marketing concepts and prepare for competition.",
+    "description": "Master the key concepts tested on the DECA Marketing Cluster Exam. This course has organized all of the units by the 2026-2027 DECA Exam Blueprints.",
     "progress": 0,
     "lessons": [
       {
@@ -35,7 +35,7 @@
   {
     "id": "finance",
     "title": "Finance Cluster Exam",
-    "description": "Prepare for DECA finance competitions.",
+    "description": "Master the key concepts tested on the DECA Finance Cluster Exam. This course has organized all of the units by the 2026-2027 DECA Exam Blueprints.",
     "progress": 0,
     "lessons": [
       {
@@ -53,28 +53,61 @@
   {
     "id": "hospitality",
     "title": "Hospitality + Tourism Cluster Exam",
-    "description": "Prepare for hospitality and tourism events.",
+    "description": "Master the key concepts tested on the DECA Hospitality Cluster Exam. This course has organized all of the units by the 2026-2027 DECA Exam Blueprints.",
     "progress": 0,
-    "lessons": []
+    "lessons": [
+      {
+        "title": "Unit 1: Business Law",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+      },
+      {
+        "title": "Unit 2: Communications",
+        "type": "youtube",
+        "url": "https://youtu.be/Zh4Jd78X0dQ?list=PL4aR3Sy4aIL_6UFvdAhCpyb-dlo2FIxZw"
+      }
+    ]
   },
   {
     "id": "business-admin-core",
     "title": "Business Administration Core Cluster Exam",
-    "description": "Master DECA core business concepts.",
+    "description": "Master the key concepts tested on the DECA Business Administration Core Cluster Exam. This course has organized all of the units by the 2026-2027 DECA Exam Blueprints.",
     "progress": 0,
-    "lessons": []
+    "lessons": [
+      {
+        "title": "Unit 1: Business Law",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+      },
+      {
+        "title": "Unit 2: Communications",
+        "type": "youtube",
+        "url": "https://youtu.be/Zh4Jd78X0dQ?list=PL4aR3Sy4aIL_6UFvdAhCpyb-dlo2FIxZw"
+      }
+    ]
   },
   {
     "id": "business-management",
     "title": "Business Management + Administration Cluster Exam",
-    "description": "Business management competition preparation.",
+    "description": "Master the key concepts tested on the DECA Business Management + Administration Cluster Exam. This course has organized all of the units by the 2026-2027 DECA Exam Blueprints.",
     "progress": 0,
-    "lessons": []
+    "lessons": [
+      {
+        "title": "Unit 1: Business Law",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+      },
+      {
+        "title": "Unit 2: Communications",
+        "type": "youtube",
+        "url": "https://youtu.be/Zh4Jd78X0dQ?list=PL4aR3Sy4aIL_6UFvdAhCpyb-dlo2FIxZw"
+      }
+    ]
   },
   {
     "id": "entrepreneurship-cluster",
     "title": "Entrepreneurship Cluster Exam",
-    "description": "Entrepreneurship exam preparation.",
+    "description": "Master the key concepts tested on the DECA Entrepreneurship Cluster Exam. This course has organized all of the units by the 2026-2027 DECA Exam Blueprints.",
     "progress": 0,
     "lessons": []
   },

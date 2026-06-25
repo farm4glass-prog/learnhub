@@ -58,7 +58,7 @@ body {
   background-image: url("home.jpg");
   background-size: cover;
   background-position: center top; /* or center 20% */
-  min-height: 100vh; /* ADD THIS */
+  height: 797px; /* ADD THIS */
   background-repeat: no-repeat;
   padding: 120px 40px 100px;
   text-align: center; color: white;

@@ -78,7 +78,7 @@ body {
   margin-top: 24px; font-size: 20px; color: rgba(255,255,255,0.7);
   max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.5;
 }
-.hero-btns { margin-top: 500px; display: flex; gap: 16px; justify-content: center; align-items: center; }
+.hero-btns { margin-top: 600px; display: flex; gap: 16px; justify-content: center; align-items: center; }
 .btn-primary {
   background: var(--blue); color: white; border: none;
   padding: 14px 28px; border-radius: 12px; cursor: pointer;

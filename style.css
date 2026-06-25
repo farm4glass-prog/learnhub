@@ -55,7 +55,7 @@ body {
 
 /* ========================= LANDING HERO ========================= */
 .landing-hero {
-  background-image: url("Cover.jpg");
+  background-image: url("home.jpg");
   background-size: cover;
   background-position: center top; /* or center 20% */
   min-height: 100vh; /* ADD THIS */

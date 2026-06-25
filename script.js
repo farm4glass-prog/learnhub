@@ -456,7 +456,7 @@ function renderFilteredCourses(list) {
     card.className = "course-card-new";
     card.onclick = () => openCourse(course.id);
     card.innerHTML = `
-      <div class="cc-top" style="background:${course.color};"></div>
+      <img class="cc-image" src="MARKETING CLUSTER EXAM (1).png" alt="${course.title}">
       <div class="cc-body">
         <div class="cc-tags">
           <span class="cc-category" style="color:${course.color};border-color:${course.color};">${course.category || "DECA"}</span>

@@ -55,7 +55,10 @@ body {
 
 /* ========================= LANDING HERO ========================= */
 .landing-hero {
-  background: linear-gradient(160deg, #0b1a2e 0%, #1e3a5f 50%, #0f5f8c 100%);
+  background-image: url("1.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   padding: 120px 40px 100px;
   text-align: center; color: white;
 }

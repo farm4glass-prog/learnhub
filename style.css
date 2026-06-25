@@ -624,7 +624,6 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 30px;
-  align-items: start;
 }
 
 .team-card {
@@ -633,6 +632,10 @@ body {
   border-radius: 24px;
   padding: 30px;
   transition: 0.3s ease;
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .team-card:hover {

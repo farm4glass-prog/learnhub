@@ -36,7 +36,6 @@
     <h2>Features</h2>
     <div class="features-grid">
       <div class="feature-card">
-        <div class="feat-icon">📚</div>
         <h3>Structured Courses</h3>
         <p>Video lessons, articles, and quizzes for every DECA cluster exam, roleplay/prepared event, and online simulations (VBC and SMG).</p>
       </div>
@@ -46,22 +45,18 @@
         <p>Earn XP for every video, article, and quiz you complete. Level up your farm animal from Baby Chick all the way to Champion Goat.</p>
       </div>
       <div class="feature-card">
-        <div class="feat-icon">🔥</div>
         <h3>Daily Streaks</h3>
         <p>Build consistency with daily learning streaks. Track your best streak and compete with members across the world.</p>
       </div>
       <div class="feature-card">
-        <div class="feat-icon">🏅</div>
         <h3>Badges</h3>
         <p>Unlock farm-themed badges for milestones: First Hay Bale, Barn Burner, Monthly Moo, and more.</p>
       </div>
       <div class="feature-card">
-        <div class="feat-icon">📊</div>
         <h3>Guest Speakers</h3>
         <p>Watch and learn from ICDC champions in your specific testing and event area.</p>
       </div>
       <div class="feature-card">
-        <div class="feat-icon">🎭</div>
         <h3>Canva and Adobe Lessons</h3>
         <p>If you've ever wanted to level up your graphic designed skills, our team has built step by step courses and templates for you.</p>
       </div>
@@ -202,26 +197,20 @@
 
     <div class="sidebar-nav">
       <button class="nav-btn active" onclick="showTab('dashboard')" id="nav-dashboard">
-        <span class="nav-icon">🏠</span> Dashboard
       </button>
       <button class="nav-btn" onclick="showTab('courses')" id="nav-courses">
-        <span class="nav-icon">📚</span> Courses
       </button>
       <button class="nav-btn" onclick="showTab('leaderboard')" id="nav-leaderboard">
-        <span class="nav-icon">📊</span> Leaderboard
       </button>
       <button class="nav-btn" onclick="showTab('profile')" id="nav-profile">
-        <span class="nav-icon">👤</span> Profile
       </button>
 
       <button id="adminBtn" class="nav-btn hidden" onclick="showTab('adminPanel')">
-        <span class="nav-icon">⚙️</span> Admin
       </button>
       
     </div>
 
     <div class="sidebar-animal" id="sidebarAnimal">
-      <div class="sa-emoji" id="saEmoji">🐣</div>
       <div class="sa-info">
         <div class="sa-name" id="saName">Baby Goat</div>
         <div class="sa-xp" id="saXp">0 / 100 XP</div>
@@ -247,30 +236,26 @@
     <div id="dashboard" class="tab-content active">
       <div class="dash-header">
         <div>
-          <h1 id="dashGreeting">Howdy! 🌾</h1>
-          <p class="dash-sub">The barn's open — time to level up your DECA game! 🚜</p>
+          <h1 id="dashGreeting">Welcome!</h1>
+          <p class="dash-sub">The barn's open! Time to level up your DECA game! 🚜</p>
         </div>
         <button class="barn-btn" onclick="showTab('courses')">Enter the Barn →</button>
       </div>
 
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-icon">🌾</div>
           <div class="stat-value" id="statXP">0</div>
           <div class="stat-label">Total XP</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">🔥</div>
           <div class="stat-value" id="statStreak">0</div>
           <div class="stat-label">Day Streak</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon" id="statAnimalIcon">🐣</div>
           <div class="stat-value" id="statAnimalName">Baby Goat</div>
           <div class="stat-label">Farm Level</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">📖</div>
           <div class="stat-value" id="statLessons">0</div>
           <div class="stat-label">Lessons Done</div>
         </div>
@@ -281,7 +266,6 @@
           <!-- ANIMAL CARD -->
           <div class="animal-card" id="dashAnimalCard">
             <div class="ac-left">
-              <div class="ac-emoji" id="acEmoji">🐣</div>
               <div class="ac-info">
                 <div class="ac-name" id="acName">Baby Goat</div>
                 <div class="ac-tagline" id="acTagline">"Just hatched on the farm!"</div>
@@ -290,7 +274,6 @@
             </div>
             <div class="ac-right">
               <div class="ac-next-label">Next up</div>
-              <div class="ac-next-emoji" id="acNextEmoji">🐔</div>
               <div class="ac-next-name" id="acNextName">Chick</div>
             </div>
           </div>
@@ -300,7 +283,7 @@
           </div>
           <div class="xp-bar-outer"><div class="xp-bar-inner" id="acXPBar" style="width:0%"></div></div>
 
-          <h2 class="section-title">🌿 Your Learning Pastures</h2>
+          <h2 class="section-title">Courses</h2>
           <div id="featuredCourses"></div>
         </div>
 
@@ -308,8 +291,8 @@
           <!-- STREAK WIDGET -->
           <div class="widget">
             <div class="widget-header">
-              <span>🔥 Daily Streak</span>
-              <span class="widget-badge" id="bestStreakBadge">🏆 Best: 0d</span>
+              <span>Daily Streak</span>
+              <span class="widget-badge" id="bestStreakBadge">Best: 0d</span>
             </div>
             <div class="streak-days" id="streakDays"></div>
             <div class="streak-count-box">
@@ -321,9 +304,9 @@
 
           <!-- BADGES WIDGET -->
           <div class="widget">
-            <div class="widget-header"><span>🥇 Farm Badges</span></div>
+            <div class="widget-header"><span>Farm Badges</span></div>
             <div class="badges-grid" id="dashBadges"></div>
-            <p class="badge-msg" id="badgeMsg">🌱 Complete lessons to earn your first badge!</p>
+            <p class="badge-msg" id="badgeMsg">Complete lessons to earn your first badge!</p>
           </div>
         </div>
       </div>
@@ -336,7 +319,6 @@
 
       <div class="course-search-row">
         <div class="search-wrap">
-          <span class="search-icon">🔍</span>
           <input type="text" id="courseSearch" placeholder="Search courses..." oninput="filterCourses()">
         </div>
       </div>
@@ -355,12 +337,12 @@
       <h1>Leaderboard</h1>
       <p class="page-sub">See how you stack up against other DECA students</p>
       <div class="lb-tabs">
-        <button class="lb-tab active" onclick="switchLbTab('xp', this)">🌾 XP Rankings</button>
-        <button class="lb-tab" onclick="switchLbTab('streak', this)">🔥 Streaks</button>
-        <button class="lb-tab" onclick="switchLbTab('lessons', this)">📖 Lessons</button>
+        <button class="lb-tab active" onclick="switchLbTab('xp', this)">XP Rankings</button>
+        <button class="lb-tab" onclick="switchLbTab('streak', this)">Streaks</button>
+        <button class="lb-tab" onclick="switchLbTab('lessons', this)">Lessons</button>
       </div>
       <div class="leaderboard-list" id="leaderboardList">
-        <div class="lb-loading">Loading rankings... 🐄</div>
+        <div class="lb-loading">Loading rankings... </div>
       </div>
     </div>
 
@@ -413,12 +395,12 @@
       </div>
 
       <div class="widget">
-        <div class="widget-header"><span>🥇 Farm Badges</span></div>
+        <div class="widget-header"><span>Farm Badges</span></div>
         <div class="badges-grid-large" id="profileBadges"></div>
       </div>
 
       <div class="widget">
-        <div class="widget-header"><span>📚 Completed Lessons</span></div>
+        <div class="widget-header"><span>Completed Lessons</span></div>
         <div id="completedLessonsList" class="completed-list"></div>
       </div>
     </div>
@@ -433,14 +415,14 @@
 </div><!-- /portal -->
 
 <!-- XP TOAST -->
-<div class="xp-toast hidden" id="xpToast">+0 XP 🌾</div>
+<div class="xp-toast hidden" id="xpToast">+0 XP</div>
 
 <!-- LEVEL UP MODAL -->
 <div class="modal-overlay hidden" id="levelUpModal">
   <div class="modal-box">
     <div class="modal-emoji" id="modalEmoji">🎉</div>
     <h2>You Evolved!</h2>
-    <div class="modal-animal" id="modalAnimal">🐔 Chick</div>
+    <div class="modal-animal" id="modalAnimal">Chick</div>
     <p id="modalMsg">Keep studying to evolve again!</p>
     <button class="btn-primary" onclick="closeModal('levelUpModal')">Let's Go! 🚜</button>
   </div>
@@ -453,7 +435,7 @@
     <h2>New Badge Unlocked!</h2>
     <div class="modal-animal" id="badgeModalName">First Hay Bale</div>
     <p id="badgeModalDesc">You completed your first lesson!</p>
-    <button class="btn-primary" onclick="closeModal('badgeModal')">Awesome! 🌾</button>
+    <button class="btn-primary" onclick="closeModal('badgeModal')">Awesome!</button>
   </div>
 </div>
 

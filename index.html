@@ -73,15 +73,15 @@
       </div>
       <div class="about-visual">
         <div class="animal-showcase">
-          <div class="animal-tier"><span>🐣</span><small>Baby</small></div>
+          <div class="animal-tier"><span></span><small>Baby</small></div>
           <div class="arrow">→</div>
-          <div class="animal-tier"><span>🐔</span><small>Chick</small></div>
+          <div class="animal-tier"><span></span><small>Chick</small></div>
           <div class="arrow">→</div>
-          <div class="animal-tier"><span>🐑</span><small>Sheep</small></div>
+          <div class="animal-tier"><span></span><small>Sheep</small></div>
           <div class="arrow">→</div>
-          <div class="animal-tier"><span>🐄</span><small>Cow</small></div>
+          <div class="animal-tier"><span></span><small>Cow</small></div>
           <div class="arrow">→</div>
-          <div class="animal-tier"><span>🐂</span><small>Bull</small></div>
+          <div class="animal-tier"><span></span><small>Bull</small></div>
         </div>
       </div>
     </div>
@@ -192,7 +192,7 @@
 
   <div class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <span class="logo-icon">🐐</span>
+      <span class="logo-icon"></span>
       <span class="logo-text">Farm4Glass</span>
     </div>
 
@@ -237,7 +237,7 @@
     <!-- MOBILE HEADER -->
     <div class="mobile-header">
       <button class="hamburger" onclick="toggleSidebar()">☰</button>
-      <span>🐐 Farm4Glass</span>
+      <span>Farm4Glass</span>
     </div>
 
     <!-- ===== DASHBOARD ===== -->
@@ -245,7 +245,7 @@
       <div class="dash-header">
         <div>
           <h1 id="dashGreeting">Welcome!</h1>
-          <p class="dash-sub">The barn's open! Time to level up your DECA game! 🚜</p>
+          <p class="dash-sub">The barn's open! Time to level up your DECA game!</p>
         </div>
         <button class="barn-btn" onclick="showTab('courses')">Enter the Barn →</button>
       </div>
@@ -286,7 +286,7 @@
             </div>
           </div>
           <div class="xp-bar-row">
-            <span>🌾 <span id="acXP">0</span> XP</span>
+            <span><span id="acXP">0</span> XP</span>
             <span id="acXPNeeded">100 XP to evolve</span>
           </div>
           <div class="xp-bar-outer"><div class="xp-bar-inner" id="acXPBar" style="width:0%"></div></div>
@@ -305,9 +305,9 @@
             <div class="streak-days" id="streakDays"></div>
             <div class="streak-count-box">
               <span class="streak-count-num" id="streakNum">0</span>
-              <span>🔥</span>
+              <span></span>
             </div>
-            <p class="streak-msg" id="streakMsg">Start your streak today! 🌱</p>
+            <p class="streak-msg" id="streakMsg">Start your streak today!</p>
           </div>
 
           <!-- BADGES WIDGET -->
@@ -368,22 +368,22 @@
 
       <div class="stats-grid profile-stats">
         <div class="stat-card">
-          <div class="stat-icon">🌾</div>
+          <div class="stat-icon"></div>
           <div class="stat-value" id="pStatXP">0</div>
           <div class="stat-label">Total XP</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">🔥</div>
+          <div class="stat-icon"></div>
           <div class="stat-value" id="pStatStreak">0</div>
           <div class="stat-label">Streak</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">📖</div>
+          <div class="stat-icon"></div>
           <div class="stat-value" id="pStatLessons">0</div>
           <div class="stat-label">Lessons</div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">🏅</div>
+          <div class="stat-icon"></div>
           <div class="stat-value" id="pStatBadges">0</div>
           <div class="stat-label">Badges</div>
         </div>
@@ -399,7 +399,7 @@
           <label>DECA Chapter</label>
           <input type="text" id="editChapter" placeholder="e.g., Los Angeles DECA">
         </div>
-        <button class="btn-primary" onclick="saveProfile()">💾 Save Changes</button>
+        <button class="btn-primary" onclick="saveProfile()">Save Changes</button>
       </div>
 
       <div class="widget">
@@ -428,18 +428,18 @@
 <!-- LEVEL UP MODAL -->
 <div class="modal-overlay hidden" id="levelUpModal">
   <div class="modal-box">
-    <div class="modal-emoji" id="modalEmoji">🎉</div>
+    <div class="modal-emoji" id="modalEmoji"></div>
     <h2>You Evolved!</h2>
     <div class="modal-animal" id="modalAnimal">Chick</div>
     <p id="modalMsg">Keep studying to evolve again!</p>
-    <button class="btn-primary" onclick="closeModal('levelUpModal')">Let's Go! 🚜</button>
+    <button class="btn-primary" onclick="closeModal('levelUpModal')">Let's Go!</button>
   </div>
 </div>
 
 <!-- BADGE MODAL -->
 <div class="modal-overlay hidden" id="badgeModal">
   <div class="modal-box">
-    <div class="modal-emoji" id="badgeModalEmoji">🏅</div>
+    <div class="modal-emoji" id="badgeModalEmoji"></div>
     <h2>New Badge Unlocked!</h2>
     <div class="modal-animal" id="badgeModalName">First Hay Bale</div>
     <p id="badgeModalDesc">You completed your first lesson!</p>

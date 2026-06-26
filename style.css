@@ -679,3 +679,24 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.nav-logo {
+    display: flex;
+    align-items: center;   /* Vertically centers everything */
+    gap: 12px;
+}
+
+.logo-icon {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    display: block;
+}
+
+.logo-text {
+    color: white;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;        /* Prevents the text from sitting too low */
+    margin: 0;
+}

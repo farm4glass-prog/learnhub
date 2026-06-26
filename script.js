@@ -458,10 +458,6 @@ function renderFilteredCourses(list) {
     card.innerHTML = `
     <img class="cc-image" src="${course.image}" alt="${course.title}">
       <div class="cc-body">
-        <div class="cc-tags">
-          <span class="cc-category" style="color:${course.color};border-color:${course.color};">${course.category || "DECA"}</span>
-          <span class="cc-level ${levelClass}">${course.level}</span>
-        </div>
         <div class="cc-title">${course.emoji} ${course.title}</div>
         <div class="cc-desc">${course.description}</div>
         <div class="cc-meta">

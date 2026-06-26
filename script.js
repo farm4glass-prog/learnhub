@@ -32,13 +32,13 @@ const provider = new GoogleAuthProvider();
 
 // ========================= FARM ANIMALS =========================
 const ANIMALS = [
-  { emoji: "🐣", name: "Baby Goat",    tagline: "Just hatched on the farm!",           xpNeeded: 100,  level: 1 },
-  { emoji: "🐔", name: "Chick",        tagline: "Finding your feed!",                  xpNeeded: 250,  level: 2 },
+  { name: "Baby Goat",    tagline: "Just hatched on the farm!",           xpNeeded: 100,  level: 1 },
+  { name: "Chick",        tagline: "Finding your feed!",                  xpNeeded: 250,  level: 2 },
   { icon: "fa-solid fa-sheep", name: "Lamb",         tagline: "Flocking to knowledge!",              xpNeeded: 500,  level: 3 },
   { img: "/assets/animals/goat.png", name: "Goat",         tagline: "Climbing the competition mountain!",  xpNeeded: 900,  level: 4 },
-  { emoji: "🐄", name: "Cow",          tagline: "Mooo-ving up in the world!",          xpNeeded: 1500, level: 5 },
-  { emoji: "🐂", name: "Bull",         tagline: "Unstoppable on the DECA stage!",      xpNeeded: 2500, level: 6 },
-  { emoji: "🏆", name: "Champion",     tagline: "The farm's greatest legend!",         xpNeeded: Infinity, level: 7 }
+  { name: "Cow",          tagline: "Mooo-ving up in the world!",          xpNeeded: 1500, level: 5 },
+  { name: "Bull",         tagline: "Unstoppable on the DECA stage!",      xpNeeded: 2500, level: 6 },
+  { name: "Champion",     tagline: "The farm's greatest legend!",         xpNeeded: Infinity, level: 7 }
 ];
 
 function getAnimal(xp) {
@@ -59,14 +59,14 @@ function getAnimalForXP(xp) {
 
 // ========================= BADGES =========================
 const BADGES = [
-  { id: "first-hay-bale",   emoji: "🌾", name: "First Hay Bale",   desc: "Complete your first lesson",           check: (u) => u.completedLessons?.length >= 1 },
-  { id: "barn-burner",      emoji: "🔥", name: "Barn Burner",      desc: "Reach a 3-day streak",                check: (u) => u.streak >= 3 },
-  { id: "monthly-moo",      emoji: "🐄", name: "Monthly Moo",      desc: "Earn 500 XP",                         check: (u) => u.xp >= 500 },
-  { id: "top-rooster",      emoji: "🐓", name: "Top Rooster",      desc: "Complete 10 lessons",                 check: (u) => u.completedLessons?.length >= 10 },
-  { id: "harvest-hero",     emoji: "🏆", name: "Harvest Hero",     desc: "Finish an entire course",             check: (u, courses) => checkCourseComplete(u, courses) },
-  { id: "field-hand",       emoji: "👐", name: "Field Hand",       desc: "Complete your first quiz",            check: (u) => u.completedQuizzes >= 1 },
-  { id: "ranch-legend",     emoji: "🌟", name: "Ranch Legend",     desc: "Earn 1000 XP",                        check: (u) => u.xp >= 1000 },
-  { id: "top-of-pasture",   emoji: "🥇", name: "Top of the Pasture", desc: "Reach a 7-day streak",              check: (u) => u.streak >= 7 },
+  { id: "first-hay-bale", name: "First Hay Bale",   desc: "Complete your first lesson",           check: (u) => u.completedLessons?.length >= 1 },
+  { id: "barn-burner", name: "Barn Burner",      desc: "Reach a 3-day streak",                check: (u) => u.streak >= 3 },
+  { id: "monthly-moo", name: "Monthly Moo",      desc: "Earn 500 XP",                         check: (u) => u.xp >= 500 },
+  { id: "top-rooster", name: "Top Rooster",      desc: "Complete 10 lessons",                 check: (u) => u.completedLessons?.length >= 10 },
+  { id: "harvest-hero", name: "Harvest Hero",     desc: "Finish an entire course",             check: (u, courses) => checkCourseComplete(u, courses) },
+  { id: "field-hand", name: "Field Hand",       desc: "Complete your first quiz",            check: (u) => u.completedQuizzes >= 1 },
+  { id: "ranch-legend", name: "Ranch Legend",     desc: "Earn 1000 XP",                        check: (u) => u.xp >= 1000 },
+  { id: "top-of-pasture", name: "Top of the Pasture", desc: "Reach a 7-day streak",              check: (u) => u.streak >= 7 },
 ];
 
 function checkCourseComplete(userData, courses) {
@@ -254,7 +254,6 @@ function renderSidebar() {
   const tierXP = animal.xpNeeded === Infinity ? 999 : animal.xpNeeded - prevXP;
   const fill = animal.xpNeeded === Infinity ? 100 : Math.min(100, ((userData.xp - prevXP) / tierXP) * 100);
 
-  document.getElementById("saEmoji").textContent = animal.emoji;
   document.getElementById("saName").textContent = animal.name;
   document.getElementById("saXp").textContent = `${userData.xp} / ${animal.xpNeeded === Infinity ? "MAX" : animal.xpNeeded} XP`;
   document.getElementById("saFill").style.width = fill + "%";
@@ -278,16 +277,13 @@ function renderDashboard() {
   // Stats
   document.getElementById("statXP").textContent = userData.xp;
   document.getElementById("statStreak").textContent = userData.streak;
-  document.getElementById("statAnimalIcon").textContent = animal.emoji;
   document.getElementById("statAnimalName").textContent = animal.name;
   document.getElementById("statLessons").textContent = (userData.completedLessons || []).length;
 
   // Animal card
-  document.getElementById("acEmoji").textContent = animal.emoji;
   document.getElementById("acName").textContent = animal.name;
   document.getElementById("acTagline").textContent = `"${animal.tagline}"`;
   document.getElementById("acLevel").textContent = `Level ${animal.level}`;
-  document.getElementById("acNextEmoji").textContent = next.emoji;
   document.getElementById("acNextName").textContent = next.name;
   document.getElementById("acXP").textContent = userData.xp;
 
@@ -323,7 +319,7 @@ function renderFeaturedCourses() {
     row.className = "pasture-row";
     row.onclick = () => openCourse(course.id);
     row.innerHTML = `
-      <div class="pasture-icon" style="background:${course.color}22;">${course.emoji || "📚"}</div>
+      <div class="pasture-icon" style="background:${course.color}22;">${course.emoji || ""}</div>
       <div class="pasture-info">
         <div class="pasture-title">${course.title}</div>
         <div class="pasture-pct">${pct}% complete</div>
@@ -359,7 +355,7 @@ function renderStreakWidget() {
   document.getElementById("streakNum").textContent = userData.streak;
   document.getElementById("bestStreakBadge").textContent = `🏆 Best: ${userData.bestStreak || 0}d`;
   document.getElementById("streakMsg").textContent =
-    userData.streak > 0 ? `${userData.streak} day streak! Keep it up! 🔥` : "Start your streak today! 🌱";
+    userData.streak > 0 ? `${userData.streak} day streak! Keep it up! ` : "Start your streak today! ";
 }
 
 function renderBadgesWidget() {
@@ -376,7 +372,7 @@ function renderBadgesWidget() {
     const div = document.createElement("div");
     div.className = "badge-item";
     div.innerHTML = `
-      <div class="badge-icon-wrap ${has ? "unlocked" : "locked"}">${badge.emoji}</div>
+      <div class="badge-icon-wrap ${has ? "unlocked" : "locked"}"></div>
       <div class="badge-name">${badge.name}</div>
     `;
     container.appendChild(div);
@@ -488,7 +484,7 @@ window.openCourse = function(id) {
     <div class="lesson-view-wrap">
       <div class="lv-back" onclick="showTab('courses')">← Back to Courses</div>
       <div class="lv-header">
-        <h1>${course.emoji} ${course.title}</h1>
+        <h1>${course.name} ${course.title}</h1>
         <div class="lv-desc">${course.description}</div>
       </div>
       <div class="lessons-list">
@@ -667,16 +663,16 @@ async function renderQuizResults() {
   const pct = Math.round((score / questions.length) * 100);
   const passed = pct >= 60;
   const xpEarned = passed ? lesson.xp : Math.round(lesson.xp * 0.3);
-  const emoji = pct === 100 ? "🏆" : pct >= 80 ? "🌟" : pct >= 60 ? "✅" : "📚";
+  const emoji = pct === 100 ? "" : pct >= 80 ? "" : pct >= 60 ? "" : "";
 
   const container = document.getElementById("lessonViewContent");
   container.innerHTML = `
     <div class="quiz-wrap">
       <div class="quiz-results">
-        <div class="results-emoji">${emoji}</div>
+        <div class="results-emoji"></div>
         <div class="results-title">${pct === 100 ? "Perfect Score!" : pct >= 80 ? "Great Job!" : pct >= 60 ? "Good Work!" : "Keep Studying!"}</div>
         <div class="results-score">${score} / ${questions.length} correct (${pct}%)</div>
-        <div class="results-xp">+${xpEarned} XP Earned 🌾</div>
+        <div class="results-xp">+${xpEarned} XP Earned </div>
         <div class="results-btns">
           <button class="btn-primary" onclick="retakeQuiz()">Retake Quiz</button>
           <button class="btn-primary" onclick="openCourse('${course.id}')">Back to Course</button>
@@ -791,7 +787,7 @@ async function renderLeaderboard() {
       row.className = `lb-row${isYou ? " you" : ""}`;
       row.innerHTML = `
         <div class="lb-rank ${rankClass}">${i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i+1}`}</div>
-        <div class="lb-avatar">${animal.emoji}</div>
+        <div class="lb-avatar">${animal.name}</div>
         <div class="lb-info">
           <div class="lb-name">${u.displayName || "DECA Student"}${isYou ? " (You)" : ""}</div>
           <div class="lb-chapter">${u.chapter || "No chapter set"} · ${animal.name}</div>
@@ -837,7 +833,7 @@ function renderProfile() {
   document.getElementById("profileName").textContent = userData.displayName || "DECA Student";
   document.getElementById("profileEmail").textContent = userData.email || "";
   const animal = getAnimalForXP(userData.xp);
-  document.getElementById("profileLevel").textContent = `${animal.emoji} ${animal.name} · ${userData.xp} XP`;
+  document.getElementById("profileLevel").textContent = `${animal.name} ${animal.name} · ${userData.xp} XP`;
 
   document.getElementById("pStatXP").textContent = userData.xp;
   document.getElementById("pStatStreak").textContent = userData.streak;
@@ -857,7 +853,7 @@ function renderProfile() {
       const div = document.createElement("div");
       div.className = "badge-item-large";
       div.innerHTML = `
-        <div class="badge-icon-lg ${has ? "unlocked" : "locked"}">${badge.emoji}</div>
+        <div class="badge-icon-lg ${has ? "unlocked" : "locked"}"></div>
         <div class="badge-name-lg">${badge.name}</div>
       `;
       div.title = badge.desc;
@@ -948,8 +944,8 @@ function showXPToast(xp) {
 
 // ========================= LEVEL UP MODAL =========================
 function showLevelUpModal(animal) {
-  document.getElementById("modalEmoji").textContent = "🎉";
-  document.getElementById("modalAnimal").textContent = `${animal.emoji} ${animal.name}`;
+  document.getElementById("modalEmoji").textContent = "";
+  document.getElementById("modalAnimal").textContent = `${animal.name} ${animal.name}`;
   document.getElementById("modalMsg").textContent = `You evolved into a ${animal.name}! Keep studying to evolve again!`;
   document.getElementById("levelUpModal").classList.remove("hidden");
 }

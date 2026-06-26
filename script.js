@@ -32,13 +32,13 @@ const provider = new GoogleAuthProvider();
 
 // ========================= FARM ANIMALS =========================
 const ANIMALS = [
-  { name: "Baby Goat",    tagline: "Just hatched on the farm!",           xpNeeded: 100,  level: 1 },
-  { name: "Chick",        tagline: "Finding your feed!",                  xpNeeded: 250,  level: 2 },
-  { icon: "fa-solid fa-sheep", name: "Lamb",         tagline: "Flocking to knowledge!",              xpNeeded: 500,  level: 3 },
-  { img: "/assets/animals/goat.png", name: "Goat",         tagline: "Climbing the competition mountain!",  xpNeeded: 900,  level: 4 },
-  { name: "Cow",          tagline: "Mooo-ving up in the world!",          xpNeeded: 1500, level: 5 },
-  { name: "Bull",         tagline: "Unstoppable on the DECA stage!",      xpNeeded: 2500, level: 6 },
-  { name: "Champion",     tagline: "The farm's greatest legend!",         xpNeeded: Infinity, level: 7 }
+  { name: "Chick",    tagline: "Just hatched! Every champion starts somewhere.",           xpNeeded: 100,  level: 1 },
+  { name: "Duckling",        tagline: "Finding your footing and building confidence.",                  xpNeeded: 250,  level: 2 },
+  { name: "Sheep",         tagline: "Growing steadily through consistent practice.",              xpNeeded: 500,  level: 3 },
+  { name: "Pig",         tagline: "Climbing the competition mountain!",  xpNeeded: 900,  level: 4 },
+  { name: "Bee",          tagline: "Busy bee grinding in DECA!",          xpNeeded: 1500, level: 5 },
+  { name: "Cow",         tagline: "Mooo-ving up in the DECA world!",      xpNeeded: 2500, level: 6 },
+  { name: "Goat",     tagline: "The farm's greatest of all time!",         xpNeeded: Infinity, level: 7 }
 ];
 
 function getAnimal(xp) {
@@ -270,9 +270,9 @@ function renderDashboard() {
 
   // Greeting
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Mornin'" : hour < 17 ? "Howdy" : "Evenin'";
+  const greeting = hour < 12 ? "Morning" : hour < 17 ? "Good Afternoon" : "Evenin";
   const name = (userData.displayName || "Farmer").split(" ")[0];
-  document.getElementById("dashGreeting").textContent = `${greeting}, ${name}! 🌾`;
+  document.getElementById("dashGreeting").textContent = `${greeting}, ${name}! `;
 
   // Stats
   document.getElementById("statXP").textContent = userData.xp;
@@ -334,7 +334,7 @@ function renderFeaturedCourses() {
 }
 
 function renderStreakWidget() {
-  const days = ["Mo","Tu","We","Th","Fr","Sa","Su"];
+  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
   const todayIdx = (new Date().getDay() + 6) % 7; // 0=Mon
   const container = document.getElementById("streakDays");
   if (!container) return;
@@ -353,7 +353,7 @@ function renderStreakWidget() {
   });
 
   document.getElementById("streakNum").textContent = userData.streak;
-  document.getElementById("bestStreakBadge").textContent = `🏆 Best: ${userData.bestStreak || 0}d`;
+  document.getElementById("bestStreakBadge").textContent = `Best: ${userData.bestStreak || 0}d`;
   document.getElementById("streakMsg").textContent =
     userData.streak > 0 ? `${userData.streak} day streak! Keep it up! ` : "Start your streak today! ";
 }
@@ -388,12 +388,12 @@ function renderCourseGrid() {
   if (!container) return;
 
   if (!coursesLoaded) {
-    container.innerHTML = `<div class="lb-loading">Loading courses... 🐐</div>`;
+    container.innerHTML = `<div class="lb-loading">Loading courses... </div>`;
     return;
   }
 
   if (!courses.length) {
-    container.innerHTML = `<div class="lb-loading">No courses found. 🌱</div>`;
+    container.innerHTML = `<div class="lb-loading">No courses found. </div>`;
     return;
   }
 
@@ -534,7 +534,7 @@ function openVideoLesson(course, lesson) {
         <h2>${lesson.title}</h2>
         <div class="vl-meta">🎬 Video lesson · ${lesson.duration} · +${lesson.xp} XP on completion</div>
         <button class="complete-btn" id="completeBtn" onclick="completeLesson('${lesson.id}', ${lesson.xp})" ${isCompleted ? "disabled" : ""}>
-          ${isCompleted ? "✓ Completed" : "✅ Mark as Complete (+"+lesson.xp+" XP)"}
+          ${isCompleted ? "✓ Completed" : "Mark as Complete (+"+lesson.xp+" XP)"}
         </button>
       </div>
     </div>
@@ -786,7 +786,7 @@ async function renderLeaderboard() {
       const row = document.createElement("div");
       row.className = `lb-row${isYou ? " you" : ""}`;
       row.innerHTML = `
-        <div class="lb-rank ${rankClass}">${i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i+1}`}</div>
+        <div class="lb-rank ${rankClass}">${i === 0 ? "" : i === 1 ? "" : i === 2 ? "" : `#${i+1}`}</div>
         <div class="lb-avatar">${animal.name}</div>
         <div class="lb-info">
           <div class="lb-name">${u.displayName || "DECA Student"}${isYou ? " (You)" : ""}</div>
@@ -867,7 +867,7 @@ function renderProfile() {
     cl.innerHTML = "";
     const completedIds = userData.completedLessons || [];
     if (completedIds.length === 0) {
-      cl.innerHTML = '<div style="color:var(--muted);font-size:14px;">No lessons completed yet. Start learning! 🌱</div>';
+      cl.innerHTML = '<div style="color:var(--muted);font-size:14px;">No lessons completed yet. Start learning!</div>';
     } else {
       completedIds.forEach(id => {
         const course = courses.find(c => c.lessons.some(l => l.id === id));
@@ -875,7 +875,7 @@ function renderProfile() {
         if (!lesson) return;
         const div = document.createElement("div");
         div.className = "completed-item";
-        div.innerHTML = `<span>✅</span><span>${lesson.title}</span><span style="color:var(--muted);font-size:12px;margin-left:auto;">${course?.title}</span>`;
+        div.innerHTML = `<span></span><span>${lesson.title}</span><span style="color:var(--muted);font-size:12px;margin-left:auto;">${course?.title}</span>`;
         cl.appendChild(div);
       });
     }
@@ -896,7 +896,7 @@ window.saveProfile = async function() {
     renderSidebar();
     renderDashboard();
     renderProfile();
-    alert("✅ Profile saved!");
+    alert("Profile saved!");
   } catch (e) {
     console.error("Failed to save profile:", e);
     alert("Couldn't save your profile — check the console for details.");
@@ -937,7 +937,7 @@ window.toggleSidebar = function() {
 function showXPToast(xp) {
   const toast = document.getElementById("xpToast");
   if (!toast) return;
-  toast.textContent = `+${xp} XP 🌾`;
+  toast.textContent = `+${xp} XP`;
   toast.classList.remove("hidden");
   setTimeout(() => toast.classList.add("hidden"), 2500);
 }

@@ -41,7 +41,7 @@ body {
 }
 .nav-logo { color: white; font-size: 22px; font-weight: 800; }
 .nav-links { display: flex; align-items: center; gap: 28px; }
-.nav-links a { color: rgba(255,255,255,0.75); text-decoration: none; font-weight: 600; font-size: 14px; transition: color 0.2s; }
+.nav-links a { color: white; text-decoration: none; font-weight: 800; font-size: 22px; transition: color 0.2s; }
 .nav-links a:hover { color: white; }
 .nav-login-btn {
   background: var(--blue); color: white; border: none;

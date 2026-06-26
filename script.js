@@ -204,13 +204,6 @@ fetch("courses.json")
         "#06b6d4"
       ][courseIndex % 6],
 
-      emoji: [
-        "📈","💰","🏨","🏢","📊",
-        "🚀","💳","🎨","🖌️","📚",
-        "👤","🤝","💵","🔬","📋",
-        "💡","📣","💻","📉"
-      ][courseIndex % 19],
-
       level: "Beginner",
       duration: "Self-paced",
 
@@ -458,7 +451,7 @@ function renderFilteredCourses(list) {
     card.innerHTML = `
     <img class="cc-image" src="${course.image}" alt="${course.title}">
       <div class="cc-body">
-        <div class="cc-title">${course.emoji} ${course.title}</div>
+        <div class="cc-title">${course.title}</div>
         <div class="cc-desc">${course.description}</div>
         <div class="cc-meta">
           <span>📖 ${course.lessons.length} lessons</span>

@@ -195,15 +195,8 @@
   },
   {
     "id": "branding-basics",
-    "title": "Branding Basics (Canva)",
-    "description": "Learn Canva and branding fundamentals.",
-    "progress": 0,
-    "lessons": []
-  },
-  {
-    "id": "adobe",
-    "title": "Using Adobe",
-    "description": "Adobe Creative Cloud fundamentals.",
+    "title": "Branding",
+    "description": "Learn branding fundamentals using Canva/Adobe.",
     "progress": 0,
     "lessons": []
   },

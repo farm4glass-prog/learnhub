@@ -7,104 +7,564 @@
     "progress": 0,
     "lessons": [
       {
+        "id": "marketing-u1-video",
         "title": "Unit 1: Business Law",
         "type": "youtube",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u1-quiz",
+        "title": "Unit 1: Business Law \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u2-video",
         "title": "Unit 2: Channel Management",
         "type": "youtube",
-        "url": "https://youtu.be/cIgvNlEUplg?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/cIgvNlEUplg?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u2-quiz",
+        "title": "Unit 2: Channel Management \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u3-video",
         "title": "Unit 3: Communications",
         "type": "youtube",
-        "url": "https://youtu.be/B7tJkVPK_DA?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/B7tJkVPK_DA?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u3-quiz",
+        "title": "Unit 3: Communications \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u4-video",
         "title": "Unit 4: Customer Relations",
         "type": "youtube",
-        "url": "https://youtu.be/GGaRv1ZPlzs?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/GGaRv1ZPlzs?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u4-quiz",
+        "title": "Unit 4: Customer Relations \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u5-video",
         "title": "Unit 5: Economics",
         "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u5-quiz",
+        "title": "Unit 5: Economics \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u6-video",
         "title": "Unit 6: Emotional Intelligence",
         "type": "youtube",
-        "url": "https://youtu.be/IRkqezjVpN0"
+        "url": "https://youtu.be/IRkqezjVpN0",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u6-quiz",
+        "title": "Unit 6: Emotional Intelligence \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u7-video",
         "title": "Unit 7: Entrepreneurship",
         "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u7-quiz",
+        "title": "Unit 7: Entrepreneurship \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u8-video",
         "title": "Unit 8: Financial Analysis",
         "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u8-quiz",
+        "title": "Unit 8: Financial Analysis \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u9-video",
         "title": "Unit 9: Human Resource Management",
         "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u9-quiz",
+        "title": "Unit 9: Human Resource Management \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u10-video",
         "title": "Unit 10: Information Management",
         "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u10-quiz",
+        "title": "Unit 10: Information Management \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u11-video",
         "title": "Unit 11: Market Planning",
         "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u11-quiz",
+        "title": "Unit 11: Market Planning \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u12-video",
         "title": "Unit 12: Marketing",
         "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u12-quiz",
+        "title": "Unit 12: Marketing \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u13-video",
         "title": "Unit 13: Marketing-Information Management",
         "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u13-quiz",
+        "title": "Unit 13: Marketing-Information Management \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u14-video",
         "title": "Unit 14: Operations",
         "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u14-quiz",
+        "title": "Unit 14: Operations \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u15-video",
         "title": "Unit 15: Pricing",
         "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u15-quiz",
+        "title": "Unit 15: Pricing \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u16-video",
         "title": "Unit 16: Product/Service Management",
         "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u16-quiz",
+        "title": "Unit 16: Product/Service Management \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u17-video",
         "title": "Unit 17: Professional Development",
         "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u17-quiz",
+        "title": "Unit 17: Professional Development \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u18-video",
         "title": "Unit 18: Promotion",
         "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u18-quiz",
+        "title": "Unit 18: Promotion \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u19-video",
         "title": "Unit 19: Selling",
         "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "marketing-u19-quiz",
+        "title": "Unit 19: Selling \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "marketing-u20-video",
         "title": "Unit 20: Strategic Management",
         "type": "youtube",
-        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t"
+        "url": "https://youtu.be/gK0exV9YSP8?list=PL4aR3Sy4aIL9PHxBAAouKSjdpm6Flyf2t",
+        "xp": 25,
+        "duration": "10 min"
+      },
+      {
+        "id": "marketing-u20-quiz",
+        "title": "Unit 20: Strategic Management \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
       }
     ]
   },
@@ -116,14 +576,60 @@
     "progress": 0,
     "lessons": [
       {
+        "id": "finance-u1-video",
         "title": "Unit 1: Business Law",
         "type": "youtube",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "finance-u1-quiz",
+        "title": "Unit 1: Business Law \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "finance-u2-video",
         "title": "Unit 2: Communications",
         "type": "youtube",
-        "url": "https://youtu.be/Zh4Jd78X0dQ?list=PL4aR3Sy4aIL_6UFvdAhCpyb-dlo2FIxZw"
+        "url": "https://youtu.be/Zh4Jd78X0dQ?list=PL4aR3Sy4aIL_6UFvdAhCpyb-dlo2FIxZw",
+        "xp": 25,
+        "duration": "10 min"
+      },
+      {
+        "id": "finance-u2-quiz",
+        "title": "Unit 2: Communications \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
       }
     ]
   },
@@ -135,14 +641,60 @@
     "progress": 0,
     "lessons": [
       {
+        "id": "hospitality-u1-video",
         "title": "Unit 1: Business Law",
         "type": "youtube",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "hospitality-u1-quiz",
+        "title": "Unit 1: Business Law \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "hospitality-u2-video",
         "title": "Unit 2: Communications",
         "type": "youtube",
-        "url": "https://youtu.be/Zh4Jd78X0dQ?list=PL4aR3Sy4aIL_6UFvdAhCpyb-dlo2FIxZw"
+        "url": "https://youtu.be/Zh4Jd78X0dQ?list=PL4aR3Sy4aIL_6UFvdAhCpyb-dlo2FIxZw",
+        "xp": 25,
+        "duration": "10 min"
+      },
+      {
+        "id": "hospitality-u2-quiz",
+        "title": "Unit 2: Communications \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
       }
     ]
   },
@@ -154,14 +706,60 @@
     "progress": 0,
     "lessons": [
       {
+        "id": "business-admin-core-u1-video",
         "title": "Unit 1: Business Law",
         "type": "youtube",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "business-admin-core-u1-quiz",
+        "title": "Unit 1: Business Law \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "business-admin-core-u2-video",
         "title": "Unit 2: Communications",
         "type": "youtube",
-        "url": "https://youtu.be/Zh4Jd78X0dQ?list=PL4aR3Sy4aIL_6UFvdAhCpyb-dlo2FIxZw"
+        "url": "https://youtu.be/Zh4Jd78X0dQ?list=PL4aR3Sy4aIL_6UFvdAhCpyb-dlo2FIxZw",
+        "xp": 25,
+        "duration": "10 min"
+      },
+      {
+        "id": "business-admin-core-u2-quiz",
+        "title": "Unit 2: Communications \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
       }
     ]
   },
@@ -173,14 +771,60 @@
     "progress": 0,
     "lessons": [
       {
+        "id": "business-management-u1-video",
         "title": "Unit 1: Business Law",
         "type": "youtube",
-        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE"
+        "url": "https://www.youtube.com/watch?v=_eWk3tz2KmE",
+        "xp": 25,
+        "duration": "10 min"
       },
       {
+        "id": "business-management-u1-quiz",
+        "title": "Unit 1: Business Law \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
+      },
+      {
+        "id": "business-management-u2-video",
         "title": "Unit 2: Communications",
         "type": "youtube",
-        "url": "https://youtu.be/Zh4Jd78X0dQ?list=PL4aR3Sy4aIL_6UFvdAhCpyb-dlo2FIxZw"
+        "url": "https://youtu.be/Zh4Jd78X0dQ?list=PL4aR3Sy4aIL_6UFvdAhCpyb-dlo2FIxZw",
+        "xp": 25,
+        "duration": "10 min"
+      },
+      {
+        "id": "business-management-u2-quiz",
+        "title": "Unit 2: Communications \u2014 Practice Quiz",
+        "type": "quiz",
+        "xp": 25,
+        "duration": "5 min",
+        "questions": [
+          {
+            "q": "Practice questions for this unit haven't been added yet.",
+            "options": [
+              "Check back soon",
+              "Ask your chapter advisor",
+              "Review the video again",
+              "Keep studying!"
+            ],
+            "answer": 0,
+            "explanation": "An admin can add real practice questions for this unit from the Admin tab."
+          }
+        ]
       }
     ]
   },

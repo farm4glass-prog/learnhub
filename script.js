@@ -19,7 +19,7 @@ const firebaseConfig = {
   measurementId: "G-27SR58HRSZ"
 };
 
-const ADMIN_EMAILS = ["farm4glass@gmail.com", "aarushig307@gmail.com"];
+const ADMIN_EMAILS = ["farm4glass@gmail.com"];
 
 function isAdmin(user) {
   return user && ADMIN_EMAILS.includes(user.email);

@@ -2,6 +2,7 @@
   {
     "id": "marketing",
     "title": "Marketing Cluster Exam",
+    "group": "cluster",
     "description": "Master the key concepts tested on the DECA Marketing Cluster Exam. This course has organized all of the units by the 2026-2027 DECA Exam Blueprints.",
     "progress": 0,
     "lessons": [
@@ -110,6 +111,7 @@
   {
     "id": "finance",
     "title": "Finance Cluster Exam",
+    "group": "cluster",
     "description": "Master the key concepts tested on the DECA Finance Cluster Exam. This course has organized all of the units by the 2026-2027 DECA Exam Blueprints.",
     "progress": 0,
     "lessons": [
@@ -128,6 +130,7 @@
   {
     "id": "hospitality",
     "title": "Hospitality + Tourism Cluster Exam",
+    "group": "cluster",
     "description": "Master the key concepts tested on the DECA Hospitality Cluster Exam. This course has organized all of the units by the 2026-2027 DECA Exam Blueprints.",
     "progress": 0,
     "lessons": [
@@ -146,6 +149,7 @@
   {
     "id": "business-admin-core",
     "title": "Business Administration Core Cluster Exam",
+    "group": "cluster",
     "description": "Master the key concepts tested on the DECA Business Administration Core Cluster Exam. This course has organized all of the units by the 2026-2027 DECA Exam Blueprints.",
     "progress": 0,
     "lessons": [
@@ -164,6 +168,7 @@
   {
     "id": "business-management",
     "title": "Business Management + Administration Cluster Exam",
+    "group": "cluster",
     "description": "Master the key concepts tested on the DECA Business Management + Administration Cluster Exam. This course has organized all of the units by the 2026-2027 DECA Exam Blueprints.",
     "progress": 0,
     "lessons": [
@@ -182,6 +187,7 @@
   {
     "id": "entrepreneurship-cluster",
     "title": "Entrepreneurship Cluster Exam",
+    "group": "cluster",
     "description": "Master the key concepts tested on the DECA Entrepreneurship Cluster Exam. This course has organized all of the units by the 2026-2027 DECA Exam Blueprints.",
     "progress": 0,
     "lessons": []
@@ -189,6 +195,7 @@
   {
     "id": "pfl-cluster",
     "title": "Personal Financial Literacy Cluster Exam",
+    "group": "cluster",
     "description": "Financial literacy preparation.",
     "progress": 0,
     "lessons": []
@@ -196,6 +203,7 @@
   {
     "id": "branding-basics",
     "title": "Branding",
+    "group": "branding",
     "description": "Learn branding fundamentals using Canva/Adobe.",
     "progress": 0,
     "lessons": []
@@ -203,6 +211,7 @@
   {
     "id": "principles",
     "title": "Principles of Business Administration Events",
+    "group": "role-play",
     "description": "Prepare for principles events.",
     "progress": 0,
     "lessons": []
@@ -210,6 +219,7 @@
   {
     "id": "individual-series",
     "title": "Individual Series Events",
+    "group": "role-play",
     "description": "Individual series event preparation.",
     "progress": 0,
     "lessons": []
@@ -217,6 +227,7 @@
   {
     "id": "team-decision",
     "title": "Team Decision Making Events",
+    "group": "role-play",
     "description": "Team decision making preparation.",
     "progress": 0,
     "lessons": []
@@ -224,6 +235,7 @@
   {
     "id": "pfl-event",
     "title": "Personal Financial Literacy Event",
+    "group": "role-play",
     "description": "PFL event preparation.",
     "progress": 0,
     "lessons": []
@@ -231,6 +243,7 @@
   {
     "id": "business-research",
     "title": "Business Operations Research Events",
+    "group": "prepared event",
     "description": "Research event preparation.",
     "progress": 0,
     "lessons": []
@@ -238,6 +251,7 @@
   {
     "id": "project-management",
     "title": "Project Management Events",
+    "group": "prepared event",
     "description": "Project management competition prep.",
     "progress": 0,
     "lessons": []
@@ -245,6 +259,7 @@
   {
     "id": "entrepreneurship-events",
     "title": "Entrepreneurship Events",
+    "group": "prepared event",
     "description": "Entrepreneurship event preparation.",
     "progress": 0,
     "lessons": []
@@ -252,6 +267,7 @@
   {
     "id": "integrated-marketing",
     "title": "Integrated Marketing Campaign Events",
+    "group": "prepared event",
     "description": "Integrated marketing preparation.",
     "progress": 0,
     "lessons": []
@@ -259,6 +275,7 @@
   {
     "id": "virtual-business",
     "title": "Virtual Business Challenge",
+    "group": "online simulation",
     "description": "Virtual Business Challenge preparation.",
     "progress": 0,
     "lessons": []
@@ -266,6 +283,7 @@
   {
     "id": "stock-market",
     "title": "Stock Market Game",
+    "group": "online simulation",
     "description": "Stock Market Game preparation.",
     "progress": 0,
     "lessons": []

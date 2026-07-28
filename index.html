@@ -151,16 +151,8 @@
       <h3>Hannah Kow</h3>
       <span>Co-Founder</span>
       <p>
-        Hannah Kow is an incoming junior at West Ranch High School in 
-        Santa Clarita, CA. She serves as the Co-President of West Ranch DECA a
-        nd VP of Marketing for the Southern California District Action Team. On the 
-        district side, she runs content for the SoCal DAT Instagram: designing posts 
-        that engage and spotlight members  (@socaldeca). Within her chapter, Hannah 
-        loves spending time mentoring fellow officers and members while maximizing 
-        fundraising, community, and competitive prep within West Ranch. On the competition 
-        side, she’s earned 1st Place glass in PEN at SoCal CDC and a top-5 finish in ACT. 
-        Through Farm 4 Glass, she wants to help members navigate competition prep and DECA 
-        leadership! She would love to connect on Instagram (@deca.kow)
+        Leads platform development and creates new features that make
+        studying more engaging and effective.
       </p>
     </div>
 
@@ -219,6 +211,10 @@
 
   <button class="nav-btn" onclick="showTab('profile')" id="nav-profile">
     Profile
+  </button>
+
+  <button class="nav-btn hidden" onclick="showTab('admin')" id="nav-admin">
+    Admin
   </button>
 
 </div>
@@ -418,13 +414,15 @@
       </div>
     </div>
 
+    <!-- ===== ADMIN ===== -->
+    <div id="admin" class="tab-content hidden">
+      <h1>Admin Panel</h1>
+      <p class="page-sub">Manage course videos and practice quizzes. Only visible to admin accounts.</p>
+      <div id="adminContent"></div>
+    </div>
+
   </div><!-- /main -->
 
-<!-- 👇 PUT ADMIN PANEL RIGHT HERE -->
-  <div id="adminPanel" class="tab-content hidden">
-      <h1>Admin Panel</h1>
-  </div>
-  
 </div><!-- /portal -->
 
 <!-- XP TOAST -->
@@ -444,7 +442,7 @@
 <!-- BADGE MODAL -->
 <div class="modal-overlay hidden" id="badgeModal">
   <div class="modal-box">
-    <div class="modal-emoji" id="badgeModalEmoji"></div>
+    <div class="badge-modal-icon" id="badgeModalIcon"></div>
     <h2>New Badge Unlocked!</h2>
     <div class="modal-animal" id="badgeModalName">First Hay Bale</div>
     <p id="badgeModalDesc">You completed your first lesson!</p>

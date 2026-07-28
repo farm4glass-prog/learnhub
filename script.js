@@ -30,6 +30,44 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
+// ========================= ICONS (inline SVG, no emoji) =========================
+// Every icon is a small stroke-based SVG string. Rendered via .icon-svg wrapper.
+const ICONS = {
+  play: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/></svg>`,
+  quiz: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 9h.01M8 13h.01M8 17h.01"/><path d="M12 9h5M12 13h5M12 17h5"/></svg>`,
+  book: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,
+  users: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  clipboard: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg>`,
+  monitor: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
+  palette: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.4-.3-.4-.5-.9-.5-1.4 0-1.1.9-2 2-2h2.3A4.2 4.2 0 0 0 21 12c0-5-4-9-9-9z"/><circle cx="7.5" cy="10.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="7" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="9" cy="15" r="1.1" fill="currentColor" stroke="none"/></svg>`,
+  flame: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1 3-2 4-2 7a4 4 0 0 0 8 0c0-1-.3-2-1-3 2 1 3 3 3 6a6 6 0 0 1-12 0c0-4 2-5 4-10z"/></svg>`,
+  flag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18"/><path d="M5 4h11l-2 4 2 4H5"/></svg>`,
+  star: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,3 14.7,9.2 21.5,9.8 16.4,14.3 17.9,21 12,17.4 6.1,21 7.6,14.3 2.5,9.8 9.3,9.2"/></svg>`,
+  award: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 13.5 7 22l5-3 5 3-2-8.5"/></svg>`,
+  trophy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v4a4 4 0 0 1-8 0V4z"/><path d="M8 4H4v2a4 4 0 0 0 4 4"/><path d="M16 4h4v2a4 4 0 0 1-4 4"/><path d="M10 15h4v3h-4z"/><path d="M8 21h8"/></svg>`,
+  medal: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="15" r="6"/><path d="M9 10 6 3M15 10l3-7M9 4h6"/></svg>`,
+  zap: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 11,14 9,22 21,10 13,10" fill="currentColor" stroke="none"/></svg>`,
+  trash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg>`,
+  plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`,
+  alert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/></svg>`
+};
+
+function icon(name) {
+  return `<span class="icon-svg">${ICONS[name] || ""}</span>`;
+}
+
+// Map course "group" to an icon (used for course cards + featured/pasture rows)
+const GROUP_ICONS = {
+  "cluster": "book",
+  "role-play": "users",
+  "prepared event": "clipboard",
+  "online simulation": "monitor",
+  "branding": "palette"
+};
+function groupIcon(group) {
+  return GROUP_ICONS[group] || "book";
+}
+
 // ========================= FARM ANIMALS =========================
 const ANIMALS = [
   { name: "Chick",    tagline: "Just hatched! Every champion starts somewhere.",           xpNeeded: 100,  level: 1 },
@@ -59,14 +97,14 @@ function getAnimalForXP(xp) {
 
 // ========================= BADGES =========================
 const BADGES = [
-  { id: "first-hay-bale", name: "First Hay Bale",   desc: "Complete your first lesson",           check: (u) => u.completedLessons?.length >= 1 },
-  { id: "barn-burner", name: "Barn Burner",      desc: "Reach a 3-day streak",                check: (u) => u.streak >= 3 },
-  { id: "monthly-moo", name: "Monthly Moo",      desc: "Earn 500 XP",                         check: (u) => u.xp >= 500 },
-  { id: "top-rooster", name: "Top Rooster",      desc: "Complete 10 lessons",                 check: (u) => u.completedLessons?.length >= 10 },
-  { id: "harvest-hero", name: "Harvest Hero",     desc: "Finish an entire course",             check: (u, courses) => checkCourseComplete(u, courses) },
-  { id: "field-hand", name: "Field Hand",       desc: "Complete your first quiz",            check: (u) => u.completedQuizzes >= 1 },
-  { id: "ranch-legend", name: "Ranch Legend",     desc: "Earn 1000 XP",                        check: (u) => u.xp >= 1000 },
-  { id: "top-of-pasture", name: "Top of the Pasture", desc: "Reach a 7-day streak",              check: (u) => u.streak >= 7 },
+  { id: "first-hay-bale", name: "First Hay Bale",   desc: "Complete your first lesson",           icon: "flag",   check: (u) => u.completedLessons?.length >= 1 },
+  { id: "barn-burner",    name: "Barn Burner",      desc: "Reach a 3-day streak",                 icon: "flame",  check: (u) => u.streak >= 3 },
+  { id: "monthly-moo",    name: "Monthly Moo",      desc: "Earn 500 XP",                          icon: "star",   check: (u) => u.xp >= 500 },
+  { id: "top-rooster",    name: "Top Rooster",      desc: "Complete 10 lessons",                  icon: "award",  check: (u) => u.completedLessons?.length >= 10 },
+  { id: "harvest-hero",   name: "Harvest Hero",     desc: "Finish an entire course",               icon: "trophy", check: (u, courses) => checkCourseComplete(u, courses) },
+  { id: "field-hand",     name: "Field Hand",       desc: "Complete your first quiz",             icon: "quiz",   check: (u) => u.completedQuizzes >= 1 },
+  { id: "ranch-legend",   name: "Ranch Legend",     desc: "Earn 1000 XP",                         icon: "medal",  check: (u) => u.xp >= 1000 },
+  { id: "top-of-pasture", name: "Top of the Pasture", desc: "Reach a 7-day streak",                icon: "zap",    check: (u) => u.streak >= 7 },
 ];
 
 function checkCourseComplete(userData, courses) {
@@ -89,6 +127,7 @@ let currentCourseId = null;
 let currentLesson = null;
 let quizState = {};
 let lbMode = "xp";
+let adminSelectedCourseId = null;
 
 // ========================= LOGIN =========================
 async function loginWithGoogle() {
@@ -104,10 +143,9 @@ document.getElementById("aboutLogin")?.addEventListener("click", loginWithGoogle
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
-    if (user && isAdmin(user)) {
-      console.log("Admin logged in");
-      document.getElementById("adminBtn")?.classList.remove("hidden");
-  }
+
+    document.getElementById("nav-admin")?.classList.toggle("hidden", !isAdmin(user));
+
     document.getElementById("landingPage")?.classList.add("hidden");
     document.getElementById("portal")?.classList.remove("hidden");
 
@@ -155,11 +193,11 @@ onAuthStateChanged(auth, async (user) => {
 function showLoadError(message) {
   const grid = document.getElementById("courseGrid");
   if (grid) {
-    grid.innerHTML = `<div class="lb-loading">⚠️ ${message}</div>`;
+    grid.innerHTML = `<div class="lb-loading">${icon("alert")} ${message}</div>`;
   }
   const dash = document.getElementById("featuredCourses");
   if (dash) {
-    dash.innerHTML = `<div class="lb-loading">⚠️ ${message}</div>`;
+    dash.innerHTML = `<div class="lb-loading">${icon("alert")} ${message}</div>`;
   }
 }
 
@@ -185,53 +223,61 @@ async function updateStreak(userRef) {
   userData.lastActiveDate = today;
 }
 
-// ========================= COURSES LOAD =========================
-fetch("courses.json")
-  .then(r => {
+// ========================= COURSES LOAD (Firestore, seeded from courses.json) =========================
+// Courses now live in the "courses" collection in Firestore so admin edits
+// (new videos, new practice questions) are saved permanently and show up
+// for every user. courses.json is only used to seed the database the very
+// first time (see adminSeedCourses below) or as an offline fallback.
+async function loadCourses() {
+  try {
+    const snap = await getDocs(collection(db, "courses"));
+    if (!snap.empty) {
+      courses = snap.docs.map(d => normalizeCourse(d.data()));
+      coursesLoaded = true;
+      renderCourseGrid();
+      renderFeaturedCourses();
+      if (document.getElementById("admin")?.classList.contains("active")) renderAdminPanel();
+      return;
+    }
+  } catch (e) {
+    console.error("Failed to load courses from Firestore:", e);
+  }
+
+  // Fall back to the bundled courses.json (also what admin "seed" uses)
+  try {
+    const r = await fetch("courses.json");
     if (!r.ok) throw new Error(`courses.json returned ${r.status}`);
-    return r.json();
-  })
-  .then(data => {
-
-    courses = data.map((course, courseIndex) => ({
-      category: "DECA",
-      color: [
-        "#22c55e",
-        "#3b82f6",
-        "#f59e0b",
-        "#ef4444",
-        "#8b5cf6",
-        "#06b6d4"
-      ][courseIndex % 6],
-
-      level: "Beginner",
-      duration: "Self-paced",
-
-      ...course,
-
-      lessons: (course.lessons || []).map((lesson, lessonIndex) => ({
-        id: lesson.id || `${course.id}-lesson-${lessonIndex + 1}`,
-        xp: lesson.xp || 25,
-        duration: lesson.duration || "10 min",
-        ...lesson
-      }))
-    }));
-
+    const data = await r.json();
+    courses = data.map(normalizeCourse);
     coursesLoaded = true;
-    console.log("Courses loaded:", courses);
-
-    // Render the course grid as soon as courses are ready, regardless of
-    // whether the user profile has finished loading yet. The grid functions
-    // already guard against userData being null.
     renderCourseGrid();
     renderFeaturedCourses();
-  })
-  .catch(err => {
+  } catch (err) {
     console.error("Failed to load courses:", err);
     showLoadError(
-      "We couldn't load the course catalog (courses.json failed to load). Check that the file exists at the right path and that the browser console doesn't show a 404 or JSON parsing error."
+      "We couldn't load the course catalog. Check that courses.json exists and that Firestore rules allow reading the 'courses' collection."
     );
-  });
+  }
+}
+
+function normalizeCourse(course, courseIndex = 0) {
+  return {
+    color: [
+      "#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"
+    ][courseIndex % 6],
+    level: "Beginner",
+    duration: "Self-paced",
+    ...course,
+    lessons: (course.lessons || []).map((lesson, lessonIndex) => ({
+      id: lesson.id || `${course.id}-lesson-${lessonIndex + 1}`,
+      xp: lesson.xp || 25,
+      duration: lesson.duration || "10 min",
+      ...lesson
+    }))
+  };
+}
+
+loadCourses();
 
 // ========================= RENDER ALL =========================
 function renderAll() {
@@ -241,13 +287,12 @@ function renderAll() {
   renderCourseGrid();
   renderProfile();
   renderLeaderboard();
+  if (isAdmin(currentUser)) renderAdminPanel();
 }
 
 // ========================= SIDEBAR =========================
 function renderSidebar() {
   const animal = getAnimalForXP(userData.xp);
-  const next = ANIMALS[animal.index + 1];
-  const xpIntoTier = animal.index === 0 ? userData.xp : userData.xp - ANIMALS[animal.index - 1]?.xpNeeded || 0;
 
   let prevXP = 0;
   if (animal.index > 0) prevXP = ANIMALS[animal.index - 1].xpNeeded;
@@ -319,7 +364,7 @@ function renderFeaturedCourses() {
     row.className = "pasture-row";
     row.onclick = () => openCourse(course.id);
     row.innerHTML = `
-      <div class="pasture-icon" style="background:${course.color}22;">${course.emoji || ""}</div>
+      <div class="pasture-icon" style="background:${course.color}22;color:${course.color};">${icon(groupIcon(course.group))}</div>
       <div class="pasture-info">
         <div class="pasture-title">${course.title}</div>
         <div class="pasture-pct">${pct}% complete</div>
@@ -372,7 +417,7 @@ function renderBadgesWidget() {
     const div = document.createElement("div");
     div.className = "badge-item";
     div.innerHTML = `
-      <div class="badge-icon-wrap ${has ? "unlocked" : "locked"}"></div>
+      <div class="badge-icon-wrap ${has ? "unlocked" : "locked"}">${icon(badge.icon)}</div>
       <div class="badge-name">${badge.name}</div>
     `;
     container.appendChild(div);
@@ -445,8 +490,8 @@ function renderFilteredCourses(list) {
     card.className = "course-card-new";
     card.onclick = () => openCourse(course.id);
     card.innerHTML = `
-    <img class="cc-image" src="${course.image}" alt="${course.title}">
       <div class="cc-body">
+        <div class="cc-icon" style="background:${course.color}22;color:${course.color};">${icon(groupIcon(course.group))}</div>
         <div class="cc-title">${course.title}</div>
         <div class="cc-desc">${course.description}</div>
         <div class="cc-meta">
@@ -466,7 +511,7 @@ function renderFilteredCourses(list) {
   });
 
   if (list.length === 0) {
-    container.innerHTML = `<div class="lb-loading">No courses match your search. 🔍</div>`;
+    container.innerHTML = `<div class="lb-loading">No courses match your search. </div>`;
   }
 }
 
@@ -484,19 +529,19 @@ window.openCourse = function(id) {
     <div class="lesson-view-wrap">
       <div class="lv-back" onclick="showTab('courses')">← Back to Courses</div>
       <div class="lv-header">
-        <h1>${course.name} ${course.title}</h1>
+        <h1>${course.title}</h1>
         <div class="lv-desc">${course.description}</div>
       </div>
       <div class="lessons-list">
         ${course.lessons.map((lesson, i) => {
           const isDone = completed.includes(lesson.id);
-          const typeIcon = lesson.type === "quiz" ? "📝" : "▶️";
+          const typeIcon = lesson.type === "quiz" ? icon("quiz") : icon("play");
           return `
             <div class="lesson-row ${isDone ? "done" : ""}" onclick="openLesson('${course.id}', '${lesson.id}')">
               <div class="lr-status ${isDone ? "completed" : "pending"}">${isDone ? "✓" : typeIcon}</div>
               <div class="lr-info">
                 <div class="lr-title">${lesson.title}</div>
-                <div class="lr-meta">${lesson.type === "quiz" ? "📝 Quiz" : "🎬 Video"} · ${lesson.duration}</div>
+                <div class="lr-meta"><span class="lr-type-icon">${lesson.type === "quiz" ? icon("quiz") : icon("play")}</span> ${lesson.type === "quiz" ? "Quiz" : "Video"} · ${lesson.duration}</div>
               </div>
               <span class="lr-xp">+${lesson.xp} XP</span>
               <span class="lr-arrow">›</span>
@@ -532,7 +577,7 @@ function openVideoLesson(course, lesson) {
       </div>
       <div class="vl-info">
         <h2>${lesson.title}</h2>
-        <div class="vl-meta">🎬 Video lesson · ${lesson.duration} · +${lesson.xp} XP on completion</div>
+        <div class="vl-meta">Video lesson · ${lesson.duration} · +${lesson.xp} XP on completion</div>
         <button class="complete-btn" id="completeBtn" onclick="completeLesson('${lesson.id}', ${lesson.xp})" ${isCompleted ? "disabled" : ""}>
           ${isCompleted ? "✓ Completed" : "Mark as Complete (+"+lesson.xp+" XP)"}
         </button>
@@ -587,11 +632,23 @@ window.completeLesson = async function(lessonId, xp) {
 function openQuiz(course, lesson) {
   quizState = {
     course, lesson,
-    questions: lesson.questions,
+    questions: lesson.questions || [],
     current: 0,
     score: 0,
     answered: false
   };
+
+  if (!quizState.questions.length) {
+    const container = document.getElementById("lessonViewContent");
+    container.innerHTML = `
+      <div class="quiz-wrap">
+        <div class="quiz-back" onclick="openCourse('${course.id}')">← ${course.title}</div>
+        <div class="admin-empty-state">This quiz doesn't have any questions yet. Check back soon!</div>
+      </div>
+    `;
+    return;
+  }
+
   renderQuizQuestion();
 }
 
@@ -619,9 +676,9 @@ function renderQuizQuestion() {
             <button class="option-btn" onclick="selectAnswer(${i})">${opt}</button>
           `).join("")}
         </div>
-        <div class="explanation-box" id="explanationBox">${q.explanation}</div>
+        <div class="explanation-box" id="explanationBox">${q.explanation || ""}</div>
         <button class="next-btn" id="nextBtn" onclick="nextQuestion()">
-          ${current + 1 === questions.length ? "See Results 🏆" : "Next Question →"}
+          ${current + 1 === questions.length ? "See Results" : "Next Question →"}
         </button>
       </div>
     </div>
@@ -663,13 +720,11 @@ async function renderQuizResults() {
   const pct = Math.round((score / questions.length) * 100);
   const passed = pct >= 60;
   const xpEarned = passed ? lesson.xp : Math.round(lesson.xp * 0.3);
-  const emoji = pct === 100 ? "" : pct >= 80 ? "" : pct >= 60 ? "" : "";
 
   const container = document.getElementById("lessonViewContent");
   container.innerHTML = `
     <div class="quiz-wrap">
       <div class="quiz-results">
-        <div class="results-emoji"></div>
         <div class="results-title">${pct === 100 ? "Perfect Score!" : pct >= 80 ? "Great Job!" : pct >= 60 ? "Good Work!" : "Keep Studying!"}</div>
         <div class="results-score">${score} / ${questions.length} correct (${pct}%)</div>
         <div class="results-xp">+${xpEarned} XP Earned </div>
@@ -747,7 +802,7 @@ async function checkAndAwardBadges() {
     const badge = BADGES.find(b => b.id === newOnes[0]);
     if (badge) {
       setTimeout(() => {
-        document.getElementById("badgeModalEmoji").textContent = badge.emoji;
+        document.getElementById("badgeModalIcon").innerHTML = ICONS[badge.icon] || "";
         document.getElementById("badgeModalName").textContent = badge.name;
         document.getElementById("badgeModalDesc").textContent = badge.desc;
         document.getElementById("badgeModal").classList.remove("hidden");
@@ -762,8 +817,6 @@ async function checkAndAwardBadges() {
 async function renderLeaderboard() {
   const container = document.getElementById("leaderboardList");
   if (!container) return;
-
-  const sortField = lbMode === "xp" ? "xp" : lbMode === "streak" ? "streak" : "completedLessons";
 
   try {
     const q = query(collection(db, "users"), orderBy(lbMode === "lessons" ? "xp" : lbMode, "desc"), limit(20));
@@ -782,11 +835,12 @@ async function renderLeaderboard() {
       const val = lbMode === "xp" ? (u.xp || 0) : lbMode === "streak" ? (u.streak || 0) : (u.completedLessons?.length || 0);
       const unit = lbMode === "xp" ? "XP" : lbMode === "streak" ? "days" : "lessons";
       const animal = getAnimalForXP(u.xp || 0);
+      const rankContent = i === 0 ? icon("trophy") : i === 1 ? icon("medal") : i === 2 ? icon("award") : `#${i+1}`;
 
       const row = document.createElement("div");
       row.className = `lb-row${isYou ? " you" : ""}`;
       row.innerHTML = `
-        <div class="lb-rank ${rankClass}">${i === 0 ? "" : i === 1 ? "" : i === 2 ? "" : `#${i+1}`}</div>
+        <div class="lb-rank ${rankClass}">${rankContent}</div>
         <div class="lb-avatar">${animal.name}</div>
         <div class="lb-info">
           <div class="lb-name">${u.displayName || "DECA Student"}${isYou ? " (You)" : ""}</div>
@@ -801,10 +855,10 @@ async function renderLeaderboard() {
     });
 
     if (users.length === 0) {
-      container.innerHTML = '<div class="lb-loading">No data yet. Be the first! 🐐</div>';
+      container.innerHTML = '<div class="lb-loading">No data yet. Be the first!</div>';
     }
   } catch (e) {
-    container.innerHTML = `<div class="lb-loading">Couldn't load rankings — check Firestore rules. 🐄</div>`;
+    container.innerHTML = `<div class="lb-loading">Couldn't load rankings — check Firestore rules.</div>`;
     console.error(e);
   }
 }
@@ -833,7 +887,7 @@ function renderProfile() {
   document.getElementById("profileName").textContent = userData.displayName || "DECA Student";
   document.getElementById("profileEmail").textContent = userData.email || "";
   const animal = getAnimalForXP(userData.xp);
-  document.getElementById("profileLevel").textContent = `${animal.name} ${animal.name} · ${userData.xp} XP`;
+  document.getElementById("profileLevel").textContent = `${animal.name} · ${userData.xp} XP`;
 
   document.getElementById("pStatXP").textContent = userData.xp;
   document.getElementById("pStatStreak").textContent = userData.streak;
@@ -853,7 +907,7 @@ function renderProfile() {
       const div = document.createElement("div");
       div.className = "badge-item-large";
       div.innerHTML = `
-        <div class="badge-icon-lg ${has ? "unlocked" : "locked"}"></div>
+        <div class="badge-icon-lg ${has ? "unlocked" : "locked"}">${icon(badge.icon)}</div>
         <div class="badge-name-lg">${badge.name}</div>
       `;
       div.title = badge.desc;
@@ -905,6 +959,8 @@ window.saveProfile = async function() {
 
 // ========================= TABS =========================
 window.showTab = function(tabName) {
+  if (tabName === "admin" && !isAdmin(currentUser)) return;
+
   document.querySelectorAll(".tab-content").forEach(el => {
     el.classList.remove("active");
     el.classList.add("hidden");
@@ -923,6 +979,7 @@ window.showTab = function(tabName) {
   if (tabName === "leaderboard") renderLeaderboard();
   if (tabName === "profile") renderProfile();
   if (tabName === "courses") renderCourseGrid();
+  if (tabName === "admin") renderAdminPanel();
 
   // Close mobile sidebar
   document.getElementById("sidebar")?.classList.remove("open");
@@ -944,8 +1001,8 @@ function showXPToast(xp) {
 
 // ========================= LEVEL UP MODAL =========================
 function showLevelUpModal(animal) {
-  document.getElementById("modalEmoji").textContent = "";
-  document.getElementById("modalAnimal").textContent = `${animal.name} ${animal.name}`;
+  document.getElementById("modalEmoji").innerHTML = icon("zap");
+  document.getElementById("modalAnimal").textContent = animal.name;
   document.getElementById("modalMsg").textContent = `You evolved into a ${animal.name}! Keep studying to evolve again!`;
   document.getElementById("levelUpModal").classList.remove("hidden");
 }
@@ -954,56 +1011,272 @@ window.closeModal = function(id) {
   document.getElementById(id)?.classList.add("hidden");
 };
 
-window.createCourse = async function () {
-  if (!isAdmin(currentUser)) return;
+// ========================================================================
+// ========================= ADMIN PANEL =================================
+// ========================================================================
+// Everything below is only reachable by emails in ADMIN_EMAILS. Course
+// content (video lessons + their paired practice quizzes) is stored in the
+// Firestore "courses" collection, one document per course, keyed by course id.
+// Remember to add Firestore security rules so only admins can write to
+// the "courses" collection, e.g.:
+//
+//   match /courses/{courseId} {
+//     allow read: if true;
+//     allow write: if request.auth.token.email == "farm4glass@gmail.com";
+//   }
 
-  const title = document.getElementById("courseTitle").value;
-  const desc = document.getElementById("courseDesc").value;
+function renderAdminPanel() {
+  const container = document.getElementById("adminContent");
+  if (!container || !isAdmin(currentUser)) return;
 
-  const ref = doc(collection(db, "courses"));
-
-  await setDoc(ref, {
-    id: ref.id,
-    title,
-    description: desc,
-    category: "DECA",
-    lessons: []
-  });
-
-  alert("Course created!");
-};
-
-window.addLesson = async function () {
-  if (!isAdmin(currentUser)) return;
-
-  const courseId = document.getElementById("lessonCourseId").value;
-  const title = document.getElementById("lessonTitle").value;
-  const url = document.getElementById("lessonUrl").value;
-  const xp = Number(document.getElementById("lessonXp").value);
-
-  const courseRef = doc(db, "courses", courseId);
-  const snap = await getDoc(courseRef);
-
-  if (!snap.exists()) {
-    alert("Course not found");
+  if (!coursesLoaded) {
+    container.innerHTML = `<div class="admin-empty-state">Loading courses...</div>`;
     return;
   }
 
-  const course = snap.data();
+  if (!adminSelectedCourseId && courses.length) {
+    adminSelectedCourseId = courses[0].id;
+  }
 
-  const newLesson = {
-    id: `${courseId}-lesson-${Date.now()}`,
-    title,
-    type: "youtube",
-    url,
-    xp
-  };
+  const courseListHtml = courses.map(c => `
+    <button class="admin-course-btn ${c.id === adminSelectedCourseId ? "active" : ""}" onclick="adminSelectCourse('${c.id}')">
+      ${c.title}
+      <span class="admin-course-sub">${c.lessons.length} lessons</span>
+    </button>
+  `).join("");
 
-  await updateDoc(courseRef, {
-    lessons: [...(course.lessons || []), newLesson]
-  });
+  container.innerHTML = `
+    <div class="admin-seed-banner">
+      <div>Courses load from the database. If this is the first time setting this up, import <code>courses.json</code> into the database once.</div>
+      <button class="admin-btn-sm" onclick="adminSeedCourses()">Import courses.json</button>
+    </div>
+    <div class="admin-layout">
+      <div class="admin-course-list">${courseListHtml}</div>
+      <div class="admin-panel-body" id="adminCourseEditor"></div>
+    </div>
+  `;
 
-  alert("Lesson added!");
+  renderAdminCourseEditor();
+}
+
+window.adminSelectCourse = function(id) {
+  adminSelectedCourseId = id;
+  renderAdminPanel();
 };
 
+function renderAdminCourseEditor() {
+  const editor = document.getElementById("adminCourseEditor");
+  if (!editor) return;
+  const course = courses.find(c => c.id === adminSelectedCourseId);
+  if (!course) {
+    editor.innerHTML = `<div class="admin-empty-state">Select a course to edit.</div>`;
+    return;
+  }
 
+  const lessonsHtml = course.lessons.map((lesson, idx) => {
+    if (lesson.type === "quiz") {
+      const questionsHtml = (lesson.questions || []).map((q, qi) => `
+        <div class="admin-question-card">
+          <strong>Q${qi + 1}:</strong> ${q.q}
+          <div style="margin-top:6px;font-size:13px;color:var(--muted);">
+            ${q.options.map((o, oi) => `${oi === q.answer ? "✓ " : "· "}${o}`).join("<br>")}
+          </div>
+          <button class="admin-btn-sm danger" style="margin-top:8px;" onclick="adminDeleteQuestion('${lesson.id}', ${qi})">${icon("trash")} Remove question</button>
+        </div>
+      `).join("") || `<div style="color:var(--muted);font-size:13px;margin-bottom:10px;">No practice questions yet.</div>`;
+
+      return `
+        <div class="admin-lesson-block quiz-block" id="admin-lesson-${lesson.id}">
+          <div class="admin-lesson-head">
+            <h4>${icon("quiz")} ${lesson.title}</h4>
+            <button class="admin-btn-sm danger" onclick="adminDeleteLesson('${lesson.id}')">${icon("trash")} Delete quiz</button>
+          </div>
+          ${questionsHtml}
+          <div class="admin-add-question-form">
+            <textarea rows="2" placeholder="Question text" id="q-text-${lesson.id}"></textarea>
+            <div class="admin-option-inputs">
+              <input type="text" placeholder="Option A" id="q-opt0-${lesson.id}">
+              <input type="text" placeholder="Option B" id="q-opt1-${lesson.id}">
+              <input type="text" placeholder="Option C" id="q-opt2-${lesson.id}">
+              <input type="text" placeholder="Option D" id="q-opt3-${lesson.id}">
+            </div>
+            <div class="admin-field-row">
+              <select id="q-answer-${lesson.id}">
+                <option value="0">Correct: Option A</option>
+                <option value="1">Correct: Option B</option>
+                <option value="2">Correct: Option C</option>
+                <option value="3">Correct: Option D</option>
+              </select>
+            </div>
+            <textarea rows="2" placeholder="Explanation (shown after answering)" id="q-exp-${lesson.id}"></textarea>
+            <button class="admin-btn-sm" onclick="adminAddQuestion('${lesson.id}')">${icon("plus")} Add question</button>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="admin-lesson-block" id="admin-lesson-${lesson.id}">
+        <div class="admin-lesson-head">
+          <h4>${icon("play")} ${lesson.title}</h4>
+          <button class="admin-btn-sm danger" onclick="adminDeleteLesson('${lesson.id}')">${icon("trash")} Delete video + quiz</button>
+        </div>
+        <div class="admin-field-row">
+          <input type="text" value="${lesson.title.replace(/"/g, "&quot;")}" id="v-title-${lesson.id}" placeholder="Title">
+          <input type="text" value="${lesson.url || ""}" id="v-url-${lesson.id}" placeholder="YouTube URL">
+          <input type="number" value="${lesson.xp}" id="v-xp-${lesson.id}" placeholder="XP" style="max-width:90px;">
+          <button class="admin-btn-sm" onclick="adminUpdateVideo('${lesson.id}')">Save</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  editor.innerHTML = `
+    <h3 style="margin-bottom:16px;">${course.title}</h3>
+    ${lessonsHtml || `<div class="admin-empty-state">No lessons yet. Add the first video unit below.</div>`}
+    <div class="admin-lesson-block" style="border-style:dashed;">
+      <h4 style="margin-bottom:10px;">${icon("plus")} Add a new unit</h4>
+      <div class="admin-field-row">
+        <input type="text" placeholder="Unit title (e.g. Unit 21: Marketing Math)" id="new-unit-title">
+        <input type="text" placeholder="YouTube URL" id="new-unit-url">
+        <input type="number" placeholder="XP (default 25)" id="new-unit-xp" style="max-width:120px;">
+        <button class="admin-btn-sm" onclick="adminAddUnit('${course.id}')">${icon("plus")} Add video + quiz</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);">Adding a video automatically creates a paired practice quiz right after it — add questions to it once it's created.</div>
+    </div>
+  `;
+}
+
+async function saveCourseLessons(courseId, lessons) {
+  await setDoc(doc(db, "courses", courseId), { lessons }, { merge: true });
+  const course = courses.find(c => c.id === courseId);
+  if (course) course.lessons = lessons;
+}
+
+window.adminUpdateVideo = async function(lessonId) {
+  const course = courses.find(c => c.id === adminSelectedCourseId);
+  if (!course) return;
+  const lesson = course.lessons.find(l => l.id === lessonId);
+  if (!lesson) return;
+
+  lesson.title = document.getElementById(`v-title-${lessonId}`).value.trim() || lesson.title;
+  lesson.url = document.getElementById(`v-url-${lessonId}`).value.trim() || lesson.url;
+  lesson.xp = Number(document.getElementById(`v-xp-${lessonId}`).value) || lesson.xp;
+
+  try {
+    await saveCourseLessons(course.id, course.lessons);
+    alert("Video updated!");
+    renderCourseGrid();
+    renderFeaturedCourses();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+};
+
+window.adminAddUnit = async function(courseId) {
+  const course = courses.find(c => c.id === courseId);
+  if (!course) return;
+
+  const title = document.getElementById("new-unit-title").value.trim();
+  const url = document.getElementById("new-unit-url").value.trim();
+  const xp = Number(document.getElementById("new-unit-xp").value) || 25;
+
+  if (!title || !url) return alert("Please enter a title and a YouTube URL.");
+
+  const stamp = Date.now();
+  const videoLesson = { id: `${courseId}-video-${stamp}`, title, type: "youtube", url, xp, duration: "10 min" };
+  const quizLesson = { id: `${courseId}-quiz-${stamp}`, title: `${title} — Practice Quiz`, type: "quiz", xp, duration: "5 min", questions: [] };
+
+  const newLessons = [...course.lessons, videoLesson, quizLesson];
+
+  try {
+    await saveCourseLessons(courseId, newLessons);
+    renderAdminPanel();
+    renderCourseGrid();
+    renderFeaturedCourses();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+};
+
+window.adminDeleteLesson = async function(lessonId) {
+  const course = courses.find(c => c.id === adminSelectedCourseId);
+  if (!course) return;
+  if (!confirm("Delete this lesson? This cannot be undone.")) return;
+
+  const newLessons = course.lessons.filter(l => l.id !== lessonId);
+  try {
+    await saveCourseLessons(course.id, newLessons);
+    renderAdminPanel();
+    renderCourseGrid();
+    renderFeaturedCourses();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+};
+
+window.adminAddQuestion = async function(lessonId) {
+  const course = courses.find(c => c.id === adminSelectedCourseId);
+  if (!course) return;
+  const lesson = course.lessons.find(l => l.id === lessonId);
+  if (!lesson) return;
+
+  const qText = document.getElementById(`q-text-${lessonId}`).value.trim();
+  const opts = [0, 1, 2, 3].map(i => document.getElementById(`q-opt${i}-${lessonId}`).value.trim());
+  const answer = Number(document.getElementById(`q-answer-${lessonId}`).value);
+  const explanation = document.getElementById(`q-exp-${lessonId}`).value.trim();
+
+  if (!qText || opts.some(o => !o)) return alert("Please fill in the question and all four options.");
+
+  lesson.questions = [...(lesson.questions || []), { q: qText, options: opts, answer, explanation }];
+
+  try {
+    await saveCourseLessons(course.id, course.lessons);
+    renderAdminPanel();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+};
+
+window.adminDeleteQuestion = async function(lessonId, questionIndex) {
+  const course = courses.find(c => c.id === adminSelectedCourseId);
+  if (!course) return;
+  const lesson = course.lessons.find(l => l.id === lessonId);
+  if (!lesson) return;
+
+  lesson.questions = (lesson.questions || []).filter((_, i) => i !== questionIndex);
+
+  try {
+    await saveCourseLessons(course.id, course.lessons);
+    renderAdminPanel();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+};
+
+// One-time helper: pushes the bundled courses.json into Firestore so the
+// admin panel (and every user) reads from the database from now on.
+window.adminSeedCourses = async function() {
+  if (!isAdmin(currentUser)) return;
+  if (!confirm("Import courses.json into the database? This will overwrite any Firestore course documents with the same IDs.")) return;
+
+  try {
+    const r = await fetch("courses.json");
+    const data = await r.json();
+    for (const raw of data) {
+      const course = normalizeCourse(raw);
+      await setDoc(doc(db, "courses", course.id), course);
+    }
+    alert("Courses imported! Reloading...");
+    await loadCourses();
+    renderAdminPanel();
+  } catch (e) {
+    console.error("Failed to seed courses:", e);
+    alert("Import failed — check the console for details.");
+  }
+};

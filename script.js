@@ -450,8 +450,8 @@ function renderFilteredCourses(list) {
         <div class="cc-title">${course.title}</div>
         <div class="cc-desc">${course.description}</div>
         <div class="cc-meta">
-          <span>📖 ${course.lessons.length} lessons</span>
-          <span>⏱ ${course.duration || "Self-paced"}</span>
+          <span> ${course.lessons.length} lessons</span>
+          <span> ${course.duration || "Self-paced"}</span>
         </div>
         <div class="cc-progress-bar">
           <div class="cc-progress-fill" style="width:${pct}%;background:${course.color};"></div>

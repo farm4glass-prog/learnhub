@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Farm4Glass: Free DECA Learning</title>
   <link rel="icon" type="image/jpeg" href="Farm4Glass logo.jpg">
-  <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700;800;900&family=Montserrat:wght@300;400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -25,14 +25,14 @@
     </div>
   </nav>
 
-<section id="hero" class="landing-hero">
+  <section id="hero" class="landing-hero">
     <h1 class="hero-title">FARM4GLASS<br><span class="hero-script">learn deca</span></h1>
     <p class="hero-subtitle">Level up your barn by farming for glass through our learning paths, quizzes, and roleplay practices.</p>
     <div class="hero-btns">
       <button id="heroLogin" class="btn-primary">Get Started Free →</button>
       <a href="#features" class="btn-ghost">See Features</a>
     </div>
-</section>
+  </section>
 
   <section id="features" class="features-section">
     <h2>Features</h2>
@@ -42,7 +42,7 @@
         <p>Video lessons, articles, and quizzes for every DECA cluster exam, roleplay/prepared event, and online simulations (VBC and SMG).</p>
       </div>
       <div class="feature-card">
-        <div class="feat-icon"></div>
+        <div class="feat-icon">⚡</div>
         <h3>XP & Leveling System</h3>
         <p>Earn XP for every video, article, and quiz you complete. Level up your farm animal from Baby Chick all the way to Champion Goat.</p>
       </div>
@@ -149,11 +149,12 @@
     </div>
 
     <div class="team-card">
-      <img src="IMG_1780.HEIC" alt="Hannah Kow">
+      <img src="images/member2.jpg" alt="Member 2">
       <h3>Hannah Kow</h3>
       <span>Co-Founder</span>
       <p>
-        Hannah Kow is an incoming junior at West Ranch High School in Santa Clarita, CA. She serves as the Co-President of West Ranch DECA and VP of Marketing for the Southern California District Action Team. On the district side, she runs content for the SoCal DAT Instagram: designing posts that engage and spotlight members  (@socaldeca). Within her chapter, Hannah loves spending time mentoring fellow officers and members while maximizing fundraising, community, and competitive prep within West Ranch. On the competition side, she’s earned 1st Place glass in PEN at SoCal CDC and a top-5 finish in ACT. Through Farm 4 Glass, she wants to help members navigate competition prep and DECA leadership! She would love to connect on Instagram (@deca.kow)
+        Leads platform development and creates new features that make
+        studying more engaging and effective.
       </p>
     </div>
 
@@ -180,7 +181,47 @@
 
   </div>
 </section>
-  
+
+<!-- FEATURED GUESTS -->
+<section id="guests" class="guests-section">
+  <h2>Featured Guests</h2>
+  <p class="guests-sub">ICDC champions and DECA leaders who've shared their expertise with our members</p>
+
+  <div class="guests-grid">
+
+    <div class="guest-card">
+      <img src="images/guest1.jpg" alt="Guest speaker name">
+      <h3>Guest Speaker Name</h3>
+      <span class="guest-role">Guest Speaker · Principles Events</span>
+      <p>
+        Short description of who they are, their DECA / competitive background,
+        and what they shared with our members (tips, strategies, judge insight, etc).
+      </p>
+    </div>
+
+    <div class="guest-card">
+      <img src="images/guest2.jpg" alt="Guest speaker name">
+      <h3>Guest Speaker Name</h3>
+      <span class="guest-role">Guest Speaker · Marketing Cluster Exam</span>
+      <p>
+        Short description of who they are, their DECA / competitive background,
+        and what they shared with our members (tips, strategies, judge insight, etc).
+      </p>
+    </div>
+
+    <div class="guest-card">
+      <img src="images/guest3.jpg" alt="Guest speaker name">
+      <h3>Guest Speaker Name</h3>
+      <span class="guest-role">Guest Speaker · Team Decision Making</span>
+      <p>
+        Short description of who they are, their DECA / competitive background,
+        and what they shared with our members (tips, strategies, judge insight, etc).
+      </p>
+    </div>
+
+  </div>
+</section>
+
   <footer class="landing-footer">
     <p> Farm4Glass &copy; 2026: Please note we are not endorsed with DECA Inc in any way.</p>
   </footer>
@@ -212,6 +253,10 @@
 
   <button class="nav-btn" onclick="showTab('profile')" id="nav-profile">
     Profile
+  </button>
+
+  <button class="nav-btn" onclick="showTab('planner')" id="nav-planner">
+    Study Planner
   </button>
 
   <button class="nav-btn hidden" onclick="showTab('admin')" id="nav-admin">
@@ -413,6 +458,35 @@
         <div class="widget-header"><span>Completed Lessons</span></div>
         <div id="completedLessonsList" class="completed-list"></div>
       </div>
+    </div>
+
+    <!-- ===== STUDY PLANNER ===== -->
+    <div id="planner" class="tab-content hidden">
+      <h1>Study Planner</h1>
+      <p class="page-sub">Tell us your conference date, exam, current score, and available time — we'll build a week-by-week study schedule.</p>
+
+      <div class="widget planner-form-widget">
+        <h3>Plan your prep</h3>
+        <div class="form-group">
+          <label>Exam / Event</label>
+          <select id="plannerCourse"></select>
+        </div>
+        <div class="form-group">
+          <label>Conference / Test Date</label>
+          <input type="date" id="plannerDate">
+        </div>
+        <div class="form-group">
+          <label>Current Practice Score (%)</label>
+          <input type="number" id="plannerScore" min="0" max="100" placeholder="e.g. 65">
+        </div>
+        <div class="form-group">
+          <label>Available Study Time (hours per week)</label>
+          <input type="number" id="plannerHours" min="1" max="40" placeholder="e.g. 5">
+        </div>
+        <button class="btn-primary" onclick="generateStudyPlan()">Generate My Study Plan</button>
+      </div>
+
+      <div id="plannerResults"></div>
     </div>
 
     <!-- ===== ADMIN ===== -->

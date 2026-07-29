@@ -4,7 +4,7 @@ import {
   onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, doc, getDoc, setDoc, updateDoc,
+  getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
   collection, getDocs, orderBy, query, limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -51,7 +51,10 @@ const ICONS = {
   plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`,
   alert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/></svg>`,
   calendar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>`,
-  clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`
+  clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`,
+  target: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>`,
+  bulb: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.6.6 1 1.4 1 2.5h6c0-1.1.4-1.9 1-2.5A6 6 0 0 0 12 3z"/></svg>`,
+  search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>`
 };
 
 function icon(name) {
@@ -120,6 +123,114 @@ function checkCourseComplete(userData, courses) {
   );
 }
 
+// ========================= KPI DATABASE (starter content) =========================
+// These are a starting set written by Farm4Glass as study aids, not verbatim DECA
+// text. Admins can add, edit, and expand this list from the Admin tab as the
+// database grows — treat this seed as a foundation, not a complete PI list.
+const KPI_SEED = [
+  {
+    id: "channels-of-distribution",
+    title: "Explain the concept of channels of distribution",
+    cluster: "Marketing",
+    explanation: "A channel of distribution is the path a product takes from producer to final consumer, and it can involve any number of intermediaries such as wholesalers, agents, and retailers, or it can be direct with no intermediaries at all.",
+    example: "A clothing brand sells directly to consumers through its own website (a direct/zero-level channel) while also selling through department stores (an indirect channel with a retailer as the intermediary).",
+    judgeExpectations: "Judges want to hear that you understand who is involved in getting the product from the business to the customer, and that you can explain why a business would choose a particular channel (cost, control, reach, speed).",
+    commonMistakes: "Competitors often confuse 'channels of distribution' with 'physical distribution' (the actual transportation/logistics) or forget to mention that a channel can be direct with zero intermediaries.",
+    sampleAnswer: "\"Our business uses an indirect channel of distribution — we manufacture the product, sell it to a regional wholesaler, who then sells it to local retailers, who sell it to the final customer. We chose this channel because it lets us reach more customers than we could on our own, even though it means we give up some control over how the product is presented at retail.\""
+  },
+  {
+    id: "business-ethics",
+    title: "Describe the nature of business ethics",
+    cluster: "Business Management + Administration",
+    explanation: "Business ethics refers to the moral principles and standards that guide behavior in the business world, covering how a company treats employees, customers, competitors, and the community, beyond what the law strictly requires.",
+    example: "A company voluntarily recalls a product at significant cost after discovering a minor safety defect, even though it wasn't legally required to, because leadership decided customer safety came first.",
+    judgeExpectations: "Judges look for the ability to distinguish ethical behavior from merely legal behavior, and to explain why ethical conduct matters for long-term reputation and trust, not just short-term profit.",
+    commonMistakes: "A common mistake is only talking about what's illegal instead of what's unethical — ethics is broader than the law. Competitors also sometimes give a vague answer without a concrete example.",
+    sampleAnswer: "\"In this situation, I'd want to make sure our decision reflects strong business ethics — even though nothing here breaks the law, being transparent with the customer about the mistake builds trust and protects our reputation long-term, which matters more than the short-term cost.\""
+  },
+  {
+    id: "marketing-information-management",
+    title: "Explain the concept of marketing-information management",
+    cluster: "Marketing",
+    explanation: "Marketing-information management is the ongoing process of gathering, analyzing, and using data about customers, competitors, and the market to make better business decisions.",
+    example: "A coffee shop tracks which drinks sell best by time of day using its point-of-sale data, then adjusts staffing and promotions around those patterns.",
+    judgeExpectations: "Judges want you to connect data collection to a specific decision — not just 'the business collects data,' but how that data changes what the business actually does.",
+    commonMistakes: "Competitors often describe collecting data (surveys, sales reports) but never explain what decision that data informed, which misses the 'management' part of the concept.",
+    sampleAnswer: "\"We'd use marketing-information management by tracking customer purchase data and running short surveys after checkout. If the data shows a certain product consistently underperforms in a specific region, we can adjust our regional marketing mix instead of guessing.\""
+  },
+  {
+    id: "technology-in-selling",
+    title: "Describe the use of technology in the selling function",
+    cluster: "Marketing",
+    explanation: "Technology in selling covers tools like customer relationship management (CRM) software, digital presentations, and mobile point-of-sale systems that help salespeople manage relationships and close sales more efficiently.",
+    example: "A sales rep uses a CRM to track every past conversation with a client, so they can follow up with personalized details instead of starting from scratch each time.",
+    judgeExpectations: "Judges expect a specific technology and a clear benefit — efficiency, personalization, or better customer tracking — rather than just saying 'businesses use technology to sell more.'",
+    commonMistakes: "Vague answers like 'they use computers' without naming a real tool or explaining the benefit are the most common mistake here.",
+    sampleAnswer: "\"I'd recommend using a CRM system so our sales team can log every customer interaction. That way, when a customer calls back, whoever answers can see their order history immediately and offer more relevant recommendations, which builds trust and speeds up the sale.\""
+  },
+  {
+    id: "concept-of-insurance",
+    title: "Explain the concept of insurance",
+    cluster: "Finance / Personal Financial Literacy",
+    explanation: "Insurance is a risk-management tool where a person or business pays a premium to an insurer in exchange for financial protection against a specified loss, spreading risk across many policyholders.",
+    example: "A homeowner pays a monthly premium so that if their house is damaged in a fire, the insurance company covers the repair costs instead of the homeowner paying entirely out of pocket.",
+    judgeExpectations: "Judges want you to explain the risk-transfer idea (premium now in exchange for protection against a larger potential loss later), not just 'insurance protects you.'",
+    commonMistakes: "Competitors often skip explaining premiums entirely or confuse insurance with savings, missing that insurance is about pooling and transferring risk.",
+    sampleAnswer: "\"Insurance lets us transfer the financial risk of something bad happening — like a fire or an accident — to an insurance company. We pay a smaller, predictable premium regularly, so that if something rare but expensive happens, we're not stuck paying the full cost ourselves.\""
+  },
+  {
+    id: "managerial-accounting",
+    title: "Discuss the nature of managerial accounting",
+    cluster: "Finance",
+    explanation: "Managerial accounting is the process of preparing financial reports and data for internal use — helping managers plan, control costs, and make operational decisions — as opposed to financial accounting, which is for external stakeholders.",
+    example: "A factory manager uses a cost report showing the cost per unit produced to decide whether to keep running an older machine or invest in a newer, more efficient one.",
+    judgeExpectations: "Judges want you to contrast managerial accounting (internal, decision-focused) with financial accounting (external, compliance-focused), and tie it to an actual internal decision.",
+    commonMistakes: "A common mistake is describing financial statements meant for investors (like an annual report) instead of internal reports meant for managers.",
+    sampleAnswer: "\"As the manager, I'd use managerial accounting reports — specifically a cost-per-unit breakdown — to decide whether raising prices or cutting costs makes more sense. This is different from our financial statements, which are for our external investors and lenders.\""
+  },
+  {
+    id: "effective-communications",
+    title: "Explain the nature of effective communications",
+    cluster: "Communications / Business Administration Core",
+    explanation: "Effective communication means a message is clearly understood as intended by the sender, which requires clarity, the right channel, active listening, and feedback to confirm understanding.",
+    example: "A manager giving instructions confirms understanding by asking the employee to repeat back the key steps, catching a misunderstanding before it causes an error.",
+    judgeExpectations: "Judges want you to mention two-way communication (feedback/confirmation), not just 'saying things clearly.' Bonus points for naming barriers to communication and how to overcome them.",
+    commonMistakes: "Competitors often define communication as one-directional (just sending a message) and forget that effective communication requires confirming the receiver understood correctly.",
+    sampleAnswer: "\"To make sure this instruction is communicated effectively, I'd explain it clearly, choose an appropriate channel — maybe a quick meeting instead of just an email for something urgent — and then ask the team to summarize back what they heard, so I can catch any misunderstanding immediately.\""
+  },
+  {
+    id: "need-for-financial-information",
+    title: "Describe the need for financial information",
+    cluster: "Finance",
+    explanation: "Businesses and individuals need financial information to track performance, make informed decisions, satisfy legal/tax requirements, and communicate financial health to stakeholders like investors, lenders, and owners.",
+    example: "A small business owner reviews monthly income statements to catch a decline in profit margin early, before it becomes a bigger cash-flow problem.",
+    judgeExpectations: "Judges want multiple reasons (decision-making, compliance, communicating to stakeholders) rather than just one, and ideally a specific example of a decision that financial information supports.",
+    commonMistakes: "Competitors often only mention 'to pay taxes' and miss the broader decision-making and stakeholder-communication purposes.",
+    sampleAnswer: "\"We need financial information for a few reasons: to track whether we're actually profitable, to meet legal reporting and tax requirements, and to show lenders or investors that we're a sound business worth funding or continuing to support.\""
+  },
+  {
+    id: "customer-relationship-management",
+    title: "Explain the concept of customer relationship management",
+    cluster: "Marketing",
+    explanation: "Customer relationship management (CRM) is the ongoing process businesses use to build and maintain positive, long-term relationships with customers in order to increase loyalty and repeat business.",
+    example: "A retailer's loyalty program tracks purchase history and sends personalized discount offers on items a customer buys often, encouraging repeat visits.",
+    judgeExpectations: "Judges want the connection between CRM activities and the goal of customer loyalty/retention — not just 'being nice to customers.'",
+    commonMistakes: "A common mistake is describing customer service (handling a single complaint) instead of the longer-term relationship-building strategy CRM actually describes.",
+    sampleAnswer: "\"I'd build our customer relationship management around a loyalty program that tracks what each customer buys, so we can send them personalized offers. This keeps customers coming back because they feel like the business understands their preferences, not just treated as a one-time sale.\""
+  },
+  {
+    id: "positioning-products-services",
+    title: "Describe factors used by businesses to position products/services",
+    cluster: "Marketing",
+    explanation: "Positioning is how a business shapes the way a product is perceived relative to competitors, using factors like price, quality, features, target market, and brand image to carve out a distinct place in the customer's mind.",
+    example: "A coffee brand positions itself as the 'premium, ethically-sourced' option, charging a higher price and emphasizing sourcing transparency, rather than competing purely on low price.",
+    judgeExpectations: "Judges want at least two or three specific positioning factors (not just 'price') and ideally a clear example of how those factors differentiate the business from competitors.",
+    commonMistakes: "Competitors often name only price or only quality and don't explain how that factor differentiates the business from a specific type of competitor.",
+    sampleAnswer: "\"We'd position our product around quality and brand image rather than price — emphasizing premium ingredients and ethical sourcing lets us stand apart from lower-cost competitors and justify a higher price point to the customers who value that.\""
+  }
+];
+
+
 // ========================= GLOBALS =========================
 let currentUser = null;
 let userData = null;
@@ -130,6 +241,10 @@ let currentLesson = null;
 let quizState = {};
 let lbMode = "xp";
 let adminSelectedCourseId = null;
+let adminActiveSubTab = "courses";
+let kpis = [];
+let kpisLoaded = false;
+let selectedKPIId = null;
 
 // ========================= LOGIN =========================
 async function loginWithGoogle() {
@@ -282,6 +397,26 @@ function normalizeCourse(course, courseIndex = 0) {
 }
 
 loadCourses();
+loadKPIs();
+
+async function loadKPIs() {
+  try {
+    const snap = await getDocs(collection(db, "kpis"));
+    if (!snap.empty) {
+      kpis = snap.docs.map(d => d.data());
+      kpisLoaded = true;
+      renderKPIList();
+      if (document.getElementById("admin")?.classList.contains("active")) renderAdminPanel();
+      return;
+    }
+  } catch (e) {
+    console.error("Failed to load KPIs from Firestore:", e);
+  }
+  // Fall back to the bundled starter set until an admin imports/edits in Firestore
+  kpis = KPI_SEED;
+  kpisLoaded = true;
+  renderKPIList();
+}
 
 // ========================= RENDER ALL =========================
 function renderAll() {
@@ -604,13 +739,16 @@ window.completeLesson = async function(lessonId, xp) {
     const newAnimal = getAnimalForXP(newXP);
 
     const completed = [...(userData.completedLessons || []), lessonId];
+    const activityLog = [...(userData.activityLog || []), { date: new Date().toISOString().slice(0, 10), xp, lessonId, type: "video" }].slice(-300);
     await updateDoc(userRef, {
       xp: newXP,
-      completedLessons: completed
+      completedLessons: completed,
+      activityLog
     });
 
     userData.xp = newXP;
     userData.completedLessons = completed;
+    userData.activityLog = activityLog;
 
     showXPToast(xp);
 
@@ -754,7 +892,8 @@ async function renderQuizResults() {
     const updates = {
       xp: newXP,
       completedQuizzes: (userData.completedQuizzes || 0) + 1,
-      [`quizScores.${lesson.id}`]: pct
+      [`quizScores.${lesson.id}`]: pct,
+      activityLog: [...(userData.activityLog || []), { date: new Date().toISOString().slice(0, 10), xp: xpEarned, lessonId: lesson.id, type: "quiz", score: pct }].slice(-300)
     };
 
     if (!already && passed) {
@@ -765,6 +904,8 @@ async function renderQuizResults() {
     await updateDoc(userRef, updates);
     userData.xp = newXP;
     userData.completedQuizzes = (userData.completedQuizzes || 0) + 1;
+    userData.activityLog = updates.activityLog;
+    userData.quizScores = { ...(userData.quizScores || {}), [lesson.id]: pct };
 
     showXPToast(xpEarned);
     if (newAnimal.index > oldAnimal.index) {
@@ -873,6 +1014,192 @@ window.switchLbTab = function(mode, el) {
   document.querySelectorAll(".lb-tab").forEach(b => b.classList.remove("active"));
   el.classList.add("active");
   renderLeaderboard();
+};
+
+// ========================= PERFORMANCE ANALYTICS =========================
+// Uses the same Firestore user doc (completedLessons, quizScores, activityLog)
+// as everywhere else — no separate database needed. Recommendations are
+// generated with a simple rules engine based on that data.
+
+function renderAnalytics() {
+  const container = document.getElementById("analyticsContent");
+  if (!container || !userData) return;
+
+  const quizScores = userData.quizScores || {};
+  const scoreEntries = Object.entries(quizScores);
+  const avgScore = scoreEntries.length
+    ? Math.round(scoreEntries.reduce((s, [, v]) => s + v, 0) / scoreEntries.length)
+    : null;
+
+  // Per-course completion + per-unit quiz scores
+  const courseRows = courses.map(course => {
+    const completed = (userData.completedLessons || []).filter(id => course.lessons.some(l => l.id === id)).length;
+    const pct = course.lessons.length ? Math.round((completed / course.lessons.length) * 100) : 0;
+    const quizUnits = course.lessons.filter(l => l.type === "quiz" && quizScores[l.id] != null);
+    return { course, pct, completed, quizUnits };
+  }).filter(r => r.completed > 0 || r.quizUnits.length > 0);
+
+  // Last 7 days of XP from activityLog
+  const log = userData.activityLog || [];
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+    const xpThatDay = log.filter(e => e.date === d).reduce((s, e) => s + (e.xp || 0), 0);
+    days.push({ date: d, xp: xpThatDay });
+  }
+  const maxXp = Math.max(1, ...days.map(d => d.xp));
+
+  const recommendations = buildRecommendations(courseRows, quizScores, log);
+
+  container.innerHTML = `
+    <div class="analytics-grid">
+      <div class="stat-card"><div class="stat-value">${userData.xp}</div><div class="stat-label">Total XP</div></div>
+      <div class="stat-card"><div class="stat-value">${(userData.completedLessons || []).length}</div><div class="stat-label">Lessons Done</div></div>
+      <div class="stat-card"><div class="stat-value">${avgScore != null ? avgScore + "%" : "—"}</div><div class="stat-label">Avg Quiz Score</div></div>
+      <div class="stat-card"><div class="stat-value">${userData.streak}</div><div class="stat-label">Day Streak</div></div>
+    </div>
+
+    <div class="widget" style="margin-bottom:24px;">
+      <div class="widget-header"><span>XP — Last 7 Days</span></div>
+      <div class="analytics-xp-chart">
+        ${days.map(d => `
+          <div class="analytics-xp-bar-wrap">
+            <div class="analytics-xp-bar" style="height:${Math.max(4, (d.xp / maxXp) * 80)}px;" title="${d.xp} XP"></div>
+            <div class="analytics-xp-label">${new Date(d.date + "T00:00:00").toLocaleDateString(undefined, { weekday: "short" })}</div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
+    <h2 class="section-title">Recommended Next Steps</h2>
+    ${recommendations.map(r => `
+      <div class="rec-card">
+        ${icon(r.icon)}
+        <div>
+          <div class="rec-card-title">${r.title}</div>
+          <div class="rec-card-desc">${r.desc}</div>
+        </div>
+      </div>
+    `).join("") || `<div class="admin-empty-state">Complete a few lessons to unlock personalized recommendations.</div>`}
+
+    <h2 class="section-title" style="margin-top:28px;">Course Breakdown</h2>
+    ${courseRows.map(r => `
+      <div class="analytics-course-row">
+        <div class="analytics-course-head">
+          <span>${r.course.title}</span>
+          <span>${r.pct}% complete</span>
+        </div>
+        <div class="pasture-bar-outer"><div class="pasture-bar-inner" style="width:${r.pct}%;background:${r.course.color};"></div></div>
+        ${r.quizUnits.length ? `
+          <div class="analytics-unit-list">
+            ${r.quizUnits.map(l => {
+              const score = quizScores[l.id];
+              const cls = score >= 80 ? "good" : score >= 60 ? "mid" : "low";
+              return `<div class="analytics-unit-row">${l.title}<span class="analytics-score-pill ${cls}">${score}%</span></div>`;
+            }).join("")}
+          </div>
+        ` : ""}
+      </div>
+    `).join("") || `<div class="admin-empty-state">No course activity yet — head to Courses to get started.</div>`}
+  `;
+}
+
+function buildRecommendations(courseRows, quizScores, log) {
+  const recs = [];
+
+  // Weakest quiz units (below 60%)
+  const weakUnits = [];
+  courseRows.forEach(r => r.quizUnits.forEach(l => {
+    if (quizScores[l.id] < 60) weakUnits.push({ course: r.course, lesson: l, score: quizScores[l.id] });
+  }));
+  weakUnits.sort((a, b) => a.score - b.score).slice(0, 3).forEach(w => {
+    recs.push({
+      icon: "target",
+      title: `Retake "${w.lesson.title}"`,
+      desc: `You scored ${w.score}% on this quiz in ${w.course.title} — a quick retake could meaningfully boost your average.`
+    });
+  });
+
+  // Stalled courses: started but not touched among the most recent activity
+  const recentLessonIds = new Set(log.slice(-15).map(e => e.lessonId));
+  courseRows.forEach(r => {
+    if (r.pct > 0 && r.pct < 100) {
+      const touchedRecently = r.course.lessons.some(l => recentLessonIds.has(l.id));
+      if (!touchedRecently) {
+        recs.push({
+          icon: "bulb",
+          title: `Pick back up on ${r.course.title}`,
+          desc: `You're ${r.pct}% through this course but haven't touched it recently — even one more unit keeps your progress moving.`
+        });
+      }
+    }
+  });
+
+  // Streak nudge
+  if (!userData.streak) {
+    recs.push({ icon: "flame", title: "Start a study streak today", desc: "Complete just one lesson today to start building a streak — consistency compounds fast." });
+  }
+
+  // Untouched courses with content
+  const untouched = courseRows.length ? courses.filter(c => c.lessons.length > 0 && !courseRows.some(r => r.course.id === c.id)) : courses.filter(c => c.lessons.length > 0);
+  if (untouched.length && recs.length < 4) {
+    recs.push({ icon: "book", title: `Try ${untouched[0].title}`, desc: "You haven't started this course yet — it's a good candidate for your next study session." });
+  }
+
+  return recs.slice(0, 5);
+}
+
+// ========================= KPI DATABASE =========================
+function renderKPIList() {
+  const container = document.getElementById("kpiContent");
+  if (!container) return;
+
+  if (!kpisLoaded) {
+    container.innerHTML = `<div class="admin-empty-state">Loading KPI database...</div>`;
+    return;
+  }
+
+  const q = document.getElementById("kpiSearch")?.value.toLowerCase() || "";
+  const filtered = kpis.filter(k => k.title.toLowerCase().includes(q) || k.cluster.toLowerCase().includes(q));
+
+  if (!selectedKPIId && filtered.length) selectedKPIId = filtered[0].id;
+
+  const listHtml = filtered.map(k => `
+    <button class="kpi-list-item ${k.id === selectedKPIId ? "active" : ""}" onclick="selectKPI('${k.id}')">
+      ${k.title}
+      <span class="kpi-cluster-tag">${k.cluster}</span>
+    </button>
+  `).join("") || `<div class="admin-empty-state">No matching performance indicators.</div>`;
+
+  const selected = filtered.find(k => k.id === selectedKPIId) || filtered[0];
+
+  container.innerHTML = `
+    <div class="kpi-layout">
+      <div class="kpi-list">${listHtml}</div>
+      <div class="kpi-detail" id="kpiDetail">${selected ? renderKPIDetailHtml(selected) : `<div class="admin-empty-state">Select a performance indicator.</div>`}</div>
+    </div>
+  `;
+}
+
+function renderKPIDetailHtml(k) {
+  return `
+    <span class="kpi-cluster-tag">${k.cluster}</span>
+    <h2>${k.title}</h2>
+    <div class="kpi-section"><h4>Explanation</h4><p>${k.explanation}</p></div>
+    <div class="kpi-section"><h4>Real-World Example</h4><p>${k.example}</p></div>
+    <div class="kpi-section"><h4>Judge Expectations</h4><p>${k.judgeExpectations}</p></div>
+    <div class="kpi-section"><h4>Common Mistakes</h4><p>${k.commonMistakes}</p></div>
+    <div class="kpi-section"><h4>Sample Answer</h4><p>${k.sampleAnswer}</p></div>
+  `;
+}
+
+window.filterKPIs = function() {
+  renderKPIList();
+};
+
+window.selectKPI = function(id) {
+  selectedKPIId = id;
+  renderKPIList();
 };
 
 // ========================= PROFILE =========================
@@ -985,6 +1312,8 @@ window.showTab = function(tabName) {
   if (tabName === "profile") renderProfile();
   if (tabName === "courses") renderCourseGrid();
   if (tabName === "planner") renderPlannerForm();
+  if (tabName === "analytics") renderAnalytics();
+  if (tabName === "kpi") renderKPIList();
   if (tabName === "admin") renderAdminPanel();
 
   // Close mobile sidebar
@@ -1035,8 +1364,30 @@ function renderAdminPanel() {
   const container = document.getElementById("adminContent");
   if (!container || !isAdmin(currentUser)) return;
 
+  const subtabsHtml = `
+    <div class="admin-subtabs">
+      <button class="admin-subtab-btn ${adminActiveSubTab === "courses" ? "active" : ""}" onclick="adminSwitchSubTab('courses')">Courses</button>
+      <button class="admin-subtab-btn ${adminActiveSubTab === "kpi" ? "active" : ""}" onclick="adminSwitchSubTab('kpi')">KPI Database</button>
+    </div>
+    <div id="adminSubtabBody"></div>
+  `;
+  container.innerHTML = subtabsHtml;
+
+  if (adminActiveSubTab === "kpi") renderAdminKPISection();
+  else renderAdminCoursesSection();
+}
+
+window.adminSwitchSubTab = function(tab) {
+  adminActiveSubTab = tab;
+  renderAdminPanel();
+};
+
+function renderAdminCoursesSection() {
+  const body = document.getElementById("adminSubtabBody");
+  if (!body) return;
+
   if (!coursesLoaded) {
-    container.innerHTML = `<div class="admin-empty-state">Loading courses...</div>`;
+    body.innerHTML = `<div class="admin-empty-state">Loading courses...</div>`;
     return;
   }
 
@@ -1051,7 +1402,7 @@ function renderAdminPanel() {
     </button>
   `).join("");
 
-  container.innerHTML = `
+  body.innerHTML = `
     <div class="admin-seed-banner">
       <div>Courses load from the database. If this is the first time setting this up, import <code>courses.json</code> into the database once.</div>
       <button class="admin-btn-sm" onclick="adminSeedCourses()">Import courses.json</button>
@@ -1067,7 +1418,121 @@ function renderAdminPanel() {
 
 window.adminSelectCourse = function(id) {
   adminSelectedCourseId = id;
-  renderAdminPanel();
+  renderAdminCoursesSection();
+};
+
+// ---- KPI Database admin management ----
+let adminEditingKPIId = null;
+
+function renderAdminKPISection() {
+  const body = document.getElementById("adminSubtabBody");
+  if (!body) return;
+
+  const listHtml = kpis.map(k => `
+    <div class="admin-lesson-block">
+      <div class="admin-lesson-head">
+        <h4>${k.title}</h4>
+        <div style="display:flex;gap:8px;">
+          <button class="admin-btn-sm ghost" onclick="adminEditKPI('${k.id}')">Edit</button>
+          <button class="admin-btn-sm danger" onclick="adminDeleteKPI('${k.id}')">${icon("trash")} Delete</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);">${k.cluster}</div>
+    </div>
+  `).join("") || `<div class="admin-empty-state">No performance indicators yet.</div>`;
+
+  const editing = adminEditingKPIId ? kpis.find(k => k.id === adminEditingKPIId) : null;
+
+  body.innerHTML = `
+    <div class="admin-seed-banner">
+      <div>The KPI database starts with a small Farm4Glass-written seed set. Import it once, then expand it here as you verify and add real content.</div>
+      <button class="admin-btn-sm" onclick="adminSeedKPIs()">Import starter KPIs</button>
+    </div>
+    <div class="admin-layout">
+      <div class="admin-course-list">${listHtml}</div>
+      <div class="admin-panel-body">
+        <h3 style="margin-bottom:16px;">${editing ? "Edit Performance Indicator" : "Add a New Performance Indicator"}</h3>
+        <div class="admin-kpi-form">
+          <input type="text" id="kpi-title" placeholder="PI title (e.g. Explain the concept of channels of distribution)" value="${editing ? editing.title.replace(/"/g, "&quot;") : ""}">
+          <input type="text" id="kpi-cluster" placeholder="Cluster (e.g. Marketing)" value="${editing ? editing.cluster.replace(/"/g, "&quot;") : ""}">
+          <textarea id="kpi-explanation" rows="2" placeholder="Explanation">${editing ? editing.explanation : ""}</textarea>
+          <textarea id="kpi-example" rows="2" placeholder="Real-world example">${editing ? editing.example : ""}</textarea>
+          <textarea id="kpi-judge" rows="2" placeholder="Judge expectations">${editing ? editing.judgeExpectations : ""}</textarea>
+          <textarea id="kpi-mistakes" rows="2" placeholder="Common mistakes">${editing ? editing.commonMistakes : ""}</textarea>
+          <textarea id="kpi-sample" rows="3" placeholder="Sample answer">${editing ? editing.sampleAnswer : ""}</textarea>
+          <div style="display:flex;gap:10px;">
+            <button class="admin-btn-sm" onclick="adminSaveKPI()">${editing ? "Save Changes" : "Add Performance Indicator"}</button>
+            ${editing ? `<button class="admin-btn-sm ghost" onclick="adminCancelEditKPI()">Cancel</button>` : ""}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+window.adminEditKPI = function(id) {
+  adminEditingKPIId = id;
+  renderAdminKPISection();
+};
+
+window.adminCancelEditKPI = function() {
+  adminEditingKPIId = null;
+  renderAdminKPISection();
+};
+
+window.adminSaveKPI = async function() {
+  const title = document.getElementById("kpi-title").value.trim();
+  const cluster = document.getElementById("kpi-cluster").value.trim();
+  const explanation = document.getElementById("kpi-explanation").value.trim();
+  const example = document.getElementById("kpi-example").value.trim();
+  const judgeExpectations = document.getElementById("kpi-judge").value.trim();
+  const commonMistakes = document.getElementById("kpi-mistakes").value.trim();
+  const sampleAnswer = document.getElementById("kpi-sample").value.trim();
+
+  if (!title || !cluster || !explanation) return alert("Please fill in at least the title, cluster, and explanation.");
+
+  const id = adminEditingKPIId || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || `kpi-${Date.now()}`;
+  const kpiDoc = { id, title, cluster, explanation, example, judgeExpectations, commonMistakes, sampleAnswer };
+
+  try {
+    await setDoc(doc(db, "kpis", id), kpiDoc);
+    const idx = kpis.findIndex(k => k.id === id);
+    if (idx >= 0) kpis[idx] = kpiDoc; else kpis.push(kpiDoc);
+    adminEditingKPIId = null;
+    renderAdminKPISection();
+    renderKPIList();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+};
+
+window.adminDeleteKPI = async function(id) {
+  if (!confirm("Delete this performance indicator?")) return;
+  try {
+    await deleteDoc(doc(db, "kpis", id));
+    kpis = kpis.filter(k => k.id !== id);
+    renderAdminKPISection();
+    renderKPIList();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't delete — check the console.");
+  }
+};
+
+window.adminSeedKPIs = async function() {
+  if (!confirm("Import the starter KPI set into the database? This will overwrite any existing KPI docs with the same IDs.")) return;
+  try {
+    for (const k of KPI_SEED) {
+      await setDoc(doc(db, "kpis", k.id), k);
+    }
+    alert("Starter KPIs imported!");
+    await loadKPIs();
+    renderAdminKPISection();
+  } catch (e) {
+    console.error(e);
+    alert("Import failed — check the console.");
+  }
 };
 
 function renderAdminCourseEditor() {

@@ -259,6 +259,14 @@
     Study Planner
   </button>
 
+  <button class="nav-btn" onclick="showTab('analytics')" id="nav-analytics">
+    Analytics
+  </button>
+
+  <button class="nav-btn" onclick="showTab('kpi')" id="nav-kpi">
+    KPI Database
+  </button>
+
   <button class="nav-btn hidden" onclick="showTab('admin')" id="nav-admin">
     Admin
   </button>
@@ -489,10 +497,27 @@
       <div id="plannerResults"></div>
     </div>
 
+    <!-- ===== PERFORMANCE ANALYTICS ===== -->
+    <div id="analytics" class="tab-content hidden">
+      <h1>Performance Analytics</h1>
+      <p class="page-sub">Your detailed progress across every course, plus recommendations built just for you.</p>
+      <div id="analyticsContent"></div>
+    </div>
+
+    <!-- ===== KPI DATABASE ===== -->
+    <div id="kpi" class="tab-content hidden">
+      <h1>KPI Database</h1>
+      <p class="page-sub">Search any DECA performance indicator for an explanation, real-world example, judge expectations, common mistakes, and a sample answer.</p>
+      <div class="search-wrap" style="max-width:560px;margin-bottom:24px;">
+        <input type="text" id="kpiSearch" placeholder="Search performance indicators..." oninput="filterKPIs()">
+      </div>
+      <div id="kpiContent"></div>
+    </div>
+
     <!-- ===== ADMIN ===== -->
     <div id="admin" class="tab-content hidden">
       <h1>Admin Panel</h1>
-      <p class="page-sub">Manage course videos and practice quizzes. Only visible to admin accounts.</p>
+      <p class="page-sub">Manage course videos, practice quizzes, and the KPI database. Only visible to admin accounts.</p>
       <div id="adminContent"></div>
     </div>
 

@@ -49,7 +49,9 @@ const ICONS = {
   zap: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 3,14 11,14 9,22 21,10 13,10" fill="currentColor" stroke="none"/></svg>`,
   trash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg>`,
   plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`,
-  alert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/></svg>`
+  alert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/></svg>`,
+  calendar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>`,
+  clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`
 };
 
 function icon(name) {
@@ -236,6 +238,7 @@ async function loadCourses() {
       coursesLoaded = true;
       renderCourseGrid();
       renderFeaturedCourses();
+      renderPlannerForm();
       if (document.getElementById("admin")?.classList.contains("active")) renderAdminPanel();
       return;
     }
@@ -252,6 +255,7 @@ async function loadCourses() {
     coursesLoaded = true;
     renderCourseGrid();
     renderFeaturedCourses();
+    renderPlannerForm();
   } catch (err) {
     console.error("Failed to load courses:", err);
     showLoadError(
@@ -287,6 +291,7 @@ function renderAll() {
   renderCourseGrid();
   renderProfile();
   renderLeaderboard();
+  renderPlannerForm();
   if (isAdmin(currentUser)) renderAdminPanel();
 }
 
@@ -979,6 +984,7 @@ window.showTab = function(tabName) {
   if (tabName === "leaderboard") renderLeaderboard();
   if (tabName === "profile") renderProfile();
   if (tabName === "courses") renderCourseGrid();
+  if (tabName === "planner") renderPlannerForm();
   if (tabName === "admin") renderAdminPanel();
 
   // Close mobile sidebar
@@ -1280,3 +1286,149 @@ window.adminSeedCourses = async function() {
     alert("Import failed — check the console for details.");
   }
 };
+
+// ========================================================================
+// ========================= STUDY PLANNER ================================
+// ========================================================================
+// Personalized week-by-week schedule based on: which exam/event, the
+// conference/test date, the student's current practice score, and how many
+// hours a week they have available. Saved per-user in Firestore so it's
+// there next time they log in.
+
+function parseDurationMinutes(str) {
+  const match = /(\d+)/.exec(str || "");
+  return match ? Number(match[1]) : 10;
+}
+
+function renderPlannerForm() {
+  const select = document.getElementById("plannerCourse");
+  if (!select) return;
+
+  if (select.children.length === 0 && courses.length) {
+    select.innerHTML = courses.map(c => `<option value="${c.id}">${c.title}</option>`).join("");
+  }
+
+  const saved = userData?.studyPlan;
+  if (saved) {
+    if (saved.courseId) select.value = saved.courseId;
+    if (saved.conferenceDate) document.getElementById("plannerDate").value = saved.conferenceDate;
+    if (saved.currentScore != null) document.getElementById("plannerScore").value = saved.currentScore;
+    if (saved.hoursPerWeek != null) document.getElementById("plannerHours").value = saved.hoursPerWeek;
+    renderPlanResults(saved);
+  }
+}
+
+window.generateStudyPlan = async function() {
+  const courseId = document.getElementById("plannerCourse").value;
+  const conferenceDate = document.getElementById("plannerDate").value;
+  const currentScore = Number(document.getElementById("plannerScore").value);
+  const hoursPerWeek = Number(document.getElementById("plannerHours").value);
+
+  if (!courseId || !conferenceDate || !hoursPerWeek) {
+    alert("Please fill in the exam, date, and available hours per week.");
+    return;
+  }
+
+  const course = courses.find(c => c.id === courseId);
+  if (!course) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(conferenceDate + "T00:00:00");
+  const daysUntil = Math.max(1, Math.round((target - today) / 86400000));
+  const weeksUntil = Math.max(1, Math.ceil(daysUntil / 7));
+
+  const completed = userData?.completedLessons || [];
+  const remaining = course.lessons.filter(l => !completed.includes(l.id));
+
+  // Low scorers get quizzes re-queued earlier/more often for extra review
+  const orderedRemaining = currentScore && currentScore < 70
+    ? [...remaining].sort((a, b) => (a.type === "quiz" ? -1 : 1) - (b.type === "quiz" ? -1 : 1))
+    : remaining;
+
+  const totalMinutesNeeded = orderedRemaining.reduce((sum, l) => sum + parseDurationMinutes(l.duration), 0);
+  const totalHoursNeeded = totalMinutesNeeded / 60;
+  const availableHours = weeksUntil * hoursPerWeek;
+
+  const perWeek = Math.max(1, Math.ceil(orderedRemaining.length / weeksUntil));
+  const weeks = [];
+  for (let w = 0; w < weeksUntil && w * perWeek < orderedRemaining.length; w++) {
+    const chunk = orderedRemaining.slice(w * perWeek, (w + 1) * perWeek);
+    if (!chunk.length) break;
+    const weekStart = new Date(today.getTime() + w * 7 * 86400000);
+    const weekEnd = new Date(Math.min(weekStart.getTime() + 6 * 86400000, target.getTime()));
+    weeks.push({
+      weekNum: w + 1,
+      start: weekStart.toISOString().slice(0, 10),
+      end: weekEnd.toISOString().slice(0, 10),
+      items: chunk.map(l => ({ title: l.title, type: l.type, duration: l.duration }))
+    });
+  }
+
+  const plan = {
+    courseId, courseTitle: course.title, conferenceDate, currentScore, hoursPerWeek,
+    daysUntil, weeksUntil, remainingCount: orderedRemaining.length,
+    totalHoursNeeded: Math.round(totalHoursNeeded * 10) / 10,
+    availableHours, weeks,
+    generatedAt: new Date().toISOString()
+  };
+
+  renderPlanResults(plan);
+
+  if (currentUser) {
+    try {
+      await updateDoc(doc(db, "users", currentUser.uid), { studyPlan: plan });
+      if (userData) userData.studyPlan = plan;
+    } catch (e) {
+      console.error("Failed to save study plan:", e);
+    }
+  }
+};
+
+function renderPlanResults(plan) {
+  const container = document.getElementById("plannerResults");
+  if (!container) return;
+
+  if (!plan.weeks.length) {
+    container.innerHTML = `<div class="admin-empty-state">You've already completed every lesson in ${plan.courseTitle}! Head to the Leaderboard to see how you stack up.</div>`;
+    return;
+  }
+
+  const onTrack = plan.availableHours >= plan.totalHoursNeeded;
+  const statusHtml = onTrack
+    ? `<div class="planner-ontrack">${icon("zap")} You have enough time budgeted — stick to the plan below and you'll finish ${plan.courseTitle} before your conference.</div>`
+    : `<div class="planner-warning">${icon("alert")} At ${plan.hoursPerWeek} hrs/week you're short about ${Math.max(0, Math.round((plan.totalHoursNeeded - plan.availableHours) * 10) / 10)} hours before your conference. Consider raising your weekly hours or starting review sooner.</div>`;
+
+  const scoreNote = plan.currentScore && plan.currentScore < 70
+    ? `<div class="planner-warning">${icon("alert")} Your practice score (${plan.currentScore}%) suggests prioritizing quizzes for extra review — this plan front-loads quiz review where possible.</div>`
+    : "";
+
+  const weeksHtml = plan.weeks.map(w => `
+    <div class="planner-week-card">
+      <div class="planner-week-head">
+        <h4>Week ${w.weekNum}</h4>
+        <span class="planner-week-dates">${w.start} → ${w.end}</span>
+      </div>
+      <div class="planner-week-items">
+        ${w.items.map(item => `
+          <div class="planner-week-item">${icon(item.type === "quiz" ? "quiz" : "play")} ${item.title} <span style="color:var(--muted);margin-left:auto;">${item.duration}</span></div>
+        `).join("")}
+      </div>
+    </div>
+  `).join("");
+
+  container.innerHTML = `
+    <div class="planner-summary">
+      <h3>Your Plan for ${plan.courseTitle}</h3>
+      <div class="planner-summary-grid">
+        <div class="planner-summary-stat"><div class="val">${plan.daysUntil}</div><div class="lbl">Days Until Conference</div></div>
+        <div class="planner-summary-stat"><div class="val">${plan.remainingCount}</div><div class="lbl">Lessons Remaining</div></div>
+        <div class="planner-summary-stat"><div class="val">${plan.totalHoursNeeded}h</div><div class="lbl">Est. Time Needed</div></div>
+        <div class="planner-summary-stat"><div class="val">${plan.availableHours}h</div><div class="lbl">Time Budgeted</div></div>
+      </div>
+      ${statusHtml}
+      ${scoreNote}
+    </div>
+    <div class="planner-weeks">${weeksHtml}</div>
+  `;
+}

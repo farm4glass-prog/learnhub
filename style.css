@@ -36,7 +36,7 @@ h1, h2, .logo-text, .nav-links a, .hero-title,
 .guests-section h2, .dash-header h1, #courses h1, #leaderboard h1, #profile h1,
 .lv-header h1, .vl-info h2, .quiz-header h2, .modal-box h2, .results-title,
 .stat-value, .cc-title, .barn-btn, .btn-primary, .btn-ghost {
-  font-family: 'League Spartan', sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 /* Cursive accent style, reused anywhere we want a "learn deca"-style flourish */

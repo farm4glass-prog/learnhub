@@ -55,14 +55,11 @@ body {
 
 /* ========================= LANDING HERO ========================= */
 .landing-hero {
-  background-image: url("NewCover.jpg");
-  background-size: cover;
-  background-position: center top; /* or center 20% */
-  height: 1000px; /* ADD THIS */
-  background-repeat: no-repeat;
+  background: #0b1a2e;
   padding: 120px 40px 100px;
   text-align: center; color: white;
 }
+
 .hero-badge {
   display: inline-block; background: rgba(255,255,255,0.12);
   border: 1px solid rgba(255,255,255,0.2); border-radius: 999px;

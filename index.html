@@ -263,6 +263,22 @@
     KPI Database
   </button>
 
+  <button class="nav-btn" onclick="showTab('calendar')" id="nav-calendar">
+    Calendar
+  </button>
+
+  <button class="nav-btn" onclick="showTab('blog')" id="nav-blog">
+    Blog
+  </button>
+
+  <button class="nav-btn" onclick="showTab('network')" id="nav-network">
+    Network
+  </button>
+
+  <button class="nav-btn" onclick="showTab('checklists')" id="nav-checklists">
+    Checklists
+  </button>
+
   <button class="nav-btn hidden" onclick="showTab('admin')" id="nav-admin">
     Admin
   </button>
@@ -450,12 +466,22 @@
           <label>DECA Chapter</label>
           <input type="text" id="editChapter" placeholder="e.g., Los Angeles DECA">
         </div>
+        <div class="form-group">
+          <label>DECA Association (High School)</label>
+          <input type="text" id="editAssociation" list="associationList" placeholder="e.g., California DECA">
+          <datalist id="associationList"></datalist>
+        </div>
         <button class="btn-primary" onclick="saveProfile()">Save Changes</button>
       </div>
 
       <div class="widget">
         <div class="widget-header"><span>Farm Badges</span></div>
         <div class="badges-grid-large" id="profileBadges"></div>
+      </div>
+
+      <div class="widget">
+        <div class="widget-header"><span>Bookmarks</span></div>
+        <div id="profileBookmarks"></div>
       </div>
 
       <div class="widget">
@@ -510,10 +536,42 @@
       <div id="kpiContent"></div>
     </div>
 
+    <!-- ===== CALENDAR ===== -->
+    <div id="calendar" class="tab-content hidden">
+      <h1>Conference Calendar</h1>
+      <p class="page-sub">Upcoming DECA conferences and association deadlines — filtered to your association when you've set one on your profile.</p>
+      <div id="calendarContent"></div>
+    </div>
+
+    <!-- ===== BLOG ===== -->
+    <div id="blog" class="tab-content hidden">
+      <h1>Farm4Glass Blog</h1>
+      <p class="page-sub">Updates, tips, and reels from the Farm4Glass team.</p>
+      <div id="blogContent"></div>
+    </div>
+
+    <!-- ===== NETWORK ===== -->
+    <div id="network" class="tab-content hidden">
+      <h1>Network</h1>
+      <p class="page-sub">Find and message other DECA competitors on Farm4Glass.</p>
+      <div class="network-tabs">
+        <button class="lb-tab active" onclick="switchNetworkTab('directory', this)">Directory</button>
+        <button class="lb-tab" onclick="switchNetworkTab('messages', this)">Messages</button>
+      </div>
+      <div id="networkContent"></div>
+    </div>
+
+    <!-- ===== CHECKLISTS ===== -->
+    <div id="checklists" class="tab-content hidden">
+      <h1>Written Event Checklists</h1>
+      <p class="page-sub">Self-review checklists for written events — make sure you haven't missed a requirement before submission.</p>
+      <div id="checklistsContent"></div>
+    </div>
+
     <!-- ===== ADMIN ===== -->
     <div id="admin" class="tab-content hidden">
       <h1>Admin Panel</h1>
-      <p class="page-sub">Manage course videos, practice quizzes, and the KPI database. Only visible to admin accounts.</p>
+      <p class="page-sub">Manage course content, community features, and site data. Only visible to admin accounts.</p>
       <div id="adminContent"></div>
     </div>
 

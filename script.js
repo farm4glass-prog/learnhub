@@ -5,7 +5,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
-  collection, getDocs, orderBy, query, limit
+  collection, getDocs, orderBy, query, limit, where,
+  addDoc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // ========================= FIREBASE =========================
@@ -54,7 +55,13 @@ const ICONS = {
   clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`,
   target: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>`,
   bulb: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.6.6 1 1.4 1 2.5h6c0-1.1.4-1.9 1-2.5A6 6 0 0 0 12 3z"/></svg>`,
-  search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>`
+  search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>`,
+  bookmark: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg>`,
+  bookmarkFilled: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg>`,
+  send: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 12 18-9-9 18-2-7-7-2z"/></svg>`,
+  mail: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 6 8 7 8-7"/></svg>`,
+  timer: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4"/><path d="M12 14 15 11"/><circle cx="12" cy="14" r="8"/></svg>`,
+  check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>`
 };
 
 function icon(name) {
@@ -122,6 +129,27 @@ function checkCourseComplete(userData, courses) {
     )
   );
 }
+
+// ========================= DECA ASSOCIATIONS (High School) =========================
+// A starter list of chartered DECA high-school state/territory associations for the
+// profile "Association" field. It's an <input list="..."> (datalist), not a rigid
+// <select>, so a student can still type an exact chapter name if theirs is missing
+// or worded differently — admins should treat this as a convenience list, not a
+// source of truth (see https://www.deca.org/associations for the official list).
+const DECA_ASSOCIATIONS = [
+  "Alabama DECA", "Alaska DECA", "Arizona DECA", "Arkansas DECA", "California DECA",
+  "Colorado DECA", "Connecticut DECA", "Delaware DECA", "District of Columbia DECA",
+  "Florida DECA", "Georgia DECA", "Guam DECA", "Hawaii DECA", "Idaho DECA",
+  "Illinois DECA", "Indiana DECA", "Iowa DECA", "Kansas DECA", "Kentucky DECA",
+  "Louisiana DECA", "Maine DECA", "Maryland DECA", "Massachusetts DECA", "Michigan DECA",
+  "Minnesota DECA", "Mississippi DECA", "Missouri DECA", "Montana DECA", "Nebraska DECA",
+  "Nevada DECA", "New Hampshire DECA", "New Jersey DECA", "New Mexico DECA", "New York DECA",
+  "North Carolina DECA", "North Dakota DECA", "Ohio DECA", "Oklahoma DECA", "Oregon DECA",
+  "Pennsylvania DECA", "Puerto Rico DECA", "Rhode Island DECA", "South Carolina DECA",
+  "South Dakota DECA", "Tennessee DECA", "Texas DECA", "Utah DECA", "Vermont DECA",
+  "Virgin Islands DECA", "Virginia DECA", "Washington DECA", "West Virginia DECA",
+  "Wisconsin DECA", "Wyoming DECA", "DECA Germany"
+];
 
 // ========================= KPI DATABASE (starter content) =========================
 // These are a starting set written by Farm4Glass as study aids, not verbatim DECA
@@ -245,6 +273,26 @@ let adminActiveSubTab = "courses";
 let kpis = [];
 let kpisLoaded = false;
 let selectedKPIId = null;
+let calendarEvents = [];
+let calendarEventsLoaded = false;
+let adminEditingEventId = null;
+let blogs = [];
+let blogsLoaded = false;
+let adminEditingBlogId = null;
+let checklists = [];
+let checklistsLoaded = false;
+let selectedChecklistId = null;
+let adminEditingChecklistId = null;
+let networkUsers = [];
+let networkUsersLoaded = false;
+let networkActiveSubTab = "directory";
+let conversations = [];
+let activeConversationId = null;
+let activeConversationPeer = null;
+let conversationsUnsub = null;
+let messagesUnsub = null;
+let examState = null;
+let examTimerInterval = null;
 
 // ========================= LOGIN =========================
 async function loginWithGoogle() {
@@ -276,6 +324,7 @@ onAuthStateChanged(auth, async (user) => {
           email: user.email,
           photoURL: user.photoURL || "",
           chapter: "",
+          association: "",
           xp: 0,
           streak: 0,
           bestStreak: 0,
@@ -283,12 +332,22 @@ onAuthStateChanged(auth, async (user) => {
           completedLessons: [],
           completedQuizzes: 0,
           earnedBadges: [],
-          quizScores: {}
+          quizScores: {},
+          bookmarkedLessons: [],
+          bookmarkedKPIs: [],
+          examAttempts: [],
+          checklistProgress: {}
         });
       }
 
       const fresh = await getDoc(userRef);
       userData = fresh.data();
+      // Fill in defaults locally for accounts created before these fields existed
+      userData.association = userData.association || "";
+      userData.bookmarkedLessons = userData.bookmarkedLessons || [];
+      userData.bookmarkedKPIs = userData.bookmarkedKPIs || [];
+      userData.examAttempts = userData.examAttempts || [];
+      userData.checklistProgress = userData.checklistProgress || {};
 
       await updateStreak(userRef);
       renderAll();
@@ -301,6 +360,9 @@ onAuthStateChanged(auth, async (user) => {
   } else {
     currentUser = null;
     userData = null;
+    if (conversationsUnsub) { conversationsUnsub(); conversationsUnsub = null; }
+    if (messagesUnsub) { messagesUnsub(); messagesUnsub = null; }
+    if (examTimerInterval) { clearInterval(examTimerInterval); examTimerInterval = null; }
     document.getElementById("portal")?.classList.add("hidden");
     document.getElementById("landingPage")?.classList.remove("hidden");
   }
@@ -398,6 +460,10 @@ function normalizeCourse(course, courseIndex = 0) {
 
 loadCourses();
 loadKPIs();
+loadCalendarEvents();
+loadBlogs();
+loadChecklists();
+populateAssociationsDatalist();
 
 async function loadKPIs() {
   try {
@@ -662,7 +728,12 @@ window.openCourse = function(id) {
   if (!course) return;
 
   const completed = userData?.completedLessons || [];
+  const bookmarked = userData?.bookmarkedLessons || [];
   showTab("lessonView");
+
+  const examQuestionCount = course.lessons
+    .filter(l => l.type === "quiz")
+    .reduce((sum, l) => sum + (l.questions?.length || 0), 0);
 
   const container = document.getElementById("lessonViewContent");
   container.innerHTML = `
@@ -672,9 +743,19 @@ window.openCourse = function(id) {
         <h1>${course.title}</h1>
         <div class="lv-desc">${course.description}</div>
       </div>
+      ${examQuestionCount >= 10 ? `
+        <div class="exam-cta">
+          <div>
+            <div class="exam-cta-title">${icon("timer")} Practice Exam</div>
+            <div class="exam-cta-desc">Take a full timed exam pulled from all ${examQuestionCount} practice questions in this course.</div>
+          </div>
+          <button class="btn-primary" onclick="openExamSetup('${course.id}')">Take Practice Exam →</button>
+        </div>
+      ` : ""}
       <div class="lessons-list">
         ${course.lessons.map((lesson, i) => {
           const isDone = completed.includes(lesson.id);
+          const isBookmarked = bookmarked.includes(lesson.id);
           const typeIcon = lesson.type === "quiz" ? icon("quiz") : icon("play");
           return `
             <div class="lesson-row ${isDone ? "done" : ""}" onclick="openLesson('${course.id}', '${lesson.id}')">
@@ -683,6 +764,7 @@ window.openCourse = function(id) {
                 <div class="lr-title">${lesson.title}</div>
                 <div class="lr-meta"><span class="lr-type-icon">${lesson.type === "quiz" ? icon("quiz") : icon("play")}</span> ${lesson.type === "quiz" ? "Quiz" : "Video"} · ${lesson.duration}</div>
               </div>
+              <button class="bookmark-btn ${isBookmarked ? "active" : ""}" onclick="event.stopPropagation(); toggleLessonBookmark('${lesson.id}')" title="${isBookmarked ? "Remove bookmark" : "Bookmark this lesson"}">${icon(isBookmarked ? "bookmarkFilled" : "bookmark")}</button>
               <span class="lr-xp">+${lesson.xp} XP</span>
               <span class="lr-arrow">›</span>
             </div>
@@ -1161,6 +1243,7 @@ function renderKPIList() {
 
   const q = document.getElementById("kpiSearch")?.value.toLowerCase() || "";
   const filtered = kpis.filter(k => k.title.toLowerCase().includes(q) || k.cluster.toLowerCase().includes(q));
+  const bookmarked = userData?.bookmarkedKPIs || [];
 
   if (!selectedKPIId && filtered.length) selectedKPIId = filtered[0].id;
 
@@ -1168,6 +1251,7 @@ function renderKPIList() {
     <button class="kpi-list-item ${k.id === selectedKPIId ? "active" : ""}" onclick="selectKPI('${k.id}')">
       ${k.title}
       <span class="kpi-cluster-tag">${k.cluster}</span>
+      ${bookmarked.includes(k.id) ? `<span class="kpi-bookmark-dot">${icon("bookmarkFilled")}</span>` : ""}
     </button>
   `).join("") || `<div class="admin-empty-state">No matching performance indicators.</div>`;
 
@@ -1182,8 +1266,12 @@ function renderKPIList() {
 }
 
 function renderKPIDetailHtml(k) {
+  const isBookmarked = (userData?.bookmarkedKPIs || []).includes(k.id);
   return `
-    <span class="kpi-cluster-tag">${k.cluster}</span>
+    <div class="kpi-detail-head">
+      <span class="kpi-cluster-tag">${k.cluster}</span>
+      <button class="bookmark-btn ${isBookmarked ? "active" : ""}" onclick="toggleKPIBookmark('${k.id}')" title="${isBookmarked ? "Remove bookmark" : "Bookmark this PI"}">${icon(isBookmarked ? "bookmarkFilled" : "bookmark")}</button>
+    </div>
     <h2>${k.title}</h2>
     <div class="kpi-section"><h4>Explanation</h4><p>${k.explanation}</p></div>
     <div class="kpi-section"><h4>Real-World Example</h4><p>${k.example}</p></div>
@@ -1228,6 +1316,9 @@ function renderProfile() {
 
   document.getElementById("editDisplayName").value = userData.displayName || "";
   document.getElementById("editChapter").value = userData.chapter || "";
+  document.getElementById("editAssociation").value = userData.association || "";
+
+  renderProfileBookmarks();
 
   // Badges large
   const badgeContainer = document.getElementById("profileBadges");
@@ -1272,12 +1363,14 @@ window.saveProfile = async function() {
   if (!currentUser) return;
   const name = document.getElementById("editDisplayName").value.trim();
   const chapter = document.getElementById("editChapter").value.trim();
+  const association = document.getElementById("editAssociation").value.trim();
   if (!name) return alert("Display name can't be empty!");
 
   try {
-    await updateDoc(doc(db, "users", currentUser.uid), { displayName: name, chapter });
+    await updateDoc(doc(db, "users", currentUser.uid), { displayName: name, chapter, association });
     userData.displayName = name;
     userData.chapter = chapter;
+    userData.association = association;
 
     renderSidebar();
     renderDashboard();
@@ -1288,6 +1381,12 @@ window.saveProfile = async function() {
     alert("Couldn't save your profile — check the console for details.");
   }
 };
+
+function populateAssociationsDatalist() {
+  const list = document.getElementById("associationList");
+  if (!list) return;
+  list.innerHTML = DECA_ASSOCIATIONS.map(a => `<option value="${a}"></option>`).join("");
+}
 
 // ========================= TABS =========================
 window.showTab = function(tabName) {
@@ -1314,6 +1413,10 @@ window.showTab = function(tabName) {
   if (tabName === "planner") renderPlannerForm();
   if (tabName === "analytics") renderAnalytics();
   if (tabName === "kpi") renderKPIList();
+  if (tabName === "calendar") renderCalendarList();
+  if (tabName === "blog") renderBlogList();
+  if (tabName === "network") renderNetworkTab();
+  if (tabName === "checklists") renderChecklistsList();
   if (tabName === "admin") renderAdminPanel();
 
   // Close mobile sidebar
@@ -1368,12 +1471,20 @@ function renderAdminPanel() {
     <div class="admin-subtabs">
       <button class="admin-subtab-btn ${adminActiveSubTab === "courses" ? "active" : ""}" onclick="adminSwitchSubTab('courses')">Courses</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "kpi" ? "active" : ""}" onclick="adminSwitchSubTab('kpi')">KPI Database</button>
+      <button class="admin-subtab-btn ${adminActiveSubTab === "members" ? "active" : ""}" onclick="adminSwitchSubTab('members')">Members</button>
+      <button class="admin-subtab-btn ${adminActiveSubTab === "calendar" ? "active" : ""}" onclick="adminSwitchSubTab('calendar')">Calendar</button>
+      <button class="admin-subtab-btn ${adminActiveSubTab === "blog" ? "active" : ""}" onclick="adminSwitchSubTab('blog')">Blog</button>
+      <button class="admin-subtab-btn ${adminActiveSubTab === "checklists" ? "active" : ""}" onclick="adminSwitchSubTab('checklists')">Checklists</button>
     </div>
     <div id="adminSubtabBody"></div>
   `;
   container.innerHTML = subtabsHtml;
 
   if (adminActiveSubTab === "kpi") renderAdminKPISection();
+  else if (adminActiveSubTab === "members") renderAdminMembersSection();
+  else if (adminActiveSubTab === "calendar") renderAdminCalendarSection();
+  else if (adminActiveSubTab === "blog") renderAdminBlogSection();
+  else if (adminActiveSubTab === "checklists") renderAdminChecklistsSection();
   else renderAdminCoursesSection();
 }
 
@@ -1897,3 +2008,1052 @@ function renderPlanResults(plan) {
     <div class="planner-weeks">${weeksHtml}</div>
   `;
 }
+
+// ========================================================================
+// ========================= BOOKMARKS ====================================
+// ========================================================================
+
+window.toggleLessonBookmark = async function(lessonId) {
+  if (!currentUser || !userData) return;
+  const current = userData.bookmarkedLessons || [];
+  const updated = current.includes(lessonId) ? current.filter(id => id !== lessonId) : [...current, lessonId];
+
+  try {
+    await updateDoc(doc(db, "users", currentUser.uid), { bookmarkedLessons: updated });
+    userData.bookmarkedLessons = updated;
+    if (currentCourseId) openCourse(currentCourseId);
+    renderProfileBookmarks();
+  } catch (e) {
+    console.error("Failed to update bookmark:", e);
+  }
+};
+
+window.toggleKPIBookmark = async function(kpiId) {
+  if (!currentUser || !userData) return;
+  const current = userData.bookmarkedKPIs || [];
+  const updated = current.includes(kpiId) ? current.filter(id => id !== kpiId) : [...current, kpiId];
+
+  try {
+    await updateDoc(doc(db, "users", currentUser.uid), { bookmarkedKPIs: updated });
+    userData.bookmarkedKPIs = updated;
+    renderKPIList();
+    renderProfileBookmarks();
+  } catch (e) {
+    console.error("Failed to update bookmark:", e);
+  }
+};
+
+function renderProfileBookmarks() {
+  const container = document.getElementById("profileBookmarks");
+  if (!container || !userData) return;
+
+  const bookmarkedLessonIds = userData.bookmarkedLessons || [];
+  const bookmarkedKPIIds = userData.bookmarkedKPIs || [];
+
+  const lessonRows = bookmarkedLessonIds.map(id => {
+    const course = courses.find(c => c.lessons.some(l => l.id === id));
+    const lesson = course?.lessons.find(l => l.id === id);
+    if (!lesson) return "";
+    return `
+      <div class="bookmark-row" onclick="openLesson('${course.id}', '${lesson.id}')">
+        ${icon(lesson.type === "quiz" ? "quiz" : "play")}
+        <span>${lesson.title}</span>
+        <span class="bookmark-row-sub">${course.title}</span>
+      </div>
+    `;
+  }).join("");
+
+  const kpiRows = bookmarkedKPIIds.map(id => {
+    const k = kpis.find(k => k.id === id);
+    if (!k) return "";
+    return `
+      <div class="bookmark-row" onclick="showTab('kpi'); selectKPI('${k.id}')">
+        ${icon("bookmarkFilled")}
+        <span>${k.title}</span>
+        <span class="bookmark-row-sub">${k.cluster}</span>
+      </div>
+    `;
+  }).join("");
+
+  if (!lessonRows && !kpiRows) {
+    container.innerHTML = `<div class="admin-empty-state">Bookmark lessons and performance indicators to find them here.</div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    ${lessonRows ? `<div class="bookmark-group-label">Lessons</div>${lessonRows}` : ""}
+    ${kpiRows ? `<div class="bookmark-group-label">Performance Indicators</div>${kpiRows}` : ""}
+  `;
+}
+
+// ========================================================================
+// ========================= ADMIN: MEMBERS ===============================
+// ========================================================================
+// Reads the same "users" collection the leaderboard already reads publicly —
+// this just surfaces the email field (and association/chapter) in a table so
+// admins can see every member's contact info in one place.
+
+async function renderAdminMembersSection() {
+  const body = document.getElementById("adminSubtabBody");
+  if (!body) return;
+  body.innerHTML = `<div class="admin-empty-state">Loading members...</div>`;
+
+  try {
+    const snap = await getDocs(collection(db, "users"));
+    const members = [];
+    snap.forEach(d => members.push({ id: d.id, ...d.data() }));
+    members.sort((a, b) => (b.xp || 0) - (a.xp || 0));
+
+    body.innerHTML = `
+      <div class="admin-panel-body">
+        <h3 style="margin-bottom:16px;">${members.length} Members</h3>
+        <div class="admin-members-table">
+          <div class="admin-members-row admin-members-head">
+            <span>Name</span><span>Email</span><span>Chapter</span><span>Association</span><span>XP</span>
+          </div>
+          ${members.map(m => `
+            <div class="admin-members-row">
+              <span>${m.displayName || "DECA Student"}</span>
+              <span>${m.email || "—"}</span>
+              <span>${m.chapter || "—"}</span>
+              <span>${m.association || "—"}</span>
+              <span>${m.xp || 0}</span>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    console.error("Failed to load members:", e);
+    body.innerHTML = `<div class="admin-empty-state">${icon("alert")} Couldn't load members — check Firestore rules allow the admin account to read the "users" collection.</div>`;
+  }
+}
+
+// ========================================================================
+// ========================= CALENDAR ======================================
+// ========================================================================
+// Firestore "calendarEvents" collection, one doc per event:
+//   { id, title, date: "YYYY-MM-DD", type: "conference"|"deadline", association, description }
+// association === "" means the event applies to everyone.
+// Firestore rules needed:
+//   match /calendarEvents/{eventId} {
+//     allow read: if true;
+//     allow write: if request.auth.token.email == "farm4glass@gmail.com";
+//   }
+
+async function loadCalendarEvents() {
+  try {
+    const snap = await getDocs(collection(db, "calendarEvents"));
+    calendarEvents = snap.docs.map(d => d.data());
+    calendarEventsLoaded = true;
+    if (document.getElementById("calendar")?.classList.contains("active")) renderCalendarList();
+    if (adminActiveSubTab === "calendar" && document.getElementById("admin")?.classList.contains("active")) renderAdminCalendarSection();
+  } catch (e) {
+    console.error("Failed to load calendar events:", e);
+    calendarEventsLoaded = true;
+  }
+}
+
+function renderCalendarList() {
+  const container = document.getElementById("calendarContent");
+  if (!container) return;
+
+  if (!calendarEventsLoaded) {
+    container.innerHTML = `<div class="admin-empty-state">Loading calendar...</div>`;
+    return;
+  }
+
+  const myAssociation = userData?.association || "";
+  const today = new Date().toISOString().slice(0, 10);
+
+  const relevant = calendarEvents.filter(e => !e.association || e.association === myAssociation);
+  const upcoming = relevant.filter(e => e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+  const past = relevant.filter(e => e.date < today).sort((a, b) => b.date.localeCompare(a.date));
+
+  const renderEvent = (e) => `
+    <div class="calendar-event-card ${e.type}">
+      <div class="calendar-event-date">
+        <div class="ced-month">${new Date(e.date + "T00:00:00").toLocaleDateString(undefined, { month: "short" })}</div>
+        <div class="ced-day">${new Date(e.date + "T00:00:00").getDate()}</div>
+      </div>
+      <div class="calendar-event-info">
+        <div class="calendar-event-title">${e.title}</div>
+        <div class="calendar-event-meta">
+          <span class="calendar-event-type ${e.type}">${e.type === "deadline" ? "Deadline" : "Conference"}</span>
+          ${e.association ? `<span>${e.association}</span>` : `<span>All associations</span>`}
+        </div>
+        ${e.description ? `<div class="calendar-event-desc">${e.description}</div>` : ""}
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = `
+    ${!userData?.association ? `<div class="planner-warning">${icon("alert")} Set your DECA association on your Profile to filter this calendar to events relevant to you.</div>` : ""}
+    <h2 class="section-title" style="margin-top:20px;">Upcoming</h2>
+    ${upcoming.length ? upcoming.map(renderEvent).join("") : `<div class="admin-empty-state">No upcoming events yet — check back soon.</div>`}
+    ${past.length ? `
+      <h2 class="section-title" style="margin-top:28px;">Past</h2>
+      ${past.slice(0, 10).map(renderEvent).join("")}
+    ` : ""}
+  `;
+}
+
+function renderAdminCalendarSection() {
+  const body = document.getElementById("adminSubtabBody");
+  if (!body) return;
+
+  const editing = adminEditingEventId ? calendarEvents.find(e => e.id === adminEditingEventId) : null;
+  const sorted = [...calendarEvents].sort((a, b) => a.date.localeCompare(b.date));
+
+  const listHtml = sorted.map(e => `
+    <div class="admin-lesson-block">
+      <div class="admin-lesson-head">
+        <h4>${e.title} <span style="font-weight:600;color:var(--muted);font-size:12px;">— ${e.date}</span></h4>
+        <div style="display:flex;gap:8px;">
+          <button class="admin-btn-sm ghost" onclick="adminEditEvent('${e.id}')">Edit</button>
+          <button class="admin-btn-sm danger" onclick="adminDeleteEvent('${e.id}')">${icon("trash")} Delete</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);">${e.type === "deadline" ? "Deadline" : "Conference"} · ${e.association || "All associations"}</div>
+    </div>
+  `).join("") || `<div class="admin-empty-state">No calendar events yet.</div>`;
+
+  body.innerHTML = `
+    <div class="admin-layout">
+      <div class="admin-course-list">${listHtml}</div>
+      <div class="admin-panel-body">
+        <h3 style="margin-bottom:16px;">${editing ? "Edit Event" : "Add a New Event"}</h3>
+        <div class="admin-kpi-form">
+          <input type="text" id="event-title" placeholder="Event title (e.g. NorCal CDC Registration Deadline)" value="${editing ? editing.title.replace(/"/g, "&quot;") : ""}">
+          <input type="date" id="event-date" value="${editing ? editing.date : ""}">
+          <select id="event-type">
+            <option value="conference" ${editing?.type === "conference" ? "selected" : ""}>Conference</option>
+            <option value="deadline" ${editing?.type === "deadline" ? "selected" : ""}>Deadline</option>
+          </select>
+          <input type="text" id="event-association" list="associationList" placeholder="Association (leave blank for all)" value="${editing ? (editing.association || "") : ""}">
+          <textarea id="event-desc" rows="2" placeholder="Description (optional)">${editing ? (editing.description || "") : ""}</textarea>
+          <div style="display:flex;gap:10px;">
+            <button class="admin-btn-sm" onclick="adminSaveEvent()">${editing ? "Save Changes" : "Add Event"}</button>
+            ${editing ? `<button class="admin-btn-sm ghost" onclick="adminCancelEditEvent()">Cancel</button>` : ""}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+window.adminEditEvent = function(id) {
+  adminEditingEventId = id;
+  renderAdminCalendarSection();
+};
+
+window.adminCancelEditEvent = function() {
+  adminEditingEventId = null;
+  renderAdminCalendarSection();
+};
+
+window.adminSaveEvent = async function() {
+  const title = document.getElementById("event-title").value.trim();
+  const date = document.getElementById("event-date").value;
+  const type = document.getElementById("event-type").value;
+  const association = document.getElementById("event-association").value.trim();
+  const description = document.getElementById("event-desc").value.trim();
+
+  if (!title || !date) return alert("Please fill in at least a title and date.");
+
+  const id = adminEditingEventId || `event-${Date.now()}`;
+  const eventDoc = { id, title, date, type, association, description };
+
+  try {
+    await setDoc(doc(db, "calendarEvents", id), eventDoc);
+    const idx = calendarEvents.findIndex(e => e.id === id);
+    if (idx >= 0) calendarEvents[idx] = eventDoc; else calendarEvents.push(eventDoc);
+    adminEditingEventId = null;
+    renderAdminCalendarSection();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+};
+
+window.adminDeleteEvent = async function(id) {
+  if (!confirm("Delete this calendar event?")) return;
+  try {
+    await deleteDoc(doc(db, "calendarEvents", id));
+    calendarEvents = calendarEvents.filter(e => e.id !== id);
+    renderAdminCalendarSection();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't delete — check the console.");
+  }
+};
+
+// ========================================================================
+// ========================= BLOG ==========================================
+// ========================================================================
+// Firestore "blogs" collection, one doc per post:
+//   { id, title, body, coverImage, videoUrl, authorName, createdAt }
+// videoUrl can be a YouTube link (embedded) or any other link (e.g. Instagram
+// Reel/TikTok — rendered as a "Watch Reel" link since those platforms can't
+// be embedded in a plain iframe without their own SDKs).
+// Firestore rules needed:
+//   match /blogs/{postId} {
+//     allow read: if true;
+//     allow write: if request.auth.token.email == "farm4glass@gmail.com";
+//   }
+
+async function loadBlogs() {
+  try {
+    const snap = await getDocs(collection(db, "blogs"));
+    blogs = snap.docs.map(d => d.data()).sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+    blogsLoaded = true;
+    if (document.getElementById("blog")?.classList.contains("active")) renderBlogList();
+    if (adminActiveSubTab === "blog" && document.getElementById("admin")?.classList.contains("active")) renderAdminBlogSection();
+  } catch (e) {
+    console.error("Failed to load blogs:", e);
+    blogsLoaded = true;
+  }
+}
+
+function youtubeEmbedId(url) {
+  if (!url) return null;
+  if (url.includes("v=")) return url.split("v=")[1].split("&")[0];
+  if (url.includes("youtu.be/")) return url.split("youtu.be/")[1].split("?")[0];
+  return null;
+}
+
+function renderBlogList() {
+  const container = document.getElementById("blogContent");
+  if (!container) return;
+
+  if (!blogsLoaded) {
+    container.innerHTML = `<div class="admin-empty-state">Loading posts...</div>`;
+    return;
+  }
+  if (!blogs.length) {
+    container.innerHTML = `<div class="admin-empty-state">No posts yet — check back soon!</div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="blog-grid">
+      ${blogs.map(post => {
+        const ytId = youtubeEmbedId(post.videoUrl);
+        return `
+          <article class="blog-card">
+            ${post.coverImage ? `<img class="blog-cover" src="${post.coverImage}" alt="${post.title}">` : ""}
+            <div class="blog-card-body">
+              <div class="blog-meta">${post.authorName || "Farm4Glass Team"} · ${post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}</div>
+              <h3>${post.title}</h3>
+              <p>${post.body}</p>
+              ${ytId ? `<div class="blog-video"><iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen></iframe></div>` : ""}
+              ${post.videoUrl && !ytId ? `<a class="blog-reel-link" href="${post.videoUrl}" target="_blank" rel="noopener">${icon("play")} Watch Reel ↗</a>` : ""}
+            </div>
+          </article>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderAdminBlogSection() {
+  const body = document.getElementById("adminSubtabBody");
+  if (!body) return;
+
+  const editing = adminEditingBlogId ? blogs.find(b => b.id === adminEditingBlogId) : null;
+
+  const listHtml = blogs.map(post => `
+    <div class="admin-lesson-block">
+      <div class="admin-lesson-head">
+        <h4>${post.title}</h4>
+        <div style="display:flex;gap:8px;">
+          <button class="admin-btn-sm ghost" onclick="adminEditBlog('${post.id}')">Edit</button>
+          <button class="admin-btn-sm danger" onclick="adminDeleteBlog('${post.id}')">${icon("trash")} Delete</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);">${post.authorName || "Farm4Glass Team"}</div>
+    </div>
+  `).join("") || `<div class="admin-empty-state">No posts yet.</div>`;
+
+  body.innerHTML = `
+    <div class="admin-layout">
+      <div class="admin-course-list">${listHtml}</div>
+      <div class="admin-panel-body">
+        <h3 style="margin-bottom:16px;">${editing ? "Edit Post" : "Write a New Post"}</h3>
+        <div class="admin-kpi-form">
+          <input type="text" id="blog-title" placeholder="Post title" value="${editing ? editing.title.replace(/"/g, "&quot;") : ""}">
+          <input type="text" id="blog-author" placeholder="Author name" value="${editing ? (editing.authorName || "") : ""}">
+          <input type="text" id="blog-cover" placeholder="Cover image URL (optional)" value="${editing ? (editing.coverImage || "") : ""}">
+          <input type="text" id="blog-video" placeholder="Video/Reel URL (optional — YouTube embeds, others link out)" value="${editing ? (editing.videoUrl || "") : ""}">
+          <textarea id="blog-body" rows="5" placeholder="Post content">${editing ? editing.body : ""}</textarea>
+          <div style="display:flex;gap:10px;">
+            <button class="admin-btn-sm" onclick="adminSaveBlog()">${editing ? "Save Changes" : "Publish Post"}</button>
+            ${editing ? `<button class="admin-btn-sm ghost" onclick="adminCancelEditBlog()">Cancel</button>` : ""}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+window.adminEditBlog = function(id) {
+  adminEditingBlogId = id;
+  renderAdminBlogSection();
+};
+
+window.adminCancelEditBlog = function() {
+  adminEditingBlogId = null;
+  renderAdminBlogSection();
+};
+
+window.adminSaveBlog = async function() {
+  const title = document.getElementById("blog-title").value.trim();
+  const authorName = document.getElementById("blog-author").value.trim();
+  const coverImage = document.getElementById("blog-cover").value.trim();
+  const videoUrl = document.getElementById("blog-video").value.trim();
+  const bodyText = document.getElementById("blog-body").value.trim();
+
+  if (!title || !bodyText) return alert("Please fill in at least a title and post content.");
+
+  const editing = adminEditingBlogId ? blogs.find(b => b.id === adminEditingBlogId) : null;
+  const id = adminEditingBlogId || `blog-${Date.now()}`;
+  const postDoc = {
+    id, title, authorName, coverImage, videoUrl, body: bodyText,
+    createdAt: editing ? editing.createdAt : new Date().toISOString()
+  };
+
+  try {
+    await setDoc(doc(db, "blogs", id), postDoc);
+    const idx = blogs.findIndex(b => b.id === id);
+    if (idx >= 0) blogs[idx] = postDoc; else blogs.unshift(postDoc);
+    adminEditingBlogId = null;
+    renderAdminBlogSection();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+};
+
+window.adminDeleteBlog = async function(id) {
+  if (!confirm("Delete this post?")) return;
+  try {
+    await deleteDoc(doc(db, "blogs", id));
+    blogs = blogs.filter(b => b.id !== id);
+    renderAdminBlogSection();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't delete — check the console.");
+  }
+};
+
+// ========================================================================
+// ========================= CHECKLISTS ====================================
+// ========================================================================
+// Firestore "checklists" collection, one doc per event template:
+//   { id, eventName, category, items: ["...", "..."] }
+// Per-user progress is stored on the user doc: checklistProgress[checklistId]
+// = array of checked item indexes. This is a self-review tool, not AI grading.
+// Firestore rules needed:
+//   match /checklists/{checklistId} {
+//     allow read: if true;
+//     allow write: if request.auth.token.email == "farm4glass@gmail.com";
+//   }
+
+async function loadChecklists() {
+  try {
+    const snap = await getDocs(collection(db, "checklists"));
+    checklists = snap.docs.map(d => d.data());
+    checklistsLoaded = true;
+    if (document.getElementById("checklists")?.classList.contains("active")) renderChecklistsList();
+    if (adminActiveSubTab === "checklists" && document.getElementById("admin")?.classList.contains("active")) renderAdminChecklistsSection();
+  } catch (e) {
+    console.error("Failed to load checklists:", e);
+    checklistsLoaded = true;
+  }
+}
+
+function renderChecklistsList() {
+  const container = document.getElementById("checklistsContent");
+  if (!container) return;
+
+  if (!checklistsLoaded) {
+    container.innerHTML = `<div class="admin-empty-state">Loading checklists...</div>`;
+    return;
+  }
+  if (!checklists.length) {
+    container.innerHTML = `<div class="admin-empty-state">No checklists yet — an admin can add one from the Admin tab.</div>`;
+    return;
+  }
+
+  if (!selectedChecklistId) selectedChecklistId = checklists[0].id;
+  const selected = checklists.find(c => c.id === selectedChecklistId) || checklists[0];
+  const progress = (userData?.checklistProgress || {})[selected.id] || [];
+
+  container.innerHTML = `
+    <div class="kpi-layout">
+      <div class="kpi-list">
+        ${checklists.map(c => `
+          <button class="kpi-list-item ${c.id === selectedChecklistId ? "active" : ""}" onclick="selectChecklist('${c.id}')">
+            ${c.eventName}
+            <span class="kpi-cluster-tag">${c.category || ""}</span>
+          </button>
+        `).join("")}
+      </div>
+      <div class="kpi-detail">
+        <span class="kpi-cluster-tag">${selected.category || ""}</span>
+        <h2>${selected.eventName}</h2>
+        <div class="checklist-progress-label">${progress.length} / ${selected.items.length} checked</div>
+        <div class="checklist-pbar-outer"><div class="checklist-pbar-inner" style="width:${selected.items.length ? Math.round((progress.length / selected.items.length) * 100) : 0}%"></div></div>
+        <div class="checklist-items">
+          ${selected.items.map((item, i) => `
+            <label class="checklist-item ${progress.includes(i) ? "checked" : ""}">
+              <input type="checkbox" ${progress.includes(i) ? "checked" : ""} onchange="toggleChecklistItem('${selected.id}', ${i})">
+              <span>${item}</span>
+            </label>
+          `).join("")}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+window.selectChecklist = function(id) {
+  selectedChecklistId = id;
+  renderChecklistsList();
+};
+
+window.toggleChecklistItem = async function(checklistId, itemIndex) {
+  if (!currentUser || !userData) return;
+  const progressMap = { ...(userData.checklistProgress || {}) };
+  const current = progressMap[checklistId] || [];
+  progressMap[checklistId] = current.includes(itemIndex)
+    ? current.filter(i => i !== itemIndex)
+    : [...current, itemIndex];
+
+  try {
+    await updateDoc(doc(db, "users", currentUser.uid), { [`checklistProgress.${checklistId}`]: progressMap[checklistId] });
+    userData.checklistProgress = progressMap;
+    renderChecklistsList();
+  } catch (e) {
+    console.error("Failed to save checklist progress:", e);
+  }
+};
+
+function renderAdminChecklistsSection() {
+  const body = document.getElementById("adminSubtabBody");
+  if (!body) return;
+
+  const editing = adminEditingChecklistId ? checklists.find(c => c.id === adminEditingChecklistId) : null;
+
+  const listHtml = checklists.map(c => `
+    <div class="admin-lesson-block">
+      <div class="admin-lesson-head">
+        <h4>${c.eventName}</h4>
+        <div style="display:flex;gap:8px;">
+          <button class="admin-btn-sm ghost" onclick="adminEditChecklist('${c.id}')">Edit</button>
+          <button class="admin-btn-sm danger" onclick="adminDeleteChecklist('${c.id}')">${icon("trash")} Delete</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);">${c.category || ""} · ${c.items.length} items</div>
+    </div>
+  `).join("") || `<div class="admin-empty-state">No checklists yet.</div>`;
+
+  body.innerHTML = `
+    <div class="admin-layout">
+      <div class="admin-course-list">${listHtml}</div>
+      <div class="admin-panel-body">
+        <h3 style="margin-bottom:16px;">${editing ? "Edit Checklist" : "Add a New Checklist"}</h3>
+        <div class="admin-kpi-form">
+          <input type="text" id="checklist-name" placeholder="Event name (e.g. Business Growth Plan)" value="${editing ? editing.eventName.replace(/"/g, "&quot;") : ""}">
+          <input type="text" id="checklist-category" placeholder="Category (e.g. Written Event)" value="${editing ? (editing.category || "") : ""}">
+          <textarea id="checklist-items" rows="8" placeholder="One checklist item per line">${editing ? editing.items.join("\n") : ""}</textarea>
+          <div style="display:flex;gap:10px;">
+            <button class="admin-btn-sm" onclick="adminSaveChecklist()">${editing ? "Save Changes" : "Add Checklist"}</button>
+            ${editing ? `<button class="admin-btn-sm ghost" onclick="adminCancelEditChecklist()">Cancel</button>` : ""}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+window.adminEditChecklist = function(id) {
+  adminEditingChecklistId = id;
+  renderAdminChecklistsSection();
+};
+
+window.adminCancelEditChecklist = function() {
+  adminEditingChecklistId = null;
+  renderAdminChecklistsSection();
+};
+
+window.adminSaveChecklist = async function() {
+  const eventName = document.getElementById("checklist-name").value.trim();
+  const category = document.getElementById("checklist-category").value.trim();
+  const items = document.getElementById("checklist-items").value.split("\n").map(s => s.trim()).filter(Boolean);
+
+  if (!eventName || !items.length) return alert("Please fill in an event name and at least one checklist item.");
+
+  const id = adminEditingChecklistId || eventName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || `checklist-${Date.now()}`;
+  const checklistDoc = { id, eventName, category, items };
+
+  try {
+    await setDoc(doc(db, "checklists", id), checklistDoc);
+    const idx = checklists.findIndex(c => c.id === id);
+    if (idx >= 0) checklists[idx] = checklistDoc; else checklists.push(checklistDoc);
+    adminEditingChecklistId = null;
+    renderAdminChecklistsSection();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+};
+
+window.adminDeleteChecklist = async function(id) {
+  if (!confirm("Delete this checklist?")) return;
+  try {
+    await deleteDoc(doc(db, "checklists", id));
+    checklists = checklists.filter(c => c.id !== id);
+    renderAdminChecklistsSection();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't delete — check the console.");
+  }
+};
+
+// ========================================================================
+// ========================= NETWORK (directory + messaging) =============
+// ========================================================================
+// Directory reuses the public "users" collection (same one the leaderboard
+// reads). Messaging uses:
+//   conversations/{id}  — id is the two participant uids sorted + joined with "_"
+//     { participants: [uidA, uidB], names: {uidA: "...", uidB: "..."}, lastMessage, lastMessageAt }
+//   conversations/{id}/messages/{msgId}
+//     { senderId, text, createdAt }
+// Firestore rules needed:
+//   match /conversations/{convId} {
+//     allow read, write: if request.auth != null && request.auth.uid in resource.data.participants;
+//     allow create: if request.auth != null && request.auth.uid in request.resource.data.participants;
+//     match /messages/{msgId} {
+//       allow read, create: if request.auth != null &&
+//         request.auth.uid in get(/databases/$(database)/documents/conversations/$(convId)).data.participants;
+//     }
+//   }
+
+function conversationIdFor(uidA, uidB) {
+  return [uidA, uidB].sort().join("_");
+}
+
+window.switchNetworkTab = function(tab, el) {
+  networkActiveSubTab = tab;
+  document.querySelectorAll(".network-tabs .lb-tab").forEach(b => b.classList.remove("active"));
+  el?.classList.add("active");
+  renderNetworkTab();
+};
+
+async function renderNetworkTab() {
+  const container = document.getElementById("networkContent");
+  if (!container) return;
+
+  if (networkActiveSubTab === "messages") {
+    renderNetworkMessages();
+  } else {
+    renderNetworkDirectory();
+  }
+}
+
+async function renderNetworkDirectory() {
+  const container = document.getElementById("networkContent");
+  if (!container) return;
+
+  if (!networkUsersLoaded) {
+    container.innerHTML = `<div class="admin-empty-state">Loading members...</div>`;
+    try {
+      const snap = await getDocs(collection(db, "users"));
+      networkUsers = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(u => u.id !== currentUser?.uid);
+      networkUsersLoaded = true;
+    } catch (e) {
+      console.error("Failed to load network directory:", e);
+      container.innerHTML = `<div class="admin-empty-state">${icon("alert")} Couldn't load the member directory.</div>`;
+      return;
+    }
+  }
+
+  container.innerHTML = `
+    <div class="search-wrap" style="max-width:420px;margin-bottom:20px;">
+      <input type="text" id="networkSearch" placeholder="Search by name, chapter, or association..." oninput="renderNetworkDirectoryFiltered()">
+    </div>
+    <div class="network-grid" id="networkGrid"></div>
+  `;
+  renderNetworkDirectoryFiltered();
+}
+
+window.renderNetworkDirectoryFiltered = function() {
+  const grid = document.getElementById("networkGrid");
+  if (!grid) return;
+  const q = document.getElementById("networkSearch")?.value.toLowerCase() || "";
+
+  const filtered = networkUsers.filter(u =>
+    (u.displayName || "").toLowerCase().includes(q) ||
+    (u.chapter || "").toLowerCase().includes(q) ||
+    (u.association || "").toLowerCase().includes(q)
+  );
+
+  grid.innerHTML = filtered.map(u => {
+    const animal = getAnimalForXP(u.xp || 0);
+    return `
+      <div class="network-card">
+        <div class="network-card-avatar">${(u.displayName || "U")[0].toUpperCase()}</div>
+        <div class="network-card-name">${u.displayName || "DECA Student"}</div>
+        <div class="network-card-meta">${u.chapter || "No chapter set"}</div>
+        <div class="network-card-meta">${u.association || "No association set"}</div>
+        <div class="network-card-badge">${animal.name} · ${u.xp || 0} XP</div>
+        <button class="btn-primary network-msg-btn" onclick="startConversation('${u.id}', '${(u.displayName || "DECA Student").replace(/'/g, "\\'")}')">${icon("mail")} Message</button>
+      </div>
+    `;
+  }).join("") || `<div class="admin-empty-state">No members match your search.</div>`;
+};
+
+window.startConversation = function(otherUid, otherName) {
+  // Delegate entirely to openConversation — it already knows how to switch to
+  // the Messages sub-tab and render the chat layout when needed. Pre-setting
+  // networkActiveSubTab here would make openConversation think that layout is
+  // already on screen and skip building it.
+  openConversation(otherUid, otherName);
+};
+
+async function renderNetworkMessages() {
+  const container = document.getElementById("networkContent");
+  if (!container) return;
+
+  container.innerHTML = `<div class="network-messages-layout" id="networkMessagesLayout"></div>`;
+
+  if (conversationsUnsub) conversationsUnsub();
+  const q = query(collection(db, "conversations"), where("participants", "array-contains", currentUser.uid));
+  conversationsUnsub = onSnapshot(q, (snap) => {
+    conversations = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.lastMessageAt || "").localeCompare(a.lastMessageAt || ""));
+    renderConversationList();
+  }, (e) => {
+    console.error("Failed to load conversations:", e);
+    const layout = document.getElementById("networkMessagesLayout");
+    if (layout) layout.innerHTML = `<div class="admin-empty-state">${icon("alert")} Couldn't load messages — check Firestore rules allow reading your conversations.</div>`;
+  });
+}
+
+function renderConversationList() {
+  const layout = document.getElementById("networkMessagesLayout");
+  if (!layout) return;
+
+  const listHtml = conversations.length ? conversations.map(c => {
+    const peerUid = c.participants.find(p => p !== currentUser.uid);
+    const peerName = c.names?.[peerUid] || "DECA Student";
+    return `
+      <button class="conversation-item ${c.id === activeConversationId ? "active" : ""}" onclick="openConversation('${peerUid}', '${peerName.replace(/'/g, "\\'")}')">
+        <div class="network-card-avatar" style="width:36px;height:36px;font-size:14px;">${peerName[0].toUpperCase()}</div>
+        <div class="conversation-item-info">
+          <div class="conversation-item-name">${peerName}</div>
+          <div class="conversation-item-last">${c.lastMessage || "No messages yet"}</div>
+        </div>
+      </button>
+    `;
+  }).join("") : `<div class="admin-empty-state">No conversations yet — message someone from the Directory.</div>`;
+
+  layout.innerHTML = `
+    <div class="conversation-list">${listHtml}</div>
+    <div class="conversation-thread" id="conversationThread">
+      <div class="admin-empty-state">${activeConversationPeer ? "" : "Select a conversation to start chatting."}</div>
+    </div>
+  `;
+
+  if (activeConversationPeer) renderConversationThread();
+}
+
+window.openConversation = async function(peerUid, peerName) {
+  activeConversationId = conversationIdFor(currentUser.uid, peerUid);
+  activeConversationPeer = { uid: peerUid, name: peerName };
+
+  const convRef = doc(db, "conversations", activeConversationId);
+  const convSnap = await getDoc(convRef);
+  if (!convSnap.exists()) {
+    await setDoc(convRef, {
+      participants: [currentUser.uid, peerUid],
+      names: { [currentUser.uid]: userData.displayName || "DECA Student", [peerUid]: peerName },
+      lastMessage: "",
+      lastMessageAt: new Date().toISOString()
+    });
+  }
+
+  if (networkActiveSubTab !== "messages") {
+    networkActiveSubTab = "messages";
+    document.querySelectorAll(".network-tabs .lb-tab").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".network-tabs .lb-tab")[1]?.classList.add("active");
+    await renderNetworkMessages();
+  } else {
+    renderConversationList();
+  }
+};
+
+function renderConversationThread() {
+  const thread = document.getElementById("conversationThread");
+  if (!thread || !activeConversationPeer) return;
+
+  thread.innerHTML = `
+    <div class="conversation-thread-header">${activeConversationPeer.name}</div>
+    <div class="conversation-messages" id="conversationMessages"><div class="admin-empty-state">Loading messages...</div></div>
+    <form class="conversation-input-row" onsubmit="sendMessage(event)">
+      <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
+      <button type="submit" class="admin-btn-sm">${icon("send")}</button>
+    </form>
+  `;
+
+  if (messagesUnsub) messagesUnsub();
+  const msgsRef = collection(db, "conversations", activeConversationId, "messages");
+  messagesUnsub = onSnapshot(query(msgsRef, orderBy("createdAt", "asc")), (snap) => {
+    const messagesEl = document.getElementById("conversationMessages");
+    if (!messagesEl) return;
+    const msgs = snap.docs.map(d => d.data());
+    messagesEl.innerHTML = msgs.length ? msgs.map(m => `
+      <div class="message-bubble ${m.senderId === currentUser.uid ? "mine" : "theirs"}">${m.text}</div>
+    `).join("") : `<div class="admin-empty-state">Say hi 👋</div>`;
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }, (e) => {
+    console.error("Failed to load messages:", e);
+    const messagesEl = document.getElementById("conversationMessages");
+    if (messagesEl) messagesEl.innerHTML = `<div class="admin-empty-state">${icon("alert")} Couldn't load messages.</div>`;
+  });
+}
+
+window.sendMessage = async function(evt) {
+  evt.preventDefault();
+  const input = document.getElementById("messageInput");
+  const text = input.value.trim();
+  if (!text || !activeConversationId) return;
+  input.value = "";
+
+  try {
+    await addDoc(collection(db, "conversations", activeConversationId, "messages"), {
+      senderId: currentUser.uid,
+      text,
+      createdAt: new Date().toISOString()
+    });
+    await updateDoc(doc(db, "conversations", activeConversationId), {
+      lastMessage: text,
+      lastMessageAt: new Date().toISOString()
+    });
+  } catch (e) {
+    console.error("Failed to send message:", e);
+    alert("Couldn't send that message — check the console for details.");
+  }
+};
+
+// ========================================================================
+// ========================= PRACTICE EXAMS ===============================
+// ========================================================================
+// A full timed exam pooled from every practice quiz question already entered
+// for a course's units (via the admin Courses editor). This deliberately
+// reuses that same question bank instead of separate hardcoded exam content,
+// so the exam pool grows automatically as admins add real practice questions.
+
+window.openExamSetup = function(courseId) {
+  const course = courses.find(c => c.id === courseId);
+  if (!course) return;
+
+  const pool = course.lessons
+    .filter(l => l.type === "quiz")
+    .flatMap(l => (l.questions || []).map(q => ({ ...q, sourceTitle: l.title })));
+
+  const maxQ = pool.length;
+  const container = document.getElementById("lessonViewContent");
+  showTab("lessonView");
+  container.innerHTML = `
+    <div class="exam-setup-wrap">
+      <div class="lv-back" onclick="openCourse('${course.id}')">← ${course.title}</div>
+      <div class="exam-setup-card">
+        <h2>${icon("timer")} Practice Exam Setup</h2>
+        <p class="page-sub">${maxQ} practice questions are available across every unit in this course.</p>
+        <div class="form-group">
+          <label>Number of Questions</label>
+          <select id="exam-count">
+            ${[...new Set([25, 50, 75, 100].filter(n => n < maxQ).concat(maxQ))].map(n =>
+              `<option value="${n}" ${n === maxQ ? "selected" : ""}>${n} questions${n === maxQ ? " (all available)" : ""}</option>`
+            ).join("")}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Time Limit (minutes)</label>
+          <input type="number" id="exam-minutes" min="5" max="180" value="${Math.max(10, Math.round(maxQ * 0.75))}">
+        </div>
+        <button class="btn-primary" onclick="startPracticeExam('${course.id}')">Start Exam →</button>
+      </div>
+    </div>
+  `;
+};
+
+window.startPracticeExam = function(courseId) {
+  const course = courses.find(c => c.id === courseId);
+  if (!course) return;
+
+  const count = Number(document.getElementById("exam-count").value);
+  const minutes = Number(document.getElementById("exam-minutes").value) || 30;
+
+  const pool = course.lessons
+    .filter(l => l.type === "quiz")
+    .flatMap(l => (l.questions || []).map(q => ({ ...q, sourceTitle: l.title })));
+
+  const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, count);
+
+  examState = {
+    course,
+    questions: shuffled,
+    current: 0,
+    answers: new Array(shuffled.length).fill(null),
+    secondsLeft: minutes * 60,
+    submitted: false
+  };
+
+  if (examTimerInterval) clearInterval(examTimerInterval);
+  examTimerInterval = setInterval(() => {
+    if (!examState) return clearInterval(examTimerInterval);
+    examState.secondsLeft--;
+    updateExamTimerDisplay();
+    if (examState.secondsLeft <= 0) {
+      clearInterval(examTimerInterval);
+      submitPracticeExam();
+    }
+  }, 1000);
+
+  renderExamQuestion();
+};
+
+function updateExamTimerDisplay() {
+  const el = document.getElementById("examTimer");
+  if (!el || !examState) return;
+  const m = Math.floor(Math.max(0, examState.secondsLeft) / 60);
+  const s = Math.max(0, examState.secondsLeft) % 60;
+  el.textContent = `${m}:${String(s).padStart(2, "0")}`;
+  el.classList.toggle("exam-timer-low", examState.secondsLeft <= 60);
+}
+
+function renderExamQuestion() {
+  if (!examState) return;
+  const { questions, current, course, answers } = examState;
+  const q = questions[current];
+  const container = document.getElementById("lessonViewContent");
+
+  container.innerHTML = `
+    <div class="quiz-wrap">
+      <div class="exam-header">
+        <div class="quiz-progress-row">
+          <span>Question ${current + 1} of ${questions.length}</span>
+          <span class="exam-timer" id="examTimer">--:--</span>
+        </div>
+        <div class="quiz-pbar-outer"><div class="quiz-pbar-inner" style="width:${Math.round((current / questions.length) * 100)}%"></div></div>
+      </div>
+      <div class="quiz-question-card">
+        <div class="question-text">${q.q}</div>
+        <div class="options-list">
+          ${q.options.map((opt, i) => `
+            <button class="option-btn ${answers[current] === i ? "selected" : ""}" onclick="selectExamAnswer(${i})">${opt}</button>
+          `).join("")}
+        </div>
+        <div class="exam-nav-row">
+          <button class="admin-btn-sm ghost" onclick="examPrev()" ${current === 0 ? "disabled" : ""}>← Previous</button>
+          ${current + 1 === questions.length
+            ? `<button class="btn-primary" onclick="submitPracticeExam()">Submit Exam</button>`
+            : `<button class="btn-primary" onclick="examNext()">Next →</button>`}
+        </div>
+      </div>
+    </div>
+  `;
+  updateExamTimerDisplay();
+}
+
+window.selectExamAnswer = function(idx) {
+  if (!examState) return;
+  examState.answers[examState.current] = idx;
+  renderExamQuestion();
+};
+
+window.examNext = function() {
+  if (!examState) return;
+  examState.current = Math.min(examState.current + 1, examState.questions.length - 1);
+  renderExamQuestion();
+};
+
+window.examPrev = function() {
+  if (!examState) return;
+  examState.current = Math.max(examState.current - 1, 0);
+  renderExamQuestion();
+};
+
+window.submitPracticeExam = async function() {
+  if (!examState || examState.submitted) return;
+  examState.submitted = true;
+  if (examTimerInterval) clearInterval(examTimerInterval);
+
+  const { questions, answers, course } = examState;
+  const scored = questions.map((q, i) => ({ ...q, userAnswer: answers[i], correct: answers[i] === q.answer }));
+  const numCorrect = scored.filter(s => s.correct).length;
+  const pct = Math.round((numCorrect / questions.length) * 100);
+  const xpEarned = Math.round(questions.length * 0.5 * (pct / 100));
+
+  const container = document.getElementById("lessonViewContent");
+  container.innerHTML = `
+    <div class="quiz-wrap">
+      <div class="quiz-results">
+        <div class="results-title">${pct >= 80 ? "Great Job!" : pct >= 60 ? "Good Work!" : "Keep Studying!"}</div>
+        <div class="results-score">${numCorrect} / ${questions.length} correct (${pct}%)</div>
+        <div class="results-xp">+${xpEarned} XP Earned</div>
+        <div class="results-btns">
+          <button class="btn-primary" onclick="reviewExam()">Review Answers</button>
+          <button class="btn-primary" onclick="openCourse('${course.id}')">Back to Course</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (currentUser && userData) {
+    try {
+      const attempt = {
+        courseId: course.id, courseTitle: course.title,
+        date: new Date().toISOString(), score: numCorrect, total: questions.length, pct
+      };
+      const attempts = [...(userData.examAttempts || []), attempt].slice(-50);
+      const newXP = userData.xp + xpEarned;
+      await updateDoc(doc(db, "users", currentUser.uid), { examAttempts: attempts, xp: newXP });
+      userData.examAttempts = attempts;
+      userData.xp = newXP;
+      showXPToast(xpEarned);
+      renderSidebar();
+      await checkAndAwardBadges();
+    } catch (e) {
+      console.error("Failed to save exam attempt:", e);
+    }
+  }
+
+  examState.scored = scored;
+};
+
+window.reviewExam = function() {
+  if (!examState?.scored) return;
+  const container = document.getElementById("lessonViewContent");
+  container.innerHTML = `
+    <div class="quiz-wrap">
+      <div class="quiz-back" onclick="openCourse('${examState.course.id}')">← ${examState.course.title}</div>
+      <h2 style="margin-bottom:16px;">Exam Review</h2>
+      ${examState.scored.map((q, i) => `
+        <div class="quiz-question-card" style="margin-bottom:16px;">
+          <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px;">${q.sourceTitle}</div>
+          <div class="question-text" style="font-size:16px;">${i + 1}. ${q.q}</div>
+          <div class="options-list">
+            ${q.options.map((opt, oi) => `
+              <div class="option-btn" style="cursor:default;${oi === q.answer ? "border-color:var(--green);background:#dcfce7;color:#166534;" : oi === q.userAnswer ? "border-color:var(--red);background:#fee2e2;color:#991b1b;" : ""}">${opt}</div>
+            `).join("")}
+          </div>
+          ${q.explanation ? `<div class="explanation-box show">${q.explanation}</div>` : ""}
+        </div>
+      `).join("")}
+    </div>
+  `;
+};

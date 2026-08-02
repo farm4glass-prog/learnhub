@@ -12,10 +12,19 @@
 
 <!-- ========================= LANDING PAGE ========================= -->
 <div id="landingPage">
+
+  <!-- animated background field -->
+  <div class="aurora" aria-hidden="true">
+    <span class="a1"></span><span class="a2"></span><span class="a3"></span>
+  </div>
+  <div class="float-shapes" aria-hidden="true">
+    <span class="s1"></span><span class="s2"></span><span class="s3"></span><span class="s4"></span>
+  </div>
+
   <nav class="top-nav">
     <div class="nav-logo">
-        <img src="Farm4Glass logo.jpg" class="logo-icon" alt="Farm4Glass Logo">
-        <span class="logo-text">Farm4Glass</span>
+      <img src="Farm4Glass logo.jpg" class="logo-icon" alt="Farm4Glass Logo">
+      <span class="logo-text">Farm4Glass</span>
     </div>
     <div class="nav-links">
       <a href="#hero">Home</a>
@@ -25,201 +34,252 @@
     </div>
   </nav>
 
+  <!-- ===== HERO ===== -->
   <section id="hero" class="landing-hero">
-    <h1 class="hero-title">FARM4GLASS<br><span class="hero-script">learn deca</span></h1>
-    <p class="hero-subtitle">Level up your barn by farming for glass through our learning paths, quizzes, and roleplay practices.</p>
-    <div class="hero-btns">
-      <button id="heroLogin" class="btn-primary">Get Started Free →</button>
-      <a href="#features" class="btn-ghost">See Features</a>
+    <div class="hero-copy">
+      <div class="hero-eyebrow"><span class="dot"></span> Free for every DECA member</div>
+
+      <h1 class="hero-title">
+        <span class="w">FARM</span><span class="w">4</span><span class="w">GLASS</span>
+        <span class="hero-script w">learn deca</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        Level up your barn by farming for glass — structured courses, real exam prep,
+        and roleplay practice built by competitors who've actually won.
+      </p>
+
+      <div class="hero-btns">
+        <button id="heroLogin" class="btn-primary">Get Started Free →</button>
+        <a href="#features" class="btn-ghost">See Features</a>
+      </div>
+
+      <div class="hero-stats-row">
+        <div class="hs-item"><span class="hs-num">892</span><span class="hs-lbl">Performance Indicators</span></div>
+        <div class="hs-item"><span class="hs-num">17</span><span class="hs-lbl">Event Courses</span></div>
+        <div class="hs-item"><span class="hs-num">7</span><span class="hs-lbl">Levels to Climb</span></div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="hero-photo p1"><img src="IMG_4775.jpeg" alt="Farm4Glass member"></div>
+      <div class="hero-photo p2"><img src="Aarushi Gupta-Headshot (1) (1).png" alt="Farm4Glass member"></div>
+      <div class="hero-badge">
+        <div class="hb-top">Now studying</div>
+        <div class="hb-main">Marketing Cluster</div>
+        <div class="hb-bar"><span></span></div>
+      </div>
     </div>
   </section>
 
-  <section id="features" class="features-section">
-    <h2>Features</h2>
+  <!-- ===== SCROLLING MARQUEE ===== -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <span>Marketing Cluster</span><i></i>
+      <span>Individual Series</span><i></i>
+      <span>Team Decision Making</span><i></i>
+      <span>Principles</span><i></i>
+      <span>Integrated Marketing</span><i></i>
+      <span>Business Growth Plan</span><i></i>
+      <span>Project Management</span><i></i>
+      <span>Virtual Business</span><i></i>
+      <span>Stock Market Game</span><i></i>
+      <span>Marketing Cluster</span><i></i>
+      <span>Individual Series</span><i></i>
+      <span>Team Decision Making</span><i></i>
+      <span>Principles</span><i></i>
+      <span>Integrated Marketing</span><i></i>
+      <span>Business Growth Plan</span><i></i>
+      <span>Project Management</span><i></i>
+      <span>Virtual Business</span><i></i>
+      <span>Stock Market Game</span><i></i>
+    </div>
+  </div>
+
+  <!-- ===== FEATURES (BENTO) ===== -->
+  <section id="features" class="features-section reveal">
+    <div class="section-head">
+      <div class="section-tag">What's inside</div>
+      <h2>Everything you need,<br>in one barn.</h2>
+    </div>
+
     <div class="features-grid">
-      <div class="feature-card">
+      <div class="feature-card wide">
+        <span class="fc-num">01</span>
         <h3>Structured Courses</h3>
-        <p>Video lessons, articles, and quizzes for every DECA cluster exam, roleplay/prepared event, and online simulations (VBC and SMG).</p>
+        <p>Video lessons, articles, and quizzes for every DECA cluster exam, roleplay and prepared event, and online simulation (VBC and SMG) — organized by the official exam blueprints.</p>
+      </div>
+      <div class="feature-card accent">
+        <span class="fc-num">02</span>
+        <h3>XP &amp; Leveling</h3>
+        <p>Earn XP for every video, article, and quiz. Climb from Chick all the way to Goat.</p>
       </div>
       <div class="feature-card">
-        <div class="feat-icon">⚡</div>
-        <h3>XP & Leveling System</h3>
-        <p>Earn XP for every video, article, and quiz you complete. Level up your farm animal from Baby Chick all the way to Champion Goat.</p>
-      </div>
-      <div class="feature-card">
+        <span class="fc-num">03</span>
         <h3>Daily Streaks</h3>
-        <p>Build consistency with daily learning streaks. Track your best streak and compete with members across the world.</p>
+        <p>Build consistency with daily learning streaks and compete with members worldwide.</p>
       </div>
       <div class="feature-card">
-        <h3>Badges</h3>
-        <p>Unlock farm-themed badges for milestones: First Hay Bale, Barn Burner, Monthly Moo, and more.</p>
+        <span class="fc-num">04</span>
+        <h3>Farm Badges</h3>
+        <p>Unlock milestones: First Hay Bale, Barn Burner, Monthly Moo, Ranch Legend.</p>
       </div>
       <div class="feature-card">
+        <span class="fc-num">05</span>
         <h3>Guest Speakers</h3>
-        <p>Watch and learn from ICDC champions in your specific testing and event area.</p>
+        <p>Learn from ICDC champions competing in your exact event area.</p>
       </div>
-      <div class="feature-card">
-        <h3>Canva and Adobe Lessons</h3>
-        <p>If you've ever wanted to level up your graphic designed skills, our team has built step by step courses and templates for you.</p>
+      <div class="feature-card wide">
+        <span class="fc-num">06</span>
+        <h3>Canva &amp; Adobe Lessons</h3>
+        <p>Step-by-step design courses and templates built for DECA written events, so your entry looks as sharp as it reads.</p>
       </div>
     </div>
   </section>
 
-  <section id="about" class="about-section">
+  <!-- ===== ABOUT ===== -->
+  <section id="about" class="about-section reveal">
     <div class="about-inner">
       <div class="about-text">
-        <h2>Built by DECA students, for DECA students</h2>
-        <p>Farm4Glass helps DECA competitors prepare for events with structured courses, real exam prep, and a gamified experience that keeps you coming back every day.</p>
-        <p>Whether you're prepping for Marketing, Finance, Roleplay, or Written Events; we have you covered.</p>
+        <div class="section-tag light">Why we built it</div>
+        <h2>Built by DECA students,<br>for DECA students.</h2>
+        <p>Farm4Glass brings everything together in one place: structured courses, real exam prep, and a gamified experience that keeps you coming back every day.</p>
+        <p>Whether you're prepping for Marketing, Finance, Roleplay, or Written Events — we have you covered.</p>
         <button id="aboutLogin" class="btn-primary">Start Learning →</button>
       </div>
       <div class="about-visual">
         <div class="animal-showcase">
-          <div class="animal-tier"><span></span><small>Baby</small></div>
+          <div class="animal-tier"><span class="at-dot"></span><small>Chick</small></div>
           <div class="arrow">→</div>
-          <div class="animal-tier"><span></span><small>Chick</small></div>
+          <div class="animal-tier"><span class="at-dot"></span><small>Sheep</small></div>
           <div class="arrow">→</div>
-          <div class="animal-tier"><span></span><small>Sheep</small></div>
+          <div class="animal-tier"><span class="at-dot"></span><small>Pig</small></div>
           <div class="arrow">→</div>
-          <div class="animal-tier"><span></span><small>Cow</small></div>
+          <div class="animal-tier"><span class="at-dot"></span><small>Cow</small></div>
           <div class="arrow">→</div>
-          <div class="animal-tier"><span></span><small>Bull</small></div>
+          <div class="animal-tier"><span class="at-dot big"></span><small>Goat</small></div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- OUR STORY -->
-<section id="story" class="story-section">
-  <div class="story-container">
-    <h2>Our Story</h2>
-
-    <p>
-      Farm4Glass started with a simple frustration: DECA preparation felt
-      scattered, overwhelming, and inconsistent. As competitors ourselves,
-      we wanted a better way to prepare for exams, roleplays, and written
-      events. Additionally, all three of us enjoy graphic design, and we
-      know it is a hard skill to develop. We made courses on how to use
-      Canva and Adobe platforms specifically for DECA, to level up
-      your marketing skills. 
-    </p>
-
-    <p>
-      We built Farm4Glass to bring everything together in one place:
-      structured courses, realistic practice, gamified progression, and
-      resources created by students who have actually competed in the past.
-      We have also invited guest speakers, who are previous ICDC Winners and
-      Finalists for their event to share tips and tricks to help all of you
-      in your competitive success.  
-    </p>
-
-    <p>
-      Our mission is simple: help every DECA student walk into competition
-      day feeling confident and prepared.
-    </p>
-  </div>
-</section>
-
-<!-- MEET THE TEAM -->
-<section id="team" class="team-section">
-  <h2>Meet the Team</h2>
-
-  <div class="team-grid">
-
-    <div class="team-card">
-      <img src="Aarushi Gupta-Headshot (1) (1).png" alt="Aarushi Gupta">
-      <h3>Aarushi Gupta</h3>
-      <span>Co-Founder & Developer</span>
+  <!-- ===== OUR STORY ===== -->
+  <section id="story" class="story-section reveal">
+    <div class="story-container">
+      <div class="section-tag">Our story</div>
+      <h2>From scattered notes to a real study system.</h2>
       <p>
-        Aarushi Gupta is an incoming junior at Foothill High School
-        in Pleasanton, CA. She currently serves as the Northern
-        California DECA Vice President of Marketing, where she designs
-        posts and engages NorCal members through the NorCal DECA
-        Instagram (check out her work on @norcaldeca on Instagram).
-        Her DECA competitive success includes placing 6th in Retail
-        Maerchandising Series at California DECA's State Career Development 
-        Conference 2026 (qualifying to ICDC), receiving finalist for AAM 
-        and EFB at the NorCal Career Development Conference, and earning 1st 
-        place in AAM at the Tri-Valley Minicon in 2025. She would love to
-        connect (@deca.aarushi). 
+        Farm4Glass started with a simple frustration: DECA preparation felt scattered,
+        overwhelming, and inconsistent. As competitors ourselves, we wanted a better way
+        to prepare for exams, roleplays, and written events. All three of us also love
+        graphic design — a hard skill to build — so we made Canva and Adobe courses
+        specifically for DECA.
+      </p>
+      <p>
+        We built Farm4Glass to bring it all together: structured courses, realistic
+        practice, gamified progression, and resources created by students who have
+        actually competed. We've also invited guest speakers — previous ICDC winners and
+        finalists — to share what actually worked for them.
+      </p>
+      <p class="story-mission">
+        Our mission is simple: help every DECA student walk into competition day
+        confident and prepared.
       </p>
     </div>
+  </section>
 
-    <div class="team-card">
-      <img src="images/member2.jpg" alt="Member 2">
-      <h3>Hannah Kow</h3>
-      <span>Co-Founder</span>
-      <p>
-        Hannah Kow is an incoming junior at West Ranch High School in Santa Clarita, CA. She serves as the Co-President of West Ranch DECA and VP of Marketing for the Southern California District Action Team. On the district side, she runs content for the SoCal DAT Instagram: designing posts that engage and spotlight members  (@socaldeca). Within her chapter, Hannah loves spending time mentoring fellow officers and members while maximizing fundraising, community, and competitive prep within West Ranch. On the competition side, she's earned 1st Place glass in PEN at SoCal CDC and a top-5 finish in ACT. Through Farm 4 Glass, she wants to help members navigate competition prep and DECA leadership! She would love to connect on Instagram (@deca.kow)
-      </p>
+  <!-- ===== MEET THE TEAM ===== -->
+  <section id="team" class="team-section reveal">
+    <div class="section-head center">
+      <div class="section-tag">The team</div>
+      <h2>Meet the founders</h2>
     </div>
 
-    <div class="team-card">
-      <img src="IMG_4775.jpeg" alt="Betty Huang">
-      <h3>Betty Huang</h3>
-      <span>Co-Founder & Marketing Specialist</span>
-      <p>
-        Betty Huang is an incoming junior at Lynbrook High School
-        in San Jose, CA. She is currently serving as Lynbrook's
-        cluster captains, guiding members with their IMC writtens.
-        Along with that, she showcases different aspects of DECA
-        on her social media. Betty has competed in the PEN and ENT
-        events, earning 3rd place roleplay at Silicon Valley's Career
-        Development Conference and 3rd place overall at Lynbrook's
-        Mock Conference. She has also competed in IMCE and IMCS, earning
-        top 10 presentation in SVCDC. She has also competed in various
-        corporate challenges. Betty wants to be able to help DECA members
-        find their path in DECA, discover their personal brand, and bring 
-        home glass. Feel free to reach out to her through her Instagram,
-        @deca.betty.
-      </p>
+    <div class="team-grid">
+      <div class="team-card">
+        <img src="Aarushi Gupta-Headshot (1) (1).png" alt="Aarushi Gupta">
+        <h3>Aarushi Gupta</h3>
+        <span>Co-Founder &amp; Developer</span>
+        <p>
+          Aarushi is an incoming junior at Foothill High School in Pleasanton, CA, and
+          serves as the Northern California DECA Vice President of Marketing, designing
+          posts and engaging members through @norcaldeca. She placed 6th in Retail
+          Merchandising Series at California DECA's SCDC 2026 (qualifying to ICDC), was a
+          finalist for AAM and EFB at NorCal CDC, and earned 1st in AAM at the Tri-Valley
+          Minicon in 2025. Connect with her at @deca.aarushi.
+        </p>
+      </div>
+
+      <div class="team-card">
+        <img src="images/member2.jpg" alt="Hannah Kow">
+        <h3>Hannah Kow</h3>
+        <span>Co-Founder</span>
+        <p>
+          Hannah is an incoming junior at West Ranch High School in Santa Clarita, CA. She
+          serves as Co-President of West Ranch DECA and VP of Marketing for the Southern
+          California District Action Team, running content for @socaldeca. Within her
+          chapter she mentors officers and members while driving fundraising, community,
+          and competitive prep. She's earned 1st place glass in PEN at SoCal CDC and a
+          top-5 finish in ACT. Connect with her at @deca.kow.
+        </p>
+      </div>
+
+      <div class="team-card">
+        <img src="IMG_4775.jpeg" alt="Betty Huang">
+        <h3>Betty Huang</h3>
+        <span>Co-Founder &amp; Marketing Specialist</span>
+        <p>
+          Betty is an incoming junior at Lynbrook High School in San Jose, CA, and serves
+          as one of Lynbrook's cluster captains, guiding members through their IMC
+          writtens. She's competed in PEN and ENT — earning 3rd place roleplay at Silicon
+          Valley CDC and 3rd overall at Lynbrook's Mock Conference — plus IMCE and IMCS,
+          with a top 10 presentation at SVCDC. Connect with her at @deca.betty.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FEATURED GUESTS ===== -->
+  <section id="guests" class="guests-section reveal">
+    <div class="section-head center">
+      <div class="section-tag">Guest speakers</div>
+      <h2>Learn from the people<br>who already won.</h2>
+      <p class="guests-sub">ICDC champions and DECA leaders who've shared their expertise with our members</p>
     </div>
 
-  </div>
-</section>
-
-<!-- FEATURED GUESTS -->
-<section id="guests" class="guests-section">
-  <h2>Featured Guests</h2>
-  <p class="guests-sub">ICDC champions and DECA leaders who've shared their expertise with our members</p>
-
-  <div class="guests-grid">
-
-    <div class="guest-card">
-      <img src="images/guest1.jpg" alt="Guest speaker name">
-      <h3>Guest Speaker Name</h3>
-      <span class="guest-role">Guest Speaker · Principles Events</span>
-      <p>
-        Short description of who they are, their DECA / competitive background,
-        and what they shared with our members (tips, strategies, judge insight, etc).
-      </p>
+    <div class="guests-grid">
+      <div class="guest-card">
+        <img src="images/guest1.jpg" alt="Guest speaker">
+        <h3>Guest Speaker Name</h3>
+        <span class="guest-role">Principles Events</span>
+        <p>Short description of who they are, their competitive background, and what they shared with our members.</p>
+      </div>
+      <div class="guest-card">
+        <img src="images/guest2.jpg" alt="Guest speaker">
+        <h3>Guest Speaker Name</h3>
+        <span class="guest-role">Marketing Cluster Exam</span>
+        <p>Short description of who they are, their competitive background, and what they shared with our members.</p>
+      </div>
+      <div class="guest-card">
+        <img src="images/guest3.jpg" alt="Guest speaker">
+        <h3>Guest Speaker Name</h3>
+        <span class="guest-role">Team Decision Making</span>
+        <p>Short description of who they are, their competitive background, and what they shared with our members.</p>
+      </div>
     </div>
+  </section>
 
-    <div class="guest-card">
-      <img src="images/guest2.jpg" alt="Guest speaker name">
-      <h3>Guest Speaker Name</h3>
-      <span class="guest-role">Guest Speaker · Marketing Cluster Exam</span>
-      <p>
-        Short description of who they are, their DECA / competitive background,
-        and what they shared with our members (tips, strategies, judge insight, etc).
-      </p>
+  <!-- ===== FINAL CTA ===== -->
+  <section class="cta-section reveal">
+    <div class="cta-inner">
+      <h2>Ready to farm for glass?</h2>
+      <p>Join free with your Google account and start your first course today.</p>
+      <button class="btn-primary" onclick="document.getElementById('landingLogin').click()">Get Started Free →</button>
     </div>
-
-    <div class="guest-card">
-      <img src="images/guest3.jpg" alt="Guest speaker name">
-      <h3>Guest Speaker Name</h3>
-      <span class="guest-role">Guest Speaker · Team Decision Making</span>
-      <p>
-        Short description of who they are, their DECA / competitive background,
-        and what they shared with our members (tips, strategies, judge insight, etc).
-      </p>
-    </div>
-
-  </div>
-</section>
+  </section>
 
   <footer class="landing-footer">
-    <p> Farm4Glass &copy; 2026: Please note we are not endorsed with DECA Inc in any way.</p>
+    <p>Farm4Glass &copy; 2026 · Please note we are not endorsed by DECA Inc in any way.</p>
   </footer>
 </div>
 
@@ -588,6 +648,25 @@
     <button class="btn-primary" onclick="closeModal('badgeModal')">Awesome!</button>
   </div>
 </div>
+
+
+<script>
+  // Fade landing sections in as they scroll into view.
+  (function () {
+    const items = document.querySelectorAll('#landingPage .reveal');
+    if (!items.length) return;
+    if (!('IntersectionObserver' in window)) {
+      items.forEach(el => el.classList.add('in'));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.12 });
+    items.forEach(el => io.observe(el));
+  })();
+</script>
 
 <script type="module" src="script.js"></script>
 </body>

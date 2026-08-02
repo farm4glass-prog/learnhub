@@ -1,13 +1,14 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
 import {
   getAuth, GoogleAuthProvider, signInWithPopup,
   onAuthStateChanged, signOut
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
-  collection, getDocs, orderBy, query, limit, where,
-  addDoc, onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  collection, getDocs, orderBy, query, limit
+} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app-check.js";
+import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-ai.js";
 
 // ========================= FIREBASE =========================
 const firebaseConfig = {
@@ -27,6 +28,20 @@ function isAdmin(user) {
 }
 
 const app = initializeApp(firebaseConfig);
+
+// App Check is required by Firebase AI Logic (used by the Prepared Event AI tab).
+// Register the site under Firebase console > Security > App Check with reCAPTCHA v3
+// and paste the site key below. The site key is public — safe to commit.
+// On localhost, the debug flag prints a token in the console; register it under
+// App Check > Apps > Manage debug tokens.
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
+initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider("YOUR_RECAPTCHA_V3_SITE_KEY"),
+  isTokenAutoRefreshEnabled: true
+});
+
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
@@ -58,7 +73,6 @@ const ICONS = {
   search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>`,
   bookmark: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg>`,
   bookmarkFilled: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg>`,
-  send: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 12 18-9-9 18-2-7-7-2z"/></svg>`,
   mail: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 6 8 7 8-7"/></svg>`,
   timer: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4"/><path d="M12 14 15 11"/><circle cx="12" cy="14" r="8"/></svg>`,
   check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>`
@@ -131,11 +145,6 @@ function checkCourseComplete(userData, courses) {
 }
 
 // ========================= DECA ASSOCIATIONS (High School) =========================
-// A starter list of chartered DECA high-school state/territory associations for the
-// profile "Association" field. It's an <input list="..."> (datalist), not a rigid
-// <select>, so a student can still type an exact chapter name if theirs is missing
-// or worded differently — admins should treat this as a convenience list, not a
-// source of truth (see https://www.deca.org/associations for the official list).
 const DECA_ASSOCIATIONS = [
   "Alabama DECA", "Alaska DECA", "Arizona DECA", "Arkansas DECA", "California DECA",
   "Colorado DECA", "Connecticut DECA", "Delaware DECA", "District of Columbia DECA",
@@ -151,10 +160,9 @@ const DECA_ASSOCIATIONS = [
   "Wisconsin DECA", "Wyoming DECA", "DECA Germany"
 ];
 
-// ========================= KPI DATABASE (starter content) =========================
-// These are a starting set written by Farm4Glass as study aids, not verbatim DECA
-// text. Admins can add, edit, and expand this list from the Admin tab as the
-// database grows — treat this seed as a foundation, not a complete PI list.
+// ========================= KPI FALLBACK SET =========================
+// The full Marketing Career Cluster PI list lives in kpis.json. This small
+// hand-written set is only used if that file can't be loaded at all.
 const KPI_SEED = [
   {
     id: "channels-of-distribution",
@@ -258,7 +266,6 @@ const KPI_SEED = [
   }
 ];
 
-
 // ========================= GLOBALS =========================
 let currentUser = null;
 let userData = null;
@@ -279,18 +286,6 @@ let adminEditingEventId = null;
 let blogs = [];
 let blogsLoaded = false;
 let adminEditingBlogId = null;
-let checklists = [];
-let checklistsLoaded = false;
-let selectedChecklistId = null;
-let adminEditingChecklistId = null;
-let networkUsers = [];
-let networkUsersLoaded = false;
-let networkActiveSubTab = "directory";
-let conversations = [];
-let activeConversationId = null;
-let activeConversationPeer = null;
-let conversationsUnsub = null;
-let messagesUnsub = null;
 let examState = null;
 let examTimerInterval = null;
 
@@ -336,7 +331,7 @@ onAuthStateChanged(auth, async (user) => {
           bookmarkedLessons: [],
           bookmarkedKPIs: [],
           examAttempts: [],
-          checklistProgress: {}
+          preparedEventReviews: []
         });
       }
 
@@ -347,7 +342,7 @@ onAuthStateChanged(auth, async (user) => {
       userData.bookmarkedLessons = userData.bookmarkedLessons || [];
       userData.bookmarkedKPIs = userData.bookmarkedKPIs || [];
       userData.examAttempts = userData.examAttempts || [];
-      userData.checklistProgress = userData.checklistProgress || {};
+      userData.preparedEventReviews = userData.preparedEventReviews || [];
 
       await updateStreak(userRef);
       renderAll();
@@ -360,8 +355,6 @@ onAuthStateChanged(auth, async (user) => {
   } else {
     currentUser = null;
     userData = null;
-    if (conversationsUnsub) { conversationsUnsub(); conversationsUnsub = null; }
-    if (messagesUnsub) { messagesUnsub(); messagesUnsub = null; }
     if (examTimerInterval) { clearInterval(examTimerInterval); examTimerInterval = null; }
     document.getElementById("portal")?.classList.add("hidden");
     document.getElementById("landingPage")?.classList.remove("hidden");
@@ -400,13 +393,19 @@ async function updateStreak(userRef) {
   userData.streak = newStreak;
   userData.bestStreak = bestStreak;
   userData.lastActiveDate = today;
+
+  if ([3, 7, 14, 30, 50, 100].includes(newStreak)) {
+    setTimeout(() => {
+      f4gNotice(`${newStreak} day streak`, "That consistency is the whole game. Keep going.");
+      f4gBurst(120, window.innerHeight - 90, 22, 150);
+    }, 900);
+  }
 }
 
-// ========================= COURSES LOAD (Firestore, seeded from courses.json) =========================
-// Courses now live in the "courses" collection in Firestore so admin edits
-// (new videos, new practice questions) are saved permanently and show up
-// for every user. courses.json is only used to seed the database the very
-// first time (see adminSeedCourses below) or as an offline fallback.
+// ========================= COURSES LOAD =========================
+// Courses live in the "courses" collection in Firestore so admin edits are
+// saved permanently for every user. courses.json seeds the database the first
+// time (see adminSeedCourses) or acts as an offline fallback.
 async function loadCourses() {
   try {
     const snap = await getDocs(collection(db, "courses"));
@@ -423,7 +422,6 @@ async function loadCourses() {
     console.error("Failed to load courses from Firestore:", e);
   }
 
-  // Fall back to the bundled courses.json (also what admin "seed" uses)
   try {
     const r = await fetch("courses.json");
     if (!r.ok) throw new Error(`courses.json returned ${r.status}`);
@@ -462,26 +460,43 @@ loadCourses();
 loadKPIs();
 loadCalendarEvents();
 loadBlogs();
-loadChecklists();
 populateAssociationsDatalist();
 
+// ========================= KPI LOAD =========================
+// The full DECA Marketing Career Cluster PI list lives in kpis.json (static,
+// free to serve). Firestore's "kpis" collection holds ONLY admin changes —
+// edited study notes, brand-new PIs, and { id, hidden: true } markers — so
+// student page loads cost almost no Firestore reads.
 async function loadKPIs() {
+  let base = [];
+  try {
+    const r = await fetch("kpis.json");
+    if (!r.ok) throw new Error(`kpis.json returned ${r.status}`);
+    base = await r.json();
+  } catch (e) {
+    console.error("Failed to load kpis.json:", e);
+  }
+  if (!base.length) base = KPI_SEED;
+
+  let overrides = [];
   try {
     const snap = await getDocs(collection(db, "kpis"));
-    if (!snap.empty) {
-      kpis = snap.docs.map(d => d.data());
-      kpisLoaded = true;
-      renderKPIList();
-      if (document.getElementById("admin")?.classList.contains("active")) renderAdminPanel();
-      return;
-    }
+    overrides = snap.docs.map(d => d.data());
   } catch (e) {
-    console.error("Failed to load KPIs from Firestore:", e);
+    console.error("Failed to load KPI overrides from Firestore:", e);
   }
-  // Fall back to the bundled starter set until an admin imports/edits in Firestore
-  kpis = KPI_SEED;
+
+  const byId = new Map(base.map(k => [k.id, k]));
+  overrides.forEach(o => {
+    if (!o || !o.id) return;
+    if (o.hidden) byId.delete(o.id);
+    else byId.set(o.id, { ...(byId.get(o.id) || {}), ...o });
+  });
+
+  kpis = [...byId.values()];
   kpisLoaded = true;
   renderKPIList();
+  if (document.getElementById("admin")?.classList.contains("active")) renderAdminPanel();
 }
 
 // ========================= RENDER ALL =========================
@@ -525,11 +540,11 @@ function renderDashboard() {
   const name = (userData.displayName || "Farmer").split(" ")[0];
   document.getElementById("dashGreeting").textContent = `${greeting}, ${name}! `;
 
-  // Stats
-  document.getElementById("statXP").textContent = userData.xp;
-  document.getElementById("statStreak").textContent = userData.streak;
+  // Stats (animated roll-up)
+  f4gCountUp(document.getElementById("statXP"), userData.xp);
+  f4gCountUp(document.getElementById("statStreak"), userData.streak, 600);
   document.getElementById("statAnimalName").textContent = animal.name;
-  document.getElementById("statLessons").textContent = (userData.completedLessons || []).length;
+  f4gCountUp(document.getElementById("statLessons"), (userData.completedLessons || []).length, 600);
 
   // Animal card
   document.getElementById("acName").textContent = animal.name;
@@ -545,13 +560,8 @@ function renderDashboard() {
   document.getElementById("acXPNeeded").textContent =
     animal.xpNeeded === Infinity ? "MAX LEVEL!" : `${animal.xpNeeded - userData.xp} XP to evolve`;
 
-  // Featured courses (pastures)
   renderFeaturedCourses();
-
-  // Streak widget
   renderStreakWidget();
-
-  // Badges widget
   renderBadgesWidget();
 }
 
@@ -648,7 +658,6 @@ function renderCourseGrid() {
     return;
   }
 
-  // Category filters
   const filterContainer = document.getElementById("categoryFilters");
   if (filterContainer && filterContainer.children.length === 0) {
     const cats = ["All Courses", ...new Set(courses.map(c => c.category))];
@@ -834,15 +843,12 @@ window.completeLesson = async function(lessonId, xp) {
 
     showXPToast(xp);
 
-    // Check level up
     if (newAnimal.index > oldAnimal.index) {
       setTimeout(() => showLevelUpModal(newAnimal), 800);
     }
 
-    // Check badges
     await checkAndAwardBadges();
 
-    // Refresh UI
     renderSidebar();
     document.querySelector("#completeBtn") && (document.querySelector("#completeBtn").disabled = true);
     document.querySelector("#completeBtn") && (document.querySelector("#completeBtn").textContent = "✓ Completed");
@@ -922,7 +928,10 @@ window.selectAnswer = function(idx) {
     else if (i === idx) btn.classList.add("wrong");
   });
 
-  if (idx === q.answer) quizState.score++;
+  if (idx === q.answer) {
+    quizState.score++;
+    f4gBurstFrom(btns[idx], 14);
+  }
 
   const expBox = document.getElementById("explanationBox");
   if (expBox) expBox.classList.add("show");
@@ -961,7 +970,11 @@ async function renderQuizResults() {
     </div>
   `;
 
-  // Award XP if not already completed
+  if (pct >= 80) {
+    const card = document.querySelector(".quiz-results");
+    if (card) f4gBurstFrom(card, pct === 100 ? 40 : 26);
+  }
+
   if (!userData) return;
   const already = (userData.completedLessons || []).includes(lesson.id);
 
@@ -1026,7 +1039,6 @@ async function checkAndAwardBadges() {
     await updateDoc(doc(db, "users", currentUser.uid), { earnedBadges: updated });
     userData.earnedBadges = updated;
 
-    // Show first new badge modal
     const badge = BADGES.find(b => b.id === newOnes[0]);
     if (badge) {
       setTimeout(() => {
@@ -1034,6 +1046,7 @@ async function checkAndAwardBadges() {
         document.getElementById("badgeModalName").textContent = badge.name;
         document.getElementById("badgeModalDesc").textContent = badge.desc;
         document.getElementById("badgeModal").classList.remove("hidden");
+        f4gBurst(window.innerWidth / 2, window.innerHeight / 2, 36, 210);
       }, 1200);
     }
   } catch (e) {
@@ -1099,10 +1112,6 @@ window.switchLbTab = function(mode, el) {
 };
 
 // ========================= PERFORMANCE ANALYTICS =========================
-// Uses the same Firestore user doc (completedLessons, quizScores, activityLog)
-// as everywhere else — no separate database needed. Recommendations are
-// generated with a simple rules engine based on that data.
-
 function renderAnalytics() {
   const container = document.getElementById("analyticsContent");
   if (!container || !userData) return;
@@ -1113,7 +1122,6 @@ function renderAnalytics() {
     ? Math.round(scoreEntries.reduce((s, [, v]) => s + v, 0) / scoreEntries.length)
     : null;
 
-  // Per-course completion + per-unit quiz scores
   const courseRows = courses.map(course => {
     const completed = (userData.completedLessons || []).filter(id => course.lessons.some(l => l.id === id)).length;
     const pct = course.lessons.length ? Math.round((completed / course.lessons.length) * 100) : 0;
@@ -1121,7 +1129,6 @@ function renderAnalytics() {
     return { course, pct, completed, quizUnits };
   }).filter(r => r.completed > 0 || r.quizUnits.length > 0);
 
-  // Last 7 days of XP from activityLog
   const log = userData.activityLog || [];
   const days = [];
   for (let i = 6; i >= 0; i--) {
@@ -1189,7 +1196,6 @@ function renderAnalytics() {
 function buildRecommendations(courseRows, quizScores, log) {
   const recs = [];
 
-  // Weakest quiz units (below 60%)
   const weakUnits = [];
   courseRows.forEach(r => r.quizUnits.forEach(l => {
     if (quizScores[l.id] < 60) weakUnits.push({ course: r.course, lesson: l, score: quizScores[l.id] });
@@ -1202,7 +1208,6 @@ function buildRecommendations(courseRows, quizScores, log) {
     });
   });
 
-  // Stalled courses: started but not touched among the most recent activity
   const recentLessonIds = new Set(log.slice(-15).map(e => e.lessonId));
   courseRows.forEach(r => {
     if (r.pct > 0 && r.pct < 100) {
@@ -1217,12 +1222,10 @@ function buildRecommendations(courseRows, quizScores, log) {
     }
   });
 
-  // Streak nudge
   if (!userData.streak) {
     recs.push({ icon: "flame", title: "Start a study streak today", desc: "Complete just one lesson today to start building a streak — consistency compounds fast." });
   }
 
-  // Untouched courses with content
   const untouched = courseRows.length ? courses.filter(c => c.lessons.length > 0 && !courseRows.some(r => r.course.id === c.id)) : courses.filter(c => c.lessons.length > 0);
   if (untouched.length && recs.length < 4) {
     recs.push({ icon: "book", title: `Try ${untouched[0].title}`, desc: "You haven't started this course yet — it's a good candidate for your next study session." });
@@ -1242,8 +1245,16 @@ function renderKPIList() {
   }
 
   const q = document.getElementById("kpiSearch")?.value.toLowerCase() || "";
-  const filtered = kpis.filter(k => k.title.toLowerCase().includes(q) || k.cluster.toLowerCase().includes(q));
   const bookmarked = userData?.bookmarkedKPIs || [];
+
+  const matches = kpis.filter(k =>
+    `${k.title} ${k.cluster} ${k.code || ""} ${k.area || ""} ${k.tierShort || ""} ${k.levelName || ""}`
+      .toLowerCase().includes(q)
+  );
+  // 892 indicators is a lot of DOM for a school laptop — show a slice and let
+  // search narrow it. Raise KPI_LIST_LIMIT to render more at once.
+  const KPI_LIST_LIMIT = 250;
+  const filtered = matches.slice(0, KPI_LIST_LIMIT);
 
   if (!selectedKPIId && filtered.length) selectedKPIId = filtered[0].id;
 
@@ -1255,11 +1266,15 @@ function renderKPIList() {
     </button>
   `).join("") || `<div class="admin-empty-state">No matching performance indicators.</div>`;
 
+  const moreHtml = matches.length > filtered.length
+    ? `<div class="admin-empty-state">Showing ${filtered.length} of ${matches.length} — keep typing to narrow it down.</div>`
+    : "";
+
   const selected = filtered.find(k => k.id === selectedKPIId) || filtered[0];
 
   container.innerHTML = `
     <div class="kpi-layout">
-      <div class="kpi-list">${listHtml}</div>
+      <div class="kpi-list">${listHtml}${moreHtml}</div>
       <div class="kpi-detail" id="kpiDetail">${selected ? renderKPIDetailHtml(selected) : `<div class="admin-empty-state">Select a performance indicator.</div>`}</div>
     </div>
   `;
@@ -1267,17 +1282,34 @@ function renderKPIList() {
 
 function renderKPIDetailHtml(k) {
   const isBookmarked = (userData?.bookmarkedKPIs || []).includes(k.id);
+  const section = (label, body) =>
+    body ? `<div class="kpi-section"><h4>${label}</h4><p>${body}</p></div>` : "";
+
+  const meta = [
+    k.code,
+    k.levelName ? `${k.levelName} (${k.level})` : "",
+    k.tierShort
+  ].filter(Boolean).join(" · ");
+
+  const studyHtml = [
+    section("Explanation", k.explanation),
+    section("Real-World Example", k.example),
+    section("Judge Expectations", k.judgeExpectations),
+    section("Common Mistakes", k.commonMistakes),
+    section("Sample Answer", k.sampleAnswer)
+  ].join("");
+
   return `
     <div class="kpi-detail-head">
       <span class="kpi-cluster-tag">${k.cluster}</span>
       <button class="bookmark-btn ${isBookmarked ? "active" : ""}" onclick="toggleKPIBookmark('${k.id}')" title="${isBookmarked ? "Remove bookmark" : "Bookmark this PI"}">${icon(isBookmarked ? "bookmarkFilled" : "bookmark")}</button>
     </div>
     <h2>${k.title}</h2>
-    <div class="kpi-section"><h4>Explanation</h4><p>${k.explanation}</p></div>
-    <div class="kpi-section"><h4>Real-World Example</h4><p>${k.example}</p></div>
-    <div class="kpi-section"><h4>Judge Expectations</h4><p>${k.judgeExpectations}</p></div>
-    <div class="kpi-section"><h4>Common Mistakes</h4><p>${k.commonMistakes}</p></div>
-    <div class="kpi-section"><h4>Sample Answer</h4><p>${k.sampleAnswer}</p></div>
+    ${meta ? `<div class="kpi-cluster-tag">${meta}</div>` : ""}
+    ${section("Instructional Area", k.standard ? `${k.area} — ${k.standard}` : k.area)}
+    ${section("Performance Element", k.element)}
+    ${(k.appearsIn && k.appearsIn.length > 1) ? section("Also Tested In", k.appearsIn.join(" · ")) : ""}
+    ${studyHtml || `<div class="kpi-section"><h4>Study Notes</h4><p>No study notes for this indicator yet. Add an explanation, real-world example, judge expectations, common mistakes, and a sample answer from the Admin tab.</p></div>`}
   `;
 }
 
@@ -1294,7 +1326,6 @@ window.selectKPI = function(id) {
 function renderProfile() {
   if (!userData || !currentUser) return;
 
-  // Avatar
   const avatarEl = document.getElementById("profileAvatar");
   if (avatarEl) {
     if (currentUser.photoURL) {
@@ -1309,10 +1340,10 @@ function renderProfile() {
   const animal = getAnimalForXP(userData.xp);
   document.getElementById("profileLevel").textContent = `${animal.name} · ${userData.xp} XP`;
 
-  document.getElementById("pStatXP").textContent = userData.xp;
-  document.getElementById("pStatStreak").textContent = userData.streak;
-  document.getElementById("pStatLessons").textContent = (userData.completedLessons || []).length;
-  document.getElementById("pStatBadges").textContent = (userData.earnedBadges || []).length;
+  f4gCountUp(document.getElementById("pStatXP"), userData.xp);
+  f4gCountUp(document.getElementById("pStatStreak"), userData.streak, 600);
+  f4gCountUp(document.getElementById("pStatLessons"), (userData.completedLessons || []).length, 600);
+  f4gCountUp(document.getElementById("pStatBadges"), (userData.earnedBadges || []).length, 600);
 
   document.getElementById("editDisplayName").value = userData.displayName || "";
   document.getElementById("editChapter").value = userData.chapter || "";
@@ -1320,7 +1351,6 @@ function renderProfile() {
 
   renderProfileBookmarks();
 
-  // Badges large
   const badgeContainer = document.getElementById("profileBadges");
   if (badgeContainer) {
     badgeContainer.innerHTML = "";
@@ -1338,7 +1368,6 @@ function renderProfile() {
     });
   }
 
-  // Completed lessons
   const cl = document.getElementById("completedLessonsList");
   if (cl) {
     cl.innerHTML = "";
@@ -1415,11 +1444,9 @@ window.showTab = function(tabName) {
   if (tabName === "kpi") renderKPIList();
   if (tabName === "calendar") renderCalendarList();
   if (tabName === "blog") renderBlogList();
-  if (tabName === "network") renderNetworkTab();
-  if (tabName === "checklists") renderChecklistsList();
+  if (tabName === "prepared") renderPreparedEventTab();
   if (tabName === "admin") renderAdminPanel();
 
-  // Close mobile sidebar
   document.getElementById("sidebar")?.classList.remove("open");
 };
 
@@ -1434,6 +1461,7 @@ function showXPToast(xp) {
   if (!toast) return;
   toast.textContent = `+${xp} XP`;
   toast.classList.remove("hidden");
+  f4gBurstFrom(toast, xp >= 40 ? 26 : 16);
   setTimeout(() => toast.classList.add("hidden"), 2500);
 }
 
@@ -1443,6 +1471,8 @@ function showLevelUpModal(animal) {
   document.getElementById("modalAnimal").textContent = animal.name;
   document.getElementById("modalMsg").textContent = `You evolved into a ${animal.name}! Keep studying to evolve again!`;
   document.getElementById("levelUpModal").classList.remove("hidden");
+  f4gBurst(window.innerWidth / 2, window.innerHeight / 2, 44, 240);
+  setTimeout(() => f4gBurst(window.innerWidth / 2, window.innerHeight / 2, 30, 200), 260);
 }
 
 window.closeModal = function(id) {
@@ -1452,16 +1482,7 @@ window.closeModal = function(id) {
 // ========================================================================
 // ========================= ADMIN PANEL =================================
 // ========================================================================
-// Everything below is only reachable by emails in ADMIN_EMAILS. Course
-// content (video lessons + their paired practice quizzes) is stored in the
-// Firestore "courses" collection, one document per course, keyed by course id.
-// Remember to add Firestore security rules so only admins can write to
-// the "courses" collection, e.g.:
-//
-//   match /courses/{courseId} {
-//     allow read: if true;
-//     allow write: if request.auth.token.email == "farm4glass@gmail.com";
-//   }
+// Everything below is only reachable by emails in ADMIN_EMAILS.
 
 function renderAdminPanel() {
   const container = document.getElementById("adminContent");
@@ -1474,7 +1495,7 @@ function renderAdminPanel() {
       <button class="admin-subtab-btn ${adminActiveSubTab === "members" ? "active" : ""}" onclick="adminSwitchSubTab('members')">Members</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "calendar" ? "active" : ""}" onclick="adminSwitchSubTab('calendar')">Calendar</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "blog" ? "active" : ""}" onclick="adminSwitchSubTab('blog')">Blog</button>
-      <button class="admin-subtab-btn ${adminActiveSubTab === "checklists" ? "active" : ""}" onclick="adminSwitchSubTab('checklists')">Checklists</button>
+      <button class="admin-subtab-btn ${adminActiveSubTab === "rubrics" ? "active" : ""}" onclick="adminSwitchSubTab('rubrics')">Rubrics</button>
     </div>
     <div id="adminSubtabBody"></div>
   `;
@@ -1484,7 +1505,7 @@ function renderAdminPanel() {
   else if (adminActiveSubTab === "members") renderAdminMembersSection();
   else if (adminActiveSubTab === "calendar") renderAdminCalendarSection();
   else if (adminActiveSubTab === "blog") renderAdminBlogSection();
-  else if (adminActiveSubTab === "checklists") renderAdminChecklistsSection();
+  else if (adminActiveSubTab === "rubrics") renderAdminRubricsSection();
   else renderAdminCoursesSection();
 }
 
@@ -1534,43 +1555,67 @@ window.adminSelectCourse = function(id) {
 
 // ---- KPI Database admin management ----
 let adminEditingKPIId = null;
+let adminKpiQuery = "";
 
-function renderAdminKPISection() {
-  const body = document.getElementById("adminSubtabBody");
-  if (!body) return;
+function adminKpiListHtml() {
+  const filtered = kpis.filter(k =>
+    `${k.title} ${k.cluster} ${k.code || ""}`.toLowerCase().includes(adminKpiQuery)
+  );
+  const shown = filtered.slice(0, 60);
 
-  const listHtml = kpis.map(k => `
+  const blocks = shown.map(k => `
     <div class="admin-lesson-block">
       <div class="admin-lesson-head">
         <h4>${k.title}</h4>
         <div style="display:flex;gap:8px;">
           <button class="admin-btn-sm ghost" onclick="adminEditKPI('${k.id}')">Edit</button>
-          <button class="admin-btn-sm danger" onclick="adminDeleteKPI('${k.id}')">${icon("trash")} Delete</button>
+          <button class="admin-btn-sm danger" onclick="adminDeleteKPI('${k.id}')">${icon("trash")} Hide</button>
         </div>
       </div>
-      <div style="font-size:12px;color:var(--muted);">${k.cluster}</div>
+      <div style="font-size:12px;color:var(--muted);">${k.code ? k.code + " · " : ""}${k.cluster}</div>
     </div>
-  `).join("") || `<div class="admin-empty-state">No performance indicators yet.</div>`;
+  `).join("");
+
+  const more = filtered.length > shown.length
+    ? `<div class="admin-empty-state">Showing ${shown.length} of ${filtered.length} — search to narrow it down.</div>`
+    : "";
+
+  return (blocks + more) || `<div class="admin-empty-state">No performance indicators match that search.</div>`;
+}
+
+window.adminFilterKPIs = function() {
+  adminKpiQuery = (document.getElementById("adminKpiSearch")?.value || "").toLowerCase();
+  const el = document.getElementById("adminKpiList");
+  if (el) el.innerHTML = adminKpiListHtml();
+};
+
+function renderAdminKPISection() {
+  const body = document.getElementById("adminSubtabBody");
+  if (!body) return;
 
   const editing = adminEditingKPIId ? kpis.find(k => k.id === adminEditingKPIId) : null;
 
   body.innerHTML = `
     <div class="admin-seed-banner">
-      <div>The KPI database starts with a small Farm4Glass-written seed set. Import it once, then expand it here as you verify and add real content.</div>
-      <button class="admin-btn-sm" onclick="adminSeedKPIs()">Import starter KPIs</button>
+      <div>${kpis.length} performance indicators are loaded from <code>kpis.json</code>. Editing one here saves your version to the database and it overrides the file — the file itself stays untouched.</div>
     </div>
     <div class="admin-layout">
-      <div class="admin-course-list">${listHtml}</div>
+      <div>
+        <div class="admin-kpi-form">
+          <input type="text" id="adminKpiSearch" placeholder="Search PIs by title, code, or cluster..." value="${adminKpiQuery.replace(/"/g, "&quot;")}" oninput="adminFilterKPIs()">
+        </div>
+        <div class="admin-course-list" id="adminKpiList">${adminKpiListHtml()}</div>
+      </div>
       <div class="admin-panel-body">
         <h3 style="margin-bottom:16px;">${editing ? "Edit Performance Indicator" : "Add a New Performance Indicator"}</h3>
         <div class="admin-kpi-form">
-          <input type="text" id="kpi-title" placeholder="PI title (e.g. Explain the concept of channels of distribution)" value="${editing ? editing.title.replace(/"/g, "&quot;") : ""}">
-          <input type="text" id="kpi-cluster" placeholder="Cluster (e.g. Marketing)" value="${editing ? editing.cluster.replace(/"/g, "&quot;") : ""}">
-          <textarea id="kpi-explanation" rows="2" placeholder="Explanation">${editing ? editing.explanation : ""}</textarea>
-          <textarea id="kpi-example" rows="2" placeholder="Real-world example">${editing ? editing.example : ""}</textarea>
-          <textarea id="kpi-judge" rows="2" placeholder="Judge expectations">${editing ? editing.judgeExpectations : ""}</textarea>
-          <textarea id="kpi-mistakes" rows="2" placeholder="Common mistakes">${editing ? editing.commonMistakes : ""}</textarea>
-          <textarea id="kpi-sample" rows="3" placeholder="Sample answer">${editing ? editing.sampleAnswer : ""}</textarea>
+          <input type="text" id="kpi-title" placeholder="PI title (e.g. Explain the nature of channels of distribution)" value="${editing ? editing.title.replace(/"/g, "&quot;") : ""}">
+          <input type="text" id="kpi-cluster" placeholder="Cluster (e.g. Marketing · Channel Management · Tier 2 Marketing)" value="${editing ? editing.cluster.replace(/"/g, "&quot;") : ""}">
+          <textarea id="kpi-explanation" rows="2" placeholder="Explanation">${editing ? (editing.explanation || "") : ""}</textarea>
+          <textarea id="kpi-example" rows="2" placeholder="Real-world example">${editing ? (editing.example || "") : ""}</textarea>
+          <textarea id="kpi-judge" rows="2" placeholder="Judge expectations">${editing ? (editing.judgeExpectations || "") : ""}</textarea>
+          <textarea id="kpi-mistakes" rows="2" placeholder="Common mistakes">${editing ? (editing.commonMistakes || "") : ""}</textarea>
+          <textarea id="kpi-sample" rows="3" placeholder="Sample answer">${editing ? (editing.sampleAnswer || "") : ""}</textarea>
           <div style="display:flex;gap:10px;">
             <button class="admin-btn-sm" onclick="adminSaveKPI()">${editing ? "Save Changes" : "Add Performance Indicator"}</button>
             ${editing ? `<button class="admin-btn-sm ghost" onclick="adminCancelEditKPI()">Cancel</button>` : ""}
@@ -1600,10 +1645,12 @@ window.adminSaveKPI = async function() {
   const commonMistakes = document.getElementById("kpi-mistakes").value.trim();
   const sampleAnswer = document.getElementById("kpi-sample").value.trim();
 
-  if (!title || !cluster || !explanation) return alert("Please fill in at least the title, cluster, and explanation.");
+  if (!title || !cluster) return alert("Please fill in at least the title and cluster.");
 
   const id = adminEditingKPIId || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || `kpi-${Date.now()}`;
-  const kpiDoc = { id, title, cluster, explanation, example, judgeExpectations, commonMistakes, sampleAnswer };
+  const existing = kpis.find(k => k.id === id) || {};
+  const kpiDoc = { ...existing, id, title, cluster, explanation, example, judgeExpectations, commonMistakes, sampleAnswer };
+  delete kpiDoc.hidden;
 
   try {
     await setDoc(doc(db, "kpis", id), kpiDoc);
@@ -1618,31 +1665,18 @@ window.adminSaveKPI = async function() {
   }
 };
 
+// "Delete" writes a hidden marker so the entry doesn't come back from kpis.json.
+// To restore one, delete its document in the Firebase console.
 window.adminDeleteKPI = async function(id) {
-  if (!confirm("Delete this performance indicator?")) return;
+  if (!confirm("Hide this performance indicator from the KPI Database?")) return;
   try {
-    await deleteDoc(doc(db, "kpis", id));
+    await setDoc(doc(db, "kpis", id), { id, hidden: true });
     kpis = kpis.filter(k => k.id !== id);
     renderAdminKPISection();
     renderKPIList();
   } catch (e) {
     console.error(e);
-    alert("Couldn't delete — check the console.");
-  }
-};
-
-window.adminSeedKPIs = async function() {
-  if (!confirm("Import the starter KPI set into the database? This will overwrite any existing KPI docs with the same IDs.")) return;
-  try {
-    for (const k of KPI_SEED) {
-      await setDoc(doc(db, "kpis", k.id), k);
-    }
-    alert("Starter KPIs imported!");
-    await loadKPIs();
-    renderAdminKPISection();
-  } catch (e) {
-    console.error(e);
-    alert("Import failed — check the console.");
+    alert("Couldn't hide that PI — check the console.");
   }
 };
 
@@ -1841,8 +1875,7 @@ window.adminDeleteQuestion = async function(lessonId, questionIndex) {
   }
 };
 
-// One-time helper: pushes the bundled courses.json into Firestore so the
-// admin panel (and every user) reads from the database from now on.
+// One-time helper: pushes the bundled courses.json into Firestore.
 window.adminSeedCourses = async function() {
   if (!isAdmin(currentUser)) return;
   if (!confirm("Import courses.json into the database? This will overwrite any Firestore course documents with the same IDs.")) return;
@@ -1866,10 +1899,6 @@ window.adminSeedCourses = async function() {
 // ========================================================================
 // ========================= STUDY PLANNER ================================
 // ========================================================================
-// Personalized week-by-week schedule based on: which exam/event, the
-// conference/test date, the student's current practice score, and how many
-// hours a week they have available. Saved per-user in Firestore so it's
-// there next time they log in.
 
 function parseDurationMinutes(str) {
   const match = /(\d+)/.exec(str || "");
@@ -1917,7 +1946,6 @@ window.generateStudyPlan = async function() {
   const completed = userData?.completedLessons || [];
   const remaining = course.lessons.filter(l => !completed.includes(l.id));
 
-  // Low scorers get quizzes re-queued earlier/more often for extra review
   const orderedRemaining = currentScore && currentScore < 70
     ? [...remaining].sort((a, b) => (a.type === "quiz" ? -1 : 1) - (b.type === "quiz" ? -1 : 1))
     : remaining;
@@ -2089,9 +2117,6 @@ function renderProfileBookmarks() {
 // ========================================================================
 // ========================= ADMIN: MEMBERS ===============================
 // ========================================================================
-// Reads the same "users" collection the leaderboard already reads publicly —
-// this just surfaces the email field (and association/chapter) in a table so
-// admins can see every member's contact info in one place.
 
 async function renderAdminMembersSection() {
   const body = document.getElementById("adminSubtabBody");
@@ -2132,14 +2157,6 @@ async function renderAdminMembersSection() {
 // ========================================================================
 // ========================= CALENDAR ======================================
 // ========================================================================
-// Firestore "calendarEvents" collection, one doc per event:
-//   { id, title, date: "YYYY-MM-DD", type: "conference"|"deadline", association, description }
-// association === "" means the event applies to everyone.
-// Firestore rules needed:
-//   match /calendarEvents/{eventId} {
-//     allow read: if true;
-//     allow write: if request.auth.token.email == "farm4glass@gmail.com";
-//   }
 
 async function loadCalendarEvents() {
   try {
@@ -2291,16 +2308,6 @@ window.adminDeleteEvent = async function(id) {
 // ========================================================================
 // ========================= BLOG ==========================================
 // ========================================================================
-// Firestore "blogs" collection, one doc per post:
-//   { id, title, body, coverImage, videoUrl, authorName, createdAt }
-// videoUrl can be a YouTube link (embedded) or any other link (e.g. Instagram
-// Reel/TikTok — rendered as a "Watch Reel" link since those platforms can't
-// be embedded in a plain iframe without their own SDKs).
-// Firestore rules needed:
-//   match /blogs/{postId} {
-//     allow read: if true;
-//     allow write: if request.auth.token.email == "farm4glass@gmail.com";
-//   }
 
 async function loadBlogs() {
   try {
@@ -2447,413 +2454,10 @@ window.adminDeleteBlog = async function(id) {
 };
 
 // ========================================================================
-// ========================= CHECKLISTS ====================================
-// ========================================================================
-// Firestore "checklists" collection, one doc per event template:
-//   { id, eventName, category, items: ["...", "..."] }
-// Per-user progress is stored on the user doc: checklistProgress[checklistId]
-// = array of checked item indexes. This is a self-review tool, not AI grading.
-// Firestore rules needed:
-//   match /checklists/{checklistId} {
-//     allow read: if true;
-//     allow write: if request.auth.token.email == "farm4glass@gmail.com";
-//   }
-
-async function loadChecklists() {
-  try {
-    const snap = await getDocs(collection(db, "checklists"));
-    checklists = snap.docs.map(d => d.data());
-    checklistsLoaded = true;
-    if (document.getElementById("checklists")?.classList.contains("active")) renderChecklistsList();
-    if (adminActiveSubTab === "checklists" && document.getElementById("admin")?.classList.contains("active")) renderAdminChecklistsSection();
-  } catch (e) {
-    console.error("Failed to load checklists:", e);
-    checklistsLoaded = true;
-  }
-}
-
-function renderChecklistsList() {
-  const container = document.getElementById("checklistsContent");
-  if (!container) return;
-
-  if (!checklistsLoaded) {
-    container.innerHTML = `<div class="admin-empty-state">Loading checklists...</div>`;
-    return;
-  }
-  if (!checklists.length) {
-    container.innerHTML = `<div class="admin-empty-state">No checklists yet — an admin can add one from the Admin tab.</div>`;
-    return;
-  }
-
-  if (!selectedChecklistId) selectedChecklistId = checklists[0].id;
-  const selected = checklists.find(c => c.id === selectedChecklistId) || checklists[0];
-  const progress = (userData?.checklistProgress || {})[selected.id] || [];
-
-  container.innerHTML = `
-    <div class="kpi-layout">
-      <div class="kpi-list">
-        ${checklists.map(c => `
-          <button class="kpi-list-item ${c.id === selectedChecklistId ? "active" : ""}" onclick="selectChecklist('${c.id}')">
-            ${c.eventName}
-            <span class="kpi-cluster-tag">${c.category || ""}</span>
-          </button>
-        `).join("")}
-      </div>
-      <div class="kpi-detail">
-        <span class="kpi-cluster-tag">${selected.category || ""}</span>
-        <h2>${selected.eventName}</h2>
-        <div class="checklist-progress-label">${progress.length} / ${selected.items.length} checked</div>
-        <div class="checklist-pbar-outer"><div class="checklist-pbar-inner" style="width:${selected.items.length ? Math.round((progress.length / selected.items.length) * 100) : 0}%"></div></div>
-        <div class="checklist-items">
-          ${selected.items.map((item, i) => `
-            <label class="checklist-item ${progress.includes(i) ? "checked" : ""}">
-              <input type="checkbox" ${progress.includes(i) ? "checked" : ""} onchange="toggleChecklistItem('${selected.id}', ${i})">
-              <span>${item}</span>
-            </label>
-          `).join("")}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-window.selectChecklist = function(id) {
-  selectedChecklistId = id;
-  renderChecklistsList();
-};
-
-window.toggleChecklistItem = async function(checklistId, itemIndex) {
-  if (!currentUser || !userData) return;
-  const progressMap = { ...(userData.checklistProgress || {}) };
-  const current = progressMap[checklistId] || [];
-  progressMap[checklistId] = current.includes(itemIndex)
-    ? current.filter(i => i !== itemIndex)
-    : [...current, itemIndex];
-
-  try {
-    await updateDoc(doc(db, "users", currentUser.uid), { [`checklistProgress.${checklistId}`]: progressMap[checklistId] });
-    userData.checklistProgress = progressMap;
-    renderChecklistsList();
-  } catch (e) {
-    console.error("Failed to save checklist progress:", e);
-  }
-};
-
-function renderAdminChecklistsSection() {
-  const body = document.getElementById("adminSubtabBody");
-  if (!body) return;
-
-  const editing = adminEditingChecklistId ? checklists.find(c => c.id === adminEditingChecklistId) : null;
-
-  const listHtml = checklists.map(c => `
-    <div class="admin-lesson-block">
-      <div class="admin-lesson-head">
-        <h4>${c.eventName}</h4>
-        <div style="display:flex;gap:8px;">
-          <button class="admin-btn-sm ghost" onclick="adminEditChecklist('${c.id}')">Edit</button>
-          <button class="admin-btn-sm danger" onclick="adminDeleteChecklist('${c.id}')">${icon("trash")} Delete</button>
-        </div>
-      </div>
-      <div style="font-size:12px;color:var(--muted);">${c.category || ""} · ${c.items.length} items</div>
-    </div>
-  `).join("") || `<div class="admin-empty-state">No checklists yet.</div>`;
-
-  body.innerHTML = `
-    <div class="admin-layout">
-      <div class="admin-course-list">${listHtml}</div>
-      <div class="admin-panel-body">
-        <h3 style="margin-bottom:16px;">${editing ? "Edit Checklist" : "Add a New Checklist"}</h3>
-        <div class="admin-kpi-form">
-          <input type="text" id="checklist-name" placeholder="Event name (e.g. Business Growth Plan)" value="${editing ? editing.eventName.replace(/"/g, "&quot;") : ""}">
-          <input type="text" id="checklist-category" placeholder="Category (e.g. Written Event)" value="${editing ? (editing.category || "") : ""}">
-          <textarea id="checklist-items" rows="8" placeholder="One checklist item per line">${editing ? editing.items.join("\n") : ""}</textarea>
-          <div style="display:flex;gap:10px;">
-            <button class="admin-btn-sm" onclick="adminSaveChecklist()">${editing ? "Save Changes" : "Add Checklist"}</button>
-            ${editing ? `<button class="admin-btn-sm ghost" onclick="adminCancelEditChecklist()">Cancel</button>` : ""}
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-window.adminEditChecklist = function(id) {
-  adminEditingChecklistId = id;
-  renderAdminChecklistsSection();
-};
-
-window.adminCancelEditChecklist = function() {
-  adminEditingChecklistId = null;
-  renderAdminChecklistsSection();
-};
-
-window.adminSaveChecklist = async function() {
-  const eventName = document.getElementById("checklist-name").value.trim();
-  const category = document.getElementById("checklist-category").value.trim();
-  const items = document.getElementById("checklist-items").value.split("\n").map(s => s.trim()).filter(Boolean);
-
-  if (!eventName || !items.length) return alert("Please fill in an event name and at least one checklist item.");
-
-  const id = adminEditingChecklistId || eventName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || `checklist-${Date.now()}`;
-  const checklistDoc = { id, eventName, category, items };
-
-  try {
-    await setDoc(doc(db, "checklists", id), checklistDoc);
-    const idx = checklists.findIndex(c => c.id === id);
-    if (idx >= 0) checklists[idx] = checklistDoc; else checklists.push(checklistDoc);
-    adminEditingChecklistId = null;
-    renderAdminChecklistsSection();
-  } catch (e) {
-    console.error(e);
-    alert("Couldn't save — check the console.");
-  }
-};
-
-window.adminDeleteChecklist = async function(id) {
-  if (!confirm("Delete this checklist?")) return;
-  try {
-    await deleteDoc(doc(db, "checklists", id));
-    checklists = checklists.filter(c => c.id !== id);
-    renderAdminChecklistsSection();
-  } catch (e) {
-    console.error(e);
-    alert("Couldn't delete — check the console.");
-  }
-};
-
-// ========================================================================
-// ========================= NETWORK (directory + messaging) =============
-// ========================================================================
-// Directory reuses the public "users" collection (same one the leaderboard
-// reads). Messaging uses:
-//   conversations/{id}  — id is the two participant uids sorted + joined with "_"
-//     { participants: [uidA, uidB], names: {uidA: "...", uidB: "..."}, lastMessage, lastMessageAt }
-//   conversations/{id}/messages/{msgId}
-//     { senderId, text, createdAt }
-// Firestore rules needed:
-//   match /conversations/{convId} {
-//     allow read, write: if request.auth != null && request.auth.uid in resource.data.participants;
-//     allow create: if request.auth != null && request.auth.uid in request.resource.data.participants;
-//     match /messages/{msgId} {
-//       allow read, create: if request.auth != null &&
-//         request.auth.uid in get(/databases/$(database)/documents/conversations/$(convId)).data.participants;
-//     }
-//   }
-
-function conversationIdFor(uidA, uidB) {
-  return [uidA, uidB].sort().join("_");
-}
-
-window.switchNetworkTab = function(tab, el) {
-  networkActiveSubTab = tab;
-  document.querySelectorAll(".network-tabs .lb-tab").forEach(b => b.classList.remove("active"));
-  el?.classList.add("active");
-  renderNetworkTab();
-};
-
-async function renderNetworkTab() {
-  const container = document.getElementById("networkContent");
-  if (!container) return;
-
-  if (networkActiveSubTab === "messages") {
-    renderNetworkMessages();
-  } else {
-    renderNetworkDirectory();
-  }
-}
-
-async function renderNetworkDirectory() {
-  const container = document.getElementById("networkContent");
-  if (!container) return;
-
-  if (!networkUsersLoaded) {
-    container.innerHTML = `<div class="admin-empty-state">Loading members...</div>`;
-    try {
-      const snap = await getDocs(collection(db, "users"));
-      networkUsers = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(u => u.id !== currentUser?.uid);
-      networkUsersLoaded = true;
-    } catch (e) {
-      console.error("Failed to load network directory:", e);
-      container.innerHTML = `<div class="admin-empty-state">${icon("alert")} Couldn't load the member directory.</div>`;
-      return;
-    }
-  }
-
-  container.innerHTML = `
-    <div class="search-wrap" style="max-width:420px;margin-bottom:20px;">
-      <input type="text" id="networkSearch" placeholder="Search by name, chapter, or association..." oninput="renderNetworkDirectoryFiltered()">
-    </div>
-    <div class="network-grid" id="networkGrid"></div>
-  `;
-  renderNetworkDirectoryFiltered();
-}
-
-window.renderNetworkDirectoryFiltered = function() {
-  const grid = document.getElementById("networkGrid");
-  if (!grid) return;
-  const q = document.getElementById("networkSearch")?.value.toLowerCase() || "";
-
-  const filtered = networkUsers.filter(u =>
-    (u.displayName || "").toLowerCase().includes(q) ||
-    (u.chapter || "").toLowerCase().includes(q) ||
-    (u.association || "").toLowerCase().includes(q)
-  );
-
-  grid.innerHTML = filtered.map(u => {
-    const animal = getAnimalForXP(u.xp || 0);
-    return `
-      <div class="network-card">
-        <div class="network-card-avatar">${(u.displayName || "U")[0].toUpperCase()}</div>
-        <div class="network-card-name">${u.displayName || "DECA Student"}</div>
-        <div class="network-card-meta">${u.chapter || "No chapter set"}</div>
-        <div class="network-card-meta">${u.association || "No association set"}</div>
-        <div class="network-card-badge">${animal.name} · ${u.xp || 0} XP</div>
-        <button class="btn-primary network-msg-btn" onclick="startConversation('${u.id}', '${(u.displayName || "DECA Student").replace(/'/g, "\\'")}')">${icon("mail")} Message</button>
-      </div>
-    `;
-  }).join("") || `<div class="admin-empty-state">No members match your search.</div>`;
-};
-
-window.startConversation = function(otherUid, otherName) {
-  // Delegate entirely to openConversation — it already knows how to switch to
-  // the Messages sub-tab and render the chat layout when needed. Pre-setting
-  // networkActiveSubTab here would make openConversation think that layout is
-  // already on screen and skip building it.
-  openConversation(otherUid, otherName);
-};
-
-async function renderNetworkMessages() {
-  const container = document.getElementById("networkContent");
-  if (!container) return;
-
-  container.innerHTML = `<div class="network-messages-layout" id="networkMessagesLayout"></div>`;
-
-  if (conversationsUnsub) conversationsUnsub();
-  const q = query(collection(db, "conversations"), where("participants", "array-contains", currentUser.uid));
-  conversationsUnsub = onSnapshot(q, (snap) => {
-    conversations = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => (b.lastMessageAt || "").localeCompare(a.lastMessageAt || ""));
-    renderConversationList();
-  }, (e) => {
-    console.error("Failed to load conversations:", e);
-    const layout = document.getElementById("networkMessagesLayout");
-    if (layout) layout.innerHTML = `<div class="admin-empty-state">${icon("alert")} Couldn't load messages — check Firestore rules allow reading your conversations.</div>`;
-  });
-}
-
-function renderConversationList() {
-  const layout = document.getElementById("networkMessagesLayout");
-  if (!layout) return;
-
-  const listHtml = conversations.length ? conversations.map(c => {
-    const peerUid = c.participants.find(p => p !== currentUser.uid);
-    const peerName = c.names?.[peerUid] || "DECA Student";
-    return `
-      <button class="conversation-item ${c.id === activeConversationId ? "active" : ""}" onclick="openConversation('${peerUid}', '${peerName.replace(/'/g, "\\'")}')">
-        <div class="network-card-avatar" style="width:36px;height:36px;font-size:14px;">${peerName[0].toUpperCase()}</div>
-        <div class="conversation-item-info">
-          <div class="conversation-item-name">${peerName}</div>
-          <div class="conversation-item-last">${c.lastMessage || "No messages yet"}</div>
-        </div>
-      </button>
-    `;
-  }).join("") : `<div class="admin-empty-state">No conversations yet — message someone from the Directory.</div>`;
-
-  layout.innerHTML = `
-    <div class="conversation-list">${listHtml}</div>
-    <div class="conversation-thread" id="conversationThread">
-      <div class="admin-empty-state">${activeConversationPeer ? "" : "Select a conversation to start chatting."}</div>
-    </div>
-  `;
-
-  if (activeConversationPeer) renderConversationThread();
-}
-
-window.openConversation = async function(peerUid, peerName) {
-  activeConversationId = conversationIdFor(currentUser.uid, peerUid);
-  activeConversationPeer = { uid: peerUid, name: peerName };
-
-  const convRef = doc(db, "conversations", activeConversationId);
-  const convSnap = await getDoc(convRef);
-  if (!convSnap.exists()) {
-    await setDoc(convRef, {
-      participants: [currentUser.uid, peerUid],
-      names: { [currentUser.uid]: userData.displayName || "DECA Student", [peerUid]: peerName },
-      lastMessage: "",
-      lastMessageAt: new Date().toISOString()
-    });
-  }
-
-  if (networkActiveSubTab !== "messages") {
-    networkActiveSubTab = "messages";
-    document.querySelectorAll(".network-tabs .lb-tab").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll(".network-tabs .lb-tab")[1]?.classList.add("active");
-    await renderNetworkMessages();
-  } else {
-    renderConversationList();
-  }
-};
-
-function renderConversationThread() {
-  const thread = document.getElementById("conversationThread");
-  if (!thread || !activeConversationPeer) return;
-
-  thread.innerHTML = `
-    <div class="conversation-thread-header">${activeConversationPeer.name}</div>
-    <div class="conversation-messages" id="conversationMessages"><div class="admin-empty-state">Loading messages...</div></div>
-    <form class="conversation-input-row" onsubmit="sendMessage(event)">
-      <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
-      <button type="submit" class="admin-btn-sm">${icon("send")}</button>
-    </form>
-  `;
-
-  if (messagesUnsub) messagesUnsub();
-  const msgsRef = collection(db, "conversations", activeConversationId, "messages");
-  messagesUnsub = onSnapshot(query(msgsRef, orderBy("createdAt", "asc")), (snap) => {
-    const messagesEl = document.getElementById("conversationMessages");
-    if (!messagesEl) return;
-    const msgs = snap.docs.map(d => d.data());
-    messagesEl.innerHTML = msgs.length ? msgs.map(m => `
-      <div class="message-bubble ${m.senderId === currentUser.uid ? "mine" : "theirs"}">${m.text}</div>
-    `).join("") : `<div class="admin-empty-state">Say hi 👋</div>`;
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }, (e) => {
-    console.error("Failed to load messages:", e);
-    const messagesEl = document.getElementById("conversationMessages");
-    if (messagesEl) messagesEl.innerHTML = `<div class="admin-empty-state">${icon("alert")} Couldn't load messages.</div>`;
-  });
-}
-
-window.sendMessage = async function(evt) {
-  evt.preventDefault();
-  const input = document.getElementById("messageInput");
-  const text = input.value.trim();
-  if (!text || !activeConversationId) return;
-  input.value = "";
-
-  try {
-    await addDoc(collection(db, "conversations", activeConversationId, "messages"), {
-      senderId: currentUser.uid,
-      text,
-      createdAt: new Date().toISOString()
-    });
-    await updateDoc(doc(db, "conversations", activeConversationId), {
-      lastMessage: text,
-      lastMessageAt: new Date().toISOString()
-    });
-  } catch (e) {
-    console.error("Failed to send message:", e);
-    alert("Couldn't send that message — check the console for details.");
-  }
-};
-
-// ========================================================================
 // ========================= PRACTICE EXAMS ===============================
 // ========================================================================
 // A full timed exam pooled from every practice quiz question already entered
-// for a course's units (via the admin Courses editor). This deliberately
-// reuses that same question bank instead of separate hardcoded exam content,
-// so the exam pool grows automatically as admins add real practice questions.
+// for a course's units (via the admin Courses editor).
 
 window.openExamSetup = function(courseId) {
   const course = courses.find(c => c.id === courseId);
@@ -3013,6 +2617,11 @@ window.submitPracticeExam = async function() {
     </div>
   `;
 
+  if (pct >= 80) {
+    const card = document.querySelector(".quiz-results");
+    if (card) f4gBurstFrom(card, 34);
+  }
+
   if (currentUser && userData) {
     try {
       const attempt = {
@@ -3056,4 +2665,754 @@ window.reviewExam = function() {
       `).join("")}
     </div>
   `;
+};
+/* =========================================================================
+   FARM4GLASS — ADDITIONS
+   Paste this whole file at the END of script.js.
+   Requires the import + small edits described in update-guide.md.
+   ========================================================================= */
+
+
+/* =========================================================================
+   PART 1 — CELEBRATION HELPERS (confetti, count-up, milestone notices)
+   Geometric shapes only. No emoji anywhere.
+   ========================================================================= */
+
+const F4G_COLORS = ["#167db5", "#38bdf8", "#f59e0b", "#059669", "#1e3a5f"];
+
+function f4gReduceMotion() {
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+// Confetti burst from a point on screen.
+function f4gBurst(x, y, count = 24, spread = 150) {
+  if (f4gReduceMotion()) return;
+  const layer = document.createElement("div");
+  layer.className = "f4g-confetti";
+
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement("i");
+    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.6;
+    const dist = spread * (0.45 + Math.random() * 0.8);
+
+    piece.style.left = `${x}px`;
+    piece.style.top = `${y}px`;
+    piece.style.background = F4G_COLORS[i % F4G_COLORS.length];
+    piece.style.setProperty("--dx", `${Math.cos(angle) * dist}px`);
+    piece.style.setProperty("--dy", `${Math.sin(angle) * dist + 110}px`);
+    piece.style.setProperty("--rot", `${Math.round(Math.random() * 720 - 360)}deg`);
+    piece.style.animationDelay = `${Math.random() * 0.09}s`;
+    if (i % 3 === 0) piece.classList.add("round");
+    if (i % 3 === 1) piece.classList.add("bar");
+
+    layer.appendChild(piece);
+  }
+
+  document.body.appendChild(layer);
+  setTimeout(() => layer.remove(), 1500);
+}
+window.f4gBurst = f4gBurst;
+
+// Confetti burst centered on an element.
+function f4gBurstFrom(el, count = 24) {
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  f4gBurst(r.left + r.width / 2, r.top + r.height / 2, count);
+}
+window.f4gBurstFrom = f4gBurstFrom;
+
+// Animated number roll-up for stat cards.
+function f4gCountUp(el, to, dur = 800) {
+  if (!el) return;
+  const from = Number(String(el.textContent).replace(/[^\d.-]/g, "")) || 0;
+  const target = Number(to) || 0;
+
+  if (f4gReduceMotion() || from === target) {
+    el.textContent = target.toLocaleString();
+    return;
+  }
+
+  const start = performance.now();
+  el.classList.add("f4g-ticking");
+
+  function frame(now) {
+    const t = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(from + (target - from) * eased).toLocaleString();
+    if (t < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      el.textContent = target.toLocaleString();
+      el.classList.remove("f4g-ticking");
+    }
+  }
+  requestAnimationFrame(frame);
+}
+window.f4gCountUp = f4gCountUp;
+
+// Small slide-in card for milestones (streaks, first review, etc).
+function f4gNotice(title, sub = "", ms = 4200) {
+  const el = document.createElement("div");
+  el.className = "f4g-notice";
+  el.innerHTML = `<div class="f4g-notice-title">${title}</div>${sub ? `<div class="f4g-notice-sub">${sub}</div>` : ""}`;
+  document.body.appendChild(el);
+  setTimeout(() => {
+    el.classList.add("out");
+    setTimeout(() => el.remove(), 350);
+  }, ms);
+}
+window.f4gNotice = f4gNotice;
+
+
+/* =========================================================================
+   PART 2 — PREPARED EVENT AI
+   -------------------------------------------------------------------------
+   A student picks their event, uploads their written entry as a PDF, and
+   Gemini (via Firebase AI Logic) reviews it against the rubric an admin has
+   entered for that event in Admin > Rubrics.
+
+   IMPORTANT DESIGN RULE: the model is given ONLY the rubric text and penalty
+   rules stored in Firestore. It is instructed never to invent an official
+   point value. If the admin hasn't entered a point value for a rule, the
+   model reports the issue without inventing a number. That keeps the tool
+   from confidently telling a student they'll lose points they won't — the
+   one failure mode that would actually hurt someone at a conference.
+
+   Rubric doc shape (Firestore "rubrics" collection, one doc per event):
+     {
+       id, eventName, eventCode, category,
+       pageLimit: number|null,
+       penaltyRules:   [{ rule, points }],            // points may be null
+       rubricSections: [{ section, criteria }],
+       notes: "any extra guideline text pasted by an admin"
+     }
+   ========================================================================= */
+
+let rubrics = [];
+let rubricsLoaded = false;
+let peSelectedEventId = null;
+let peFile = null;
+let peBusy = false;
+let peResult = null;
+let peResultEvent = null;
+let adminEditingRubricId = null;
+let peModel = null;
+
+const PE_MODEL_NAME = "gemini-3.5-flash";
+const PE_MAX_MB = 15;
+
+// ---- load rubrics -------------------------------------------------------
+async function loadRubrics() {
+  try {
+    const snap = await getDocs(collection(db, "rubrics"));
+    rubrics = snap.docs.map(d => d.data());
+  } catch (e) {
+    console.error("Failed to load rubrics from Firestore:", e);
+  }
+
+  if (!rubrics.length) {
+    try {
+      const r = await fetch("rubrics.json");
+      if (r.ok) rubrics = await r.json();
+    } catch (e) {
+      console.error("Failed to load rubrics.json:", e);
+    }
+  }
+
+  rubrics.sort((a, b) => (a.eventName || "").localeCompare(b.eventName || ""));
+  rubricsLoaded = true;
+
+  if (document.getElementById("prepared")?.classList.contains("active")) renderPreparedEventTab();
+  if (adminActiveSubTab === "rubrics" && document.getElementById("admin")?.classList.contains("active")) renderAdminRubricsSection();
+}
+loadRubrics();
+
+function rubricIsReady(r) {
+  return !!(r && ((r.rubricSections && r.rubricSections.length) || (r.penaltyRules && r.penaltyRules.length)));
+}
+
+// ---- model --------------------------------------------------------------
+const PE_SYSTEM_INSTRUCTION = `
+You are an experienced DECA advisor giving a high school student PRACTICE feedback
+on a written/prepared event entry before they submit it. You are not an official
+judge and you never claim to be.
+
+Hard rules you must follow:
+1. Judge the entry ONLY against the rubric text and penalty rules provided in the
+   prompt. Do not apply rules from memory, from other years, or from other events.
+2. NEVER invent a penalty point value. If a penalty rule provided to you has no
+   point value attached, set "points" to null and say the student should confirm
+   the value in the current DECA guidelines. Inventing a number could send a
+   student into a conference with wrong information.
+3. If you cannot tell from the PDF whether a rule is met (for example the file is
+   missing a signed page, or formatting is ambiguous), use status "unclear"
+   rather than guessing "fail".
+4. Quote or point to specific locations in the entry ("page 4, the Methods
+   section") so the student can find what you mean.
+5. Be direct about problems but write like a supportive advisor, not a grader.
+   Every criticism gets a concrete, actionable fix.
+6. Do not use emoji.
+7. Return JSON matching the provided schema and nothing else.
+`.trim();
+
+function getPreparedEventModel() {
+  if (peModel) return peModel;
+
+  const schema = Schema.object({
+    properties: {
+      overallSummary: Schema.string(),
+      pageCountObserved: Schema.number(),
+      pageCountConfidence: Schema.string(),
+      estimatedPenaltyPoints: Schema.number(),
+      penaltyPointsUncertain: Schema.boolean(),
+      penaltyChecks: Schema.array({
+        items: Schema.object({
+          properties: {
+            rule: Schema.string(),
+            status: Schema.string(),      // "pass" | "fail" | "unclear"
+            points: Schema.number(),      // null when unknown
+            evidence: Schema.string(),
+            howToFix: Schema.string()
+          },
+          optionalProperties: ["points"]
+        })
+      }),
+      rubricFeedback: Schema.array({
+        items: Schema.object({
+          properties: {
+            section: Schema.string(),
+            level: Schema.string(),       // "Exceeds" | "Meets" | "Below" | "Little/No Value"
+            whyThisLevel: Schema.string(),
+            howToImprove: Schema.string()
+          }
+        })
+      }),
+      strengths: Schema.array({ items: Schema.string() }),
+      topPriorities: Schema.array({ items: Schema.string() })
+    },
+    optionalProperties: ["pageCountObserved", "pageCountConfidence"]
+  });
+
+  const ai = getAI(app, { backend: new GoogleAIBackend() });
+  peModel = getGenerativeModel(ai, {
+    model: PE_MODEL_NAME,
+    systemInstruction: PE_SYSTEM_INSTRUCTION,
+    generationConfig: {
+      temperature: 0.2,
+      responseMimeType: "application/json",
+      responseSchema: schema
+    }
+  });
+  return peModel;
+}
+
+function buildPreparedEventPrompt(rubric) {
+  const penalties = (rubric.penaltyRules || []).length
+    ? rubric.penaltyRules.map(p => `- ${p.rule}${p.points != null ? ` [${p.points} penalty points]` : " [point value not recorded — report as unknown]"}`).join("\n")
+    : "(no penalty rules have been entered for this event yet — skip the penalty section)";
+
+  const sections = (rubric.rubricSections || []).length
+    ? rubric.rubricSections.map(s => `- ${s.section}: ${s.criteria}`).join("\n")
+    : "(no rubric sections have been entered for this event yet)";
+
+  return `
+EVENT: ${rubric.eventName}${rubric.eventCode ? ` (${rubric.eventCode})` : ""}
+${rubric.pageLimit ? `STATED PAGE LIMIT: ${rubric.pageLimit} pages` : "PAGE LIMIT: not recorded — do not guess one"}
+
+PENALTY RULES FOR THIS EVENT:
+${penalties}
+
+RUBRIC SECTIONS AND CRITERIA FOR THIS EVENT:
+${sections}
+
+${rubric.notes ? `ADDITIONAL GUIDELINE NOTES:\n${rubric.notes}\n` : ""}
+The attached PDF is the student's written entry.
+
+Do all of the following:
+1. Count the pages of the entry and report what you observe, plus how confident
+   you are. Tell the student to verify the count themselves.
+2. Work through every penalty rule above and mark it pass, fail, or unclear.
+   Sum only the point values you were actually given into estimatedPenaltyPoints,
+   and set penaltyPointsUncertain to true if any failing rule had no point value.
+3. For each rubric section above, say which performance level the entry currently
+   reads at and exactly what would move it up one level.
+4. List genuine strengths — things the student should not change.
+5. List the 3-5 highest-impact fixes, in priority order.
+`.trim();
+}
+
+// ---- file handling ------------------------------------------------------
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1]);
+    reader.onerror = () => reject(new Error("Couldn't read that file."));
+    reader.readAsDataURL(file);
+  });
+}
+
+window.peHandleFile = function(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+
+  if (file.type !== "application/pdf") {
+    alert("Please upload your entry as a PDF. Export it from Google Docs or Word with File > Download > PDF.");
+    input.value = "";
+    return;
+  }
+  if (file.size > PE_MAX_MB * 1024 * 1024) {
+    alert(`That PDF is ${(file.size / 1048576).toFixed(1)} MB. The limit is ${PE_MAX_MB} MB — try exporting at a lower image quality.`);
+    input.value = "";
+    return;
+  }
+
+  peFile = file;
+  renderPreparedEventTab();
+};
+
+window.peSelectEvent = function(id) {
+  peSelectedEventId = id;
+  renderPreparedEventTab();
+};
+
+window.peClearFile = function() {
+  peFile = null;
+  renderPreparedEventTab();
+};
+
+// ---- the analysis --------------------------------------------------------
+window.analyzePreparedEvent = async function() {
+  const rubric = rubrics.find(r => r.id === peSelectedEventId);
+
+  if (!rubric) return alert("Pick your event first.");
+  if (!peFile) return alert("Upload your written entry as a PDF first.");
+  if (!rubricIsReady(rubric)) {
+    return alert(`The rubric for ${rubric.eventName} hasn't been added yet. An admin needs to enter it under Admin > Rubrics before this event can be reviewed.`);
+  }
+
+  peBusy = true;
+  peResult = null;
+  renderPreparedEventTab();
+
+  try {
+    const base64 = await fileToBase64(peFile);
+    const model = getPreparedEventModel();
+
+    const result = await model.generateContent([
+      { inlineData: { mimeType: "application/pdf", data: base64 } },
+      { text: buildPreparedEventPrompt(rubric) }
+    ]);
+
+    peResult = JSON.parse(result.response.text());
+    peResultEvent = rubric;
+    peBusy = false;
+    renderPreparedEventTab();
+
+    const banner = document.querySelector(".pe-score-banner");
+    if (banner) f4gBurstFrom(banner, (peResult.estimatedPenaltyPoints || 0) === 0 ? 34 : 18);
+
+    await savePreparedEventReview(rubric, peResult);
+    await awardPreparedEventXP();
+  } catch (e) {
+    console.error("Prepared Event AI failed:", e);
+    peBusy = false;
+    renderPreparedEventTab();
+
+    const msg = String(e && e.message ? e.message : e);
+    if (msg.includes("App Check") || msg.includes("appCheck") || msg.includes("403")) {
+      alert("The AI review couldn't run — this is almost always an App Check or API setup issue. Check the browser console, and see the setup steps in the update guide.");
+    } else {
+      alert("The AI review couldn't finish. Check the browser console for the exact error, then try again.");
+    }
+  }
+};
+
+async function savePreparedEventReview(rubric, result) {
+  if (!currentUser || !userData) return;
+  try {
+    // Store a compact record so the user doc stays small.
+    const entry = {
+      eventId: rubric.id,
+      eventName: rubric.eventName,
+      fileName: peFile ? peFile.name : "",
+      date: new Date().toISOString(),
+      estimatedPenaltyPoints: result.estimatedPenaltyPoints ?? 0,
+      penaltyPointsUncertain: !!result.penaltyPointsUncertain,
+      failCount: (result.penaltyChecks || []).filter(c => c.status === "fail").length,
+      overallSummary: (result.overallSummary || "").slice(0, 600),
+      topPriorities: (result.topPriorities || []).slice(0, 5)
+    };
+    const reviews = [...(userData.preparedEventReviews || []), entry].slice(-10);
+    await updateDoc(doc(db, "users", currentUser.uid), { preparedEventReviews: reviews });
+    userData.preparedEventReviews = reviews;
+  } catch (e) {
+    console.error("Couldn't save that review:", e);
+  }
+}
+
+// One XP award per day so the tab can't be farmed.
+async function awardPreparedEventXP() {
+  if (!currentUser || !userData) return;
+  const today = new Date().toISOString().slice(0, 10);
+  if (userData.lastPreparedEventXPDate === today) return;
+
+  const xp = 40;
+  try {
+    const newXP = userData.xp + xp;
+    const oldAnimal = getAnimalForXP(userData.xp);
+    const newAnimal = getAnimalForXP(newXP);
+    const activityLog = [...(userData.activityLog || []), { date: today, xp, lessonId: "prepared-event-ai", type: "review" }].slice(-300);
+
+    await updateDoc(doc(db, "users", currentUser.uid), {
+      xp: newXP,
+      activityLog,
+      lastPreparedEventXPDate: today
+    });
+
+    userData.xp = newXP;
+    userData.activityLog = activityLog;
+    userData.lastPreparedEventXPDate = today;
+
+    showXPToast(xp);
+    if (newAnimal.index > oldAnimal.index) setTimeout(() => showLevelUpModal(newAnimal), 800);
+    await checkAndAwardBadges();
+    renderSidebar();
+  } catch (e) {
+    console.error("Couldn't award review XP:", e);
+  }
+}
+
+// ---- rendering -----------------------------------------------------------
+function renderPreparedEventTab() {
+  const container = document.getElementById("preparedContent");
+  if (!container) return;
+
+  if (!rubricsLoaded) {
+    container.innerHTML = `<div class="admin-empty-state">Loading events...</div>`;
+    return;
+  }
+  if (!rubrics.length) {
+    container.innerHTML = `<div class="admin-empty-state">No events have been set up yet. An admin can add them under Admin &gt; Rubrics.</div>`;
+    return;
+  }
+
+  const selected = rubrics.find(r => r.id === peSelectedEventId) || null;
+  const ready = rubricIsReady(selected);
+
+  const optionsHtml = [`<option value="">Select your event...</option>`]
+    .concat(rubrics.map(r =>
+      `<option value="${r.id}" ${r.id === peSelectedEventId ? "selected" : ""}>${r.eventName}${rubricIsReady(r) ? "" : " — rubric not added yet"}</option>`
+    )).join("");
+
+  const fileHtml = peFile
+    ? `<div class="pe-file">
+         ${icon("check")}
+         <span>${peFile.name}</span>
+         <span class="pe-file-size">${(peFile.size / 1048576).toFixed(1)} MB</span>
+         <button class="admin-btn-sm ghost" onclick="peClearFile()">Remove</button>
+       </div>`
+    : "";
+
+  const canRun = selected && ready && peFile && !peBusy;
+
+  container.innerHTML = `
+    <div class="pe-layout">
+      <div>
+        <div class="widget">
+          <div class="widget-header"><span>Submit your entry</span></div>
+
+          <div class="form-group">
+            <label>Your DECA Event</label>
+            <select id="peEvent" onchange="peSelectEvent(this.value)">${optionsHtml}</select>
+          </div>
+
+          ${selected && !ready ? `<div class="planner-warning">${icon("alert")} The rubric for ${selected.eventName} hasn't been entered yet, so a review would have nothing to compare against. An admin can add it under Admin &gt; Rubrics.</div>` : ""}
+
+          <div class="form-group">
+            <label>Written Entry (PDF)</label>
+            <div class="pe-drop" onclick="document.getElementById('peFileInput').click()">
+              ${icon("clipboard")}
+              <div class="pe-drop-title">Choose your PDF</div>
+              <div class="pe-drop-sub">Up to ${PE_MAX_MB} MB · export from Docs or Word as PDF so page breaks match what a judge sees</div>
+            </div>
+            <input type="file" id="peFileInput" accept="application/pdf" style="display:none" onchange="peHandleFile(this)">
+            ${fileHtml}
+          </div>
+
+          <button class="btn-primary" onclick="analyzePreparedEvent()" ${canRun ? "" : "disabled style='opacity:.5;cursor:default;'"}>
+            ${peBusy ? "Reviewing..." : "Review My Entry"}
+          </button>
+
+          ${peBusy ? `<div class="pe-thinking" style="margin-top:16px;"><span></span><span></span><span></span> Reading your entry against the ${selected ? selected.eventName : ""} rubric — this takes about a minute.</div>` : ""}
+        </div>
+
+        ${renderPreparedEventHistory()}
+      </div>
+
+      <div>${peResult ? renderPreparedEventResult() : renderPreparedEventPlaceholder(selected)}</div>
+    </div>
+  `;
+}
+
+function renderPreparedEventPlaceholder(selected) {
+  return `
+    <div class="widget">
+      <div class="widget-header"><span>How this works</span></div>
+      <div class="pe-list">
+        <div class="pe-list-row">${icon("clipboard")}<span>Pick your event and upload your written entry as a PDF.</span></div>
+        <div class="pe-list-row">${icon("search")}<span>Your entry gets read against ${selected ? `the ${selected.eventName} rubric` : "that event's rubric"} and its penalty-point rules.</span></div>
+        <div class="pe-list-row">${icon("alert")}<span>You get back every penalty rule marked pass, fail, or unclear — with where in your entry the problem is.</span></div>
+        <div class="pe-list-row">${icon("target")}<span>Then section-by-section feedback: what level you're reading at now, and what moves you up one.</span></div>
+      </div>
+      <div class="pe-disclaimer">
+        This is practice feedback from an AI, not an official score. It can miss things and it can be wrong —
+        especially about formatting rules and page counts. Always check the current DECA guidelines for your
+        event yourself, and have your advisor review your entry before you submit it.
+      </div>
+    </div>
+  `;
+}
+
+function renderPreparedEventResult() {
+  const r = peResult;
+  const penalties = r.penaltyChecks || [];
+  const fails = penalties.filter(c => c.status === "fail");
+  const unclear = penalties.filter(c => c.status === "unclear");
+  const clean = fails.length === 0 && unclear.length === 0;
+
+  const levelClass = (lvl = "") => {
+    const l = lvl.toLowerCase();
+    if (l.startsWith("exceed")) return "exceeds";
+    if (l.startsWith("meet")) return "meets";
+    if (l.startsWith("below")) return "below";
+    return "little";
+  };
+
+  const penaltyHtml = penalties.map(c => `
+    <div class="pe-flag ${c.status}">
+      <div style="flex:1;">
+        <div class="pe-flag-title">${c.rule}</div>
+        <div class="pe-flag-body">${c.evidence || ""}</div>
+        ${c.status !== "pass" && c.howToFix ? `<div class="pe-flag-fix"><strong>Fix:</strong> ${c.howToFix}</div>` : ""}
+      </div>
+      <span class="pe-flag-pts">${
+        c.status === "pass" ? "OK"
+        : c.points != null ? `-${c.points}`
+        : "check guidelines"
+      }</span>
+    </div>
+  `).join("") || `<div class="admin-empty-state">No penalty rules are on file for this event.</div>`;
+
+  const sectionsHtml = (r.rubricFeedback || []).map(s => `
+    <div class="pe-section-card">
+      <div class="pe-section-head">
+        <span class="pe-section-name">${s.section}</span>
+        <span class="pe-level-pill ${levelClass(s.level)}">${s.level}</span>
+      </div>
+      <div class="pe-flag-body">${s.whyThisLevel || ""}</div>
+      ${s.howToImprove ? `<div class="pe-flag-fix"><strong>To move up:</strong> ${s.howToImprove}</div>` : ""}
+    </div>
+  `).join("");
+
+  return `
+    <div class="pe-score-banner ${clean ? "" : "flagged"}">
+      <div class="pe-score-num">${r.estimatedPenaltyPoints ?? 0}${r.penaltyPointsUncertain ? "+" : ""}</div>
+      <div class="pe-score-label">estimated penalty points${r.penaltyPointsUncertain ? " (some rules had no point value on file)" : ""}</div>
+      <div class="pe-score-note">
+        ${r.overallSummary || ""}
+        ${r.pageCountObserved ? `<br><br>Pages counted: ${r.pageCountObserved}${r.pageCountConfidence ? ` (${r.pageCountConfidence})` : ""} — count it yourself before you submit.` : ""}
+      </div>
+    </div>
+
+    ${(r.topPriorities || []).length ? `
+      <div class="widget" style="margin-bottom:20px;">
+        <div class="widget-header"><span>Fix these first</span></div>
+        <div class="pe-list">
+          ${r.topPriorities.map(p => `<div class="pe-list-row">${icon("target")}<span>${p}</span></div>`).join("")}
+        </div>
+      </div>` : ""}
+
+    <h2 class="section-title">Penalty Point Check</h2>
+    ${penaltyHtml}
+
+    ${sectionsHtml ? `<h2 class="section-title" style="margin-top:28px;">Rubric Feedback</h2>${sectionsHtml}` : ""}
+
+    ${(r.strengths || []).length ? `
+      <h2 class="section-title" style="margin-top:28px;">What's Already Working</h2>
+      <div class="widget">
+        <div class="pe-list">
+          ${r.strengths.map(s => `<div class="pe-list-row">${icon("check")}<span>${s}</span></div>`).join("")}
+        </div>
+      </div>` : ""}
+
+    <div class="pe-disclaimer">
+      Practice feedback from an AI — not an official score, and not a substitute for the current DECA guidelines
+      for your event. Verify every formatting and penalty item yourself, and have your advisor read your entry
+      before you submit.
+    </div>
+  `;
+}
+
+function renderPreparedEventHistory() {
+  const reviews = (userData?.preparedEventReviews || []).slice().reverse();
+  if (!reviews.length) return "";
+
+  return `
+    <div class="widget" style="margin-top:20px;">
+      <div class="widget-header"><span>Your Past Reviews</span></div>
+      ${reviews.map(rev => `
+        <div class="pe-history-row">
+          ${icon("clipboard")}
+          <span>${rev.eventName}</span>
+          <span class="pe-history-meta">${rev.estimatedPenaltyPoints}${rev.penaltyPointsUncertain ? "+" : ""} pts · ${new Date(rev.date).toLocaleDateString()}</span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+
+/* =========================================================================
+   PART 3 — ADMIN: RUBRICS
+   Replaces the old Checklists admin sub-tab.
+   ========================================================================= */
+
+function parsePenaltyLines(text) {
+  return text.split("\n").map(s => s.trim()).filter(Boolean).map(line => {
+    const [rule, pts] = line.split("||").map(s => (s || "").trim());
+    const points = pts === "" || pts == null ? null : Number(pts);
+    return { rule, points: Number.isFinite(points) ? points : null };
+  });
+}
+
+function parseSectionLines(text) {
+  return text.split("\n").map(s => s.trim()).filter(Boolean).map(line => {
+    const [section, criteria] = line.split("||").map(s => (s || "").trim());
+    return { section, criteria: criteria || "" };
+  });
+}
+
+function renderAdminRubricsSection() {
+  const body = document.getElementById("adminSubtabBody");
+  if (!body) return;
+
+  const editing = adminEditingRubricId ? rubrics.find(r => r.id === adminEditingRubricId) : null;
+
+  const listHtml = rubrics.map(r => `
+    <div class="admin-lesson-block">
+      <div class="admin-lesson-head">
+        <h4>${r.eventName}</h4>
+        <div style="display:flex;gap:8px;">
+          <button class="admin-btn-sm ghost" onclick="adminEditRubric('${r.id}')">Edit</button>
+          <button class="admin-btn-sm danger" onclick="adminDeleteRubric('${r.id}')">${icon("trash")} Delete</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);">
+        ${r.category || ""} · ${(r.rubricSections || []).length} sections · ${(r.penaltyRules || []).length} penalty rules
+        ${rubricIsReady(r) ? "" : " · <strong>not ready</strong>"}
+      </div>
+    </div>
+  `).join("") || `<div class="admin-empty-state">No events yet.</div>`;
+
+  const penaltyText = editing
+    ? (editing.penaltyRules || []).map(p => `${p.rule}${p.points != null ? ` || ${p.points}` : ""}`).join("\n")
+    : "";
+  const sectionText = editing
+    ? (editing.rubricSections || []).map(s => `${s.section} || ${s.criteria}`).join("\n")
+    : "";
+
+  body.innerHTML = `
+    <div class="admin-seed-banner">
+      <div>Paste each event's rubric and penalty rules straight from the current DECA guidelines. The AI only ever grades against what's entered here — an event with nothing entered stays locked for students.</div>
+    </div>
+    <div class="admin-layout">
+      <div class="admin-course-list">${listHtml}</div>
+      <div class="admin-panel-body">
+        <h3 style="margin-bottom:16px;">${editing ? "Edit Event Rubric" : "Add an Event Rubric"}</h3>
+        <div class="admin-kpi-form">
+          <input type="text" id="rubric-name" placeholder="Event name (e.g. Business Growth Plan)" value="${editing ? editing.eventName.replace(/"/g, "&quot;") : ""}">
+          <input type="text" id="rubric-code" placeholder="Event code (e.g. EBG)" value="${editing ? (editing.eventCode || "") : ""}">
+          <input type="text" id="rubric-category" placeholder="Category (e.g. Entrepreneurship Written Event)" value="${editing ? (editing.category || "") : ""}">
+          <input type="number" id="rubric-pagelimit" placeholder="Page limit (leave blank if none)" value="${editing && editing.pageLimit != null ? editing.pageLimit : ""}">
+          <textarea id="rubric-penalties" rows="7" placeholder="One penalty rule per line. Add the point value after || if you know it:&#10;Written entry exceeds the page limit || 5&#10;Statement of Assurances missing or unsigned || 5&#10;Sections not in the required order">${penaltyText}</textarea>
+          <textarea id="rubric-sections" rows="9" placeholder="One rubric section per line, as:  Section name || what the judge is looking for&#10;Executive Summary || Concise overview of the whole entry; hooks the reader; states the ask">${sectionText}</textarea>
+          <textarea id="rubric-notes" rows="3" placeholder="Any extra guideline notes (formatting, appendix rules, etc.)">${editing ? (editing.notes || "") : ""}</textarea>
+          <div style="display:flex;gap:10px;">
+            <button class="admin-btn-sm" onclick="adminSaveRubric()">${editing ? "Save Changes" : "Add Event"}</button>
+            ${editing ? `<button class="admin-btn-sm ghost" onclick="adminCancelEditRubric()">Cancel</button>` : ""}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+window.adminEditRubric = function(id) {
+  adminEditingRubricId = id;
+  renderAdminRubricsSection();
+};
+
+window.adminCancelEditRubric = function() {
+  adminEditingRubricId = null;
+  renderAdminRubricsSection();
+};
+
+window.adminSaveRubric = async function() {
+  const eventName = document.getElementById("rubric-name").value.trim();
+  const eventCode = document.getElementById("rubric-code").value.trim();
+  const category = document.getElementById("rubric-category").value.trim();
+  const pageLimitRaw = document.getElementById("rubric-pagelimit").value.trim();
+  const notes = document.getElementById("rubric-notes").value.trim();
+
+  if (!eventName) return alert("Please enter an event name.");
+
+  const id = adminEditingRubricId || eventName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || `rubric-${Date.now()}`;
+  const rubricDoc = {
+    id, eventName, eventCode, category,
+    pageLimit: pageLimitRaw === "" ? null : Number(pageLimitRaw),
+    penaltyRules: parsePenaltyLines(document.getElementById("rubric-penalties").value),
+    rubricSections: parseSectionLines(document.getElementById("rubric-sections").value),
+    notes
+  };
+
+  try {
+    await setDoc(doc(db, "rubrics", id), rubricDoc);
+    const idx = rubrics.findIndex(r => r.id === id);
+    if (idx >= 0) rubrics[idx] = rubricDoc; else rubrics.push(rubricDoc);
+    rubrics.sort((a, b) => (a.eventName || "").localeCompare(b.eventName || ""));
+    adminEditingRubricId = null;
+    renderAdminRubricsSection();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+};
+
+window.adminDeleteRubric = async function(id) {
+  if (!confirm("Delete this event rubric?")) return;
+  try {
+    await deleteDoc(doc(db, "rubrics", id));
+    rubrics = rubrics.filter(r => r.id !== id);
+    renderAdminRubricsSection();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't delete — check the console.");
+  }
+};
+
+// One-time import of the starter event list from rubrics.json.
+window.adminSeedRubrics = async function() {
+  if (!isAdmin(currentUser)) return;
+  if (!confirm("Import the starter event list? Existing events with the same ID will be overwritten.")) return;
+  try {
+    const r = await fetch("rubrics.json");
+    const data = await r.json();
+    for (const item of data) await setDoc(doc(db, "rubrics", item.id), item);
+    alert("Events imported. Now fill in each one's rubric and penalty rules.");
+    await loadRubrics();
+    renderAdminRubricsSection();
+  } catch (e) {
+    console.error(e);
+    alert("Import failed — check the console.");
+  }
 };

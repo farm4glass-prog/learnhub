@@ -1,14 +1,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
 import {
-  initializeAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
-  getRedirectResult, onAuthStateChanged, signOut,
-  browserLocalPersistence, browserSessionPersistence, browserPopupRedirectResolver
+  getAuth, GoogleAuthProvider, signInWithPopup,
+  onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
   collection, getDocs, orderBy, query, limit
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
-//import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app-check.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app-check.js";
 import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-ai.js";
 
 // ========================= FIREBASE =========================
@@ -35,18 +34,15 @@ const app = initializeApp(firebaseConfig);
 // and paste the site key below. The site key is public — safe to commit.
 // On localhost, the debug flag prints a token in the console; register it under
 // App Check > Apps > Manage debug tokens.
-//if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
-//  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-//}
-//initializeAppCheck(app, {
-//  provider: new ReCaptchaV3Provider("YOUR_RECAPTCHA_V3_SITE_KEY"),
-//  isTokenAutoRefreshEnabled: true
-//});
-
-const auth = initializeAuth(app, {
-  persistence: [browserLocalPersistence, browserSessionPersistence],
-  popupRedirectResolver: browserPopupRedirectResolver
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
+initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider("YOUR_RECAPTCHA_V3_SITE_KEY"),
+  isTokenAutoRefreshEnabled: true
 });
+
+const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
@@ -96,6 +92,72 @@ const GROUP_ICONS = {
 };
 function groupIcon(group) {
   return GROUP_ICONS[group] || "book";
+}
+
+// ========================= COURSE CATEGORIES =========================
+// Filter buttons on the Course Catalog, in the order they appear.
+// Add a category here and it shows up as a filter — even before a course
+// exists for it (students get a "coming soon" message instead of nothing).
+const COURSE_CATEGORIES = [
+  "Cluster Exams",
+  "Principles of Business Administration Events",
+  "Individual Series Events",
+  "Team Decision Making Events",
+  "Personal Financial Literacy Event",
+  "Business Operations Research Events",
+  "Project Management Events",
+  "Entrepreneurship Events",
+  "Integrated Marketing Campaign Events",
+  "Professional Selling and Consulting Events",
+  "Stock Market Game",
+  "Virtual Business Challenge",
+  "Branding & Design"
+];
+
+// Maps existing course IDs to a category. Kept here rather than in
+// courses.json so it works whether courses load from the file or from
+// Firestore. A course doc with its own "category" field wins over this map.
+const COURSE_CATEGORY_BY_ID = {
+  "marketing": "Cluster Exams",
+  "finance": "Cluster Exams",
+  "hospitality": "Cluster Exams",
+  "business-admin-core": "Cluster Exams",
+  "business-management": "Cluster Exams",
+  "entrepreneurship-cluster": "Cluster Exams",
+  "pfl-cluster": "Cluster Exams",
+  "principles": "Principles of Business Administration Events",
+  "individual-series": "Individual Series Events",
+  "team-decision": "Team Decision Making Events",
+  "pfl-event": "Personal Financial Literacy Event",
+  "business-research": "Business Operations Research Events",
+  "project-management": "Project Management Events",
+  "entrepreneurship-events": "Entrepreneurship Events",
+  "integrated-marketing": "Integrated Marketing Campaign Events",
+  "virtual-business": "Virtual Business Challenge",
+  "stock-market": "Stock Market Game",
+  "branding-basics": "Branding & Design"
+};
+
+// Fallback for courses an admin adds later without a category.
+const GROUP_CATEGORY_FALLBACK = {
+  "cluster": "Cluster Exams",
+  "branding": "Branding & Design",
+  "online simulation": "Virtual Business Challenge"
+};
+
+function courseCategory(course) {
+  if (!course) return "";
+  return course.category
+    || COURSE_CATEGORY_BY_ID[course.id]
+    || GROUP_CATEGORY_FALLBACK[course.group]
+    || "";
+}
+
+// Progress helper used by the dashboard and the catalog.
+function courseProgress(course) {
+  const done = (userData?.completedLessons || []).filter(id => course.lessons.some(l => l.id === id)).length;
+  const total = course.lessons.length;
+  return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
 }
 
 // ========================= FARM ANIMALS =========================
@@ -295,19 +357,9 @@ let examTimerInterval = null;
 
 // ========================= LOGIN =========================
 async function loginWithGoogle() {
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (e) {
-    console.error("Popup sign-in failed, falling back to redirect:", e);
-    if (/popup|cancelled|closed|blocked|Database/i.test(e.message || "")) {
-      await signInWithRedirect(auth, provider);
-    } else {
-      alert(e.message);
-    }
-  }
+  try { await signInWithPopup(auth, provider); }
+  catch (e) { console.error(e); alert(e.message); }
 }
-
-getRedirectResult(auth).catch(e => console.error("Redirect sign-in failed:", e));
 
 document.getElementById("landingLogin")?.addEventListener("click", loginWithGoogle);
 document.getElementById("heroLogin")?.addEventListener("click", loginWithGoogle);
@@ -582,30 +634,53 @@ function renderDashboard() {
 function renderFeaturedCourses() {
   const container = document.getElementById("featuredCourses");
   if (!container || !courses.length) return;
+
+  const withLessons = courses.filter(c => c.lessons.length > 0);
+  const scored = withLessons.map(c => ({ course: c, ...courseProgress(c) }));
+
+  const started = scored.filter(r => r.done > 0);
+  const inProgress = started.filter(r => r.pct < 100).sort((a, b) => b.pct - a.pct);
+  const finished = started.filter(r => r.pct === 100);
+  const show = [...inProgress, ...finished].slice(0, 5);
+
+  // Heading above this list (the Dashboard's "Courses" title).
+  const heading = document.querySelector("#dashboard .dash-left .section-title");
+
+  if (!show.length) {
+    // Nothing started yet — suggest the courses with the most content.
+    const picks = [...scored].sort((a, b) => b.total - a.total).slice(0, 4);
+    if (heading) heading.textContent = "Start here";
+
+    container.innerHTML = picks.length
+      ? `<div class="page-sub" style="margin:-6px 0 14px;">You haven't started a course yet. These are good places to begin.</div>`
+      : `<div class="admin-empty-state">No courses available yet — check back soon.</div>`;
+
+    picks.forEach(r => container.appendChild(pastureRow(r.course, r.pct, true)));
+    return;
+  }
+
+  if (heading) heading.textContent = inProgress.length ? "Continue where you left off" : "Your courses";
   container.innerHTML = "";
+  show.forEach(r => container.appendChild(pastureRow(r.course, r.pct, false)));
+}
 
-  courses.slice(0, 5).forEach(course => {
-    const completed = (userData?.completedLessons || []).filter(id => course.lessons.some(l => l.id === id)).length;
-    const pct = course.lessons.length
-      ? Math.round((completed / course.lessons.length) * 100)
-      : 0;
-
-    const row = document.createElement("div");
-    row.className = "pasture-row";
-    row.onclick = () => openCourse(course.id);
-    row.innerHTML = `
-      <div class="pasture-icon" style="background:${course.color}22;color:${course.color};">${icon(groupIcon(course.group))}</div>
-      <div class="pasture-info">
-        <div class="pasture-title">${course.title}</div>
-        <div class="pasture-pct">${pct}% complete</div>
-        <div class="pasture-bar-outer">
-          <div class="pasture-bar-inner" style="width:${pct}%;background:${course.color || "#22c55e"};"></div>
-        </div>
+// One row in the dashboard course list.
+function pastureRow(course, pct, isSuggestion) {
+  const row = document.createElement("div");
+  row.className = "pasture-row";
+  row.onclick = () => openCourse(course.id);
+  row.innerHTML = `
+    <div class="pasture-icon" style="background:${course.color}22;color:${course.color};">${icon(groupIcon(course.group))}</div>
+    <div class="pasture-info">
+      <div class="pasture-title">${course.title}</div>
+      <div class="pasture-pct">${isSuggestion ? `${course.lessons.length} lessons · not started` : `${pct}% complete`}</div>
+      <div class="pasture-bar-outer">
+        <div class="pasture-bar-inner" style="width:${pct}%;background:${course.color || "#22c55e"};"></div>
       </div>
-      <div class="pasture-arrow">›</div>
-    `;
-    container.appendChild(row);
-  });
+    </div>
+    <div class="pasture-arrow">${isSuggestion ? "Start ›" : "›"}</div>
+  `;
+  return row;
 }
 
 function renderStreakWidget() {
@@ -674,7 +749,11 @@ function renderCourseGrid() {
 
   const filterContainer = document.getElementById("categoryFilters");
   if (filterContainer && filterContainer.children.length === 0) {
-    const cats = ["All Courses", ...new Set(courses.map(c => c.category))];
+    // Fixed category list, plus anything an admin-added course introduces.
+    const extras = courses
+      .map(courseCategory)
+      .filter(cat => cat && !COURSE_CATEGORIES.includes(cat));
+    const cats = ["All Courses", ...COURSE_CATEGORIES, ...new Set(extras)];
     cats.forEach(cat => {
       const btn = document.createElement("button");
       btn.className = "cat-btn" + (cat === "All Courses" ? " active" : "");
@@ -695,7 +774,7 @@ window.filterCourses = function() {
   const q = document.getElementById("courseSearch")?.value.toLowerCase() || "";
   const activeCat = document.querySelector(".cat-btn.active")?.textContent || "All Courses";
   const filtered = courses.filter(c => {
-    const matchCat = activeCat === "All Courses" || c.category === activeCat;
+    const matchCat = activeCat === "All Courses" || courseCategory(c) === activeCat;
     const matchQ = c.title.toLowerCase().includes(q) || c.description.toLowerCase().includes(q);
     return matchCat && matchQ;
   });
@@ -740,7 +819,11 @@ function renderFilteredCourses(list) {
   });
 
   if (list.length === 0) {
-    container.innerHTML = `<div class="lb-loading">No courses match your search. </div>`;
+    const activeCat = document.querySelector(".cat-btn.active")?.textContent || "All Courses";
+    const q = document.getElementById("courseSearch")?.value.trim() || "";
+    container.innerHTML = q
+      ? `<div class="lb-loading">No courses match "${q}".</div>`
+      : `<div class="lb-loading">No courses in ${activeCat} yet — we're building them out. Check back soon.</div>`;
   }
 }
 

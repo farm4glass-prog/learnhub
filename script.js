@@ -1,7 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
 import {
-  getAuth, GoogleAuthProvider, signInWithPopup,
-  onAuthStateChanged, signOut
+  initializeAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
+  getRedirectResult, onAuthStateChanged, signOut,
+  browserLocalPersistence, browserSessionPersistence, browserPopupRedirectResolver
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
@@ -42,7 +43,10 @@ initializeAppCheck(app, {
   isTokenAutoRefreshEnabled: true
 });
 
-const auth = getAuth(app);
+const auth = initializeAuth(app, {
+  persistence: [browserLocalPersistence, browserSessionPersistence],
+  popupRedirectResolver: browserPopupRedirectResolver
+});
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
@@ -357,9 +361,19 @@ let examTimerInterval = null;
 
 // ========================= LOGIN =========================
 async function loginWithGoogle() {
-  try { await signInWithPopup(auth, provider); }
-  catch (e) { console.error(e); alert(e.message); }
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (e) {
+    console.error("Popup sign-in failed, falling back to redirect:", e);
+    if (/popup|cancelled|closed|blocked|Database/i.test(e.message || "")) {
+      await signInWithRedirect(auth, provider);
+    } else {
+      alert(e.message);
+    }
+  }
 }
+
+getRedirectResult(auth).catch(e => console.error("Redirect sign-in failed:", e));
 
 document.getElementById("landingLogin")?.addEventListener("click", loginWithGoogle);
 document.getElementById("heroLogin")?.addEventListener("click", loginWithGoogle);

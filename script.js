@@ -7,7 +7,7 @@ import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
   collection, getDocs, orderBy, query, limit
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
-import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app-check.js";
+//import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app-check.js";
 import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-ai.js";
 
 // ========================= FIREBASE =========================
@@ -34,13 +34,13 @@ const app = initializeApp(firebaseConfig);
 // and paste the site key below. The site key is public — safe to commit.
 // On localhost, the debug flag prints a token in the console; register it under
 // App Check > Apps > Manage debug tokens.
-if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-}
-initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider("YOUR_RECAPTCHA_V3_SITE_KEY"),
-  isTokenAutoRefreshEnabled: true
-});
+//if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+//  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+//}
+//initializeAppCheck(app, {
+//  provider: new ReCaptchaV3Provider("YOUR_RECAPTCHA_V3_SITE_KEY"),
+//  isTokenAutoRefreshEnabled: true
+//});
 
 const auth = getAuth(app);
 const db = getFirestore(app);

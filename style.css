@@ -1237,7 +1237,6 @@ h1, h2, .logo-text, .nav-links a, .hero-title,
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   .f4g-confetti { display: none !important; }
 }
-
 /* =========================================================================
    FARM4GLASS — LANDING PAGE (v2)
    Scoped to #landingPage, so the signed-in portal is untouched.
@@ -1616,3 +1615,304 @@ h1, h2, .logo-text, .nav-links a, .hero-title,
   #landingPage .reveal { opacity: 1; transform: none; }
   #landingPage .hb-bar span { width: 72%; }
 }
+/* =========================================================================
+   FARM4GLASS — STUDY PORTAL (v2)
+   Brings the landing page aesthetic inside: blue gradient canvas, glass
+   cards, pill controls, tighter typography.
+
+   Scoped to #portal, so the landing page is untouched. No markup changes
+   needed — every selector already exists in your HTML.
+   ========================================================================= */
+
+/* ---------- canvas ---------- */
+#portal {
+  background:
+    radial-gradient(900px 620px at 82% -6%, rgba(56,189,248,.16), transparent 62%),
+    radial-gradient(760px 560px at 6% 52%, rgba(22,125,181,.10), transparent 62%),
+    linear-gradient(180deg, #f7fbff 0%, #eef5fc 40%, #e3eefa 100%);
+  background-attachment: fixed;
+}
+#portal .main { background: transparent; }
+
+/* ---------- sidebar: deep blue gradient, pill nav ---------- */
+#portal .sidebar {
+  background: linear-gradient(170deg, #0a1a2b 0%, #0f5f8c 62%, #167db5 130%);
+  border-right: 1px solid rgba(255,255,255,.08);
+  padding: 22px 14px;
+}
+#portal .sidebar-logo { border-bottom: 1px solid rgba(255,255,255,.14); }
+#portal .logo-text { letter-spacing: -.02em; }
+
+#portal .nav-btn {
+  border-radius: 999px; padding: 11px 16px; font-size: 14.5px;
+  color: rgba(255,255,255,.72); letter-spacing: -.01em;
+}
+#portal .nav-btn:hover { background: rgba(255,255,255,.12); color: #fff; }
+#portal .nav-btn.active {
+  background: rgba(255,255,255,.95); color: #0a1a2b; font-weight: 800;
+  box-shadow: 0 8px 20px rgba(0,0,0,.18);
+}
+#portal .nav-btn.active::before { display: none; }
+
+#portal .sidebar-animal {
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18);
+  backdrop-filter: blur(8px); border-radius: 20px;
+}
+#portal .logout-btn { border-radius: 999px; }
+
+/* ---------- typography ---------- */
+#portal h1 { letter-spacing: -.035em; color: #0a1a2b; }
+#portal .section-title { letter-spacing: -.02em; color: #0a1a2b; font-size: 21px; }
+#portal .page-sub { color: #4a6c8c; font-size: 15.5px; }
+#portal .dash-header h1 { font-size: clamp(32px, 3.6vw, 44px); }
+
+/* ---------- glass card treatment (everything shares it) ---------- */
+#portal .stat-card,
+#portal .widget,
+#portal .course-card-new,
+#portal .pasture-row,
+#portal .lesson-row,
+#portal .lb-row,
+#portal .quiz-header,
+#portal .quiz-question-card,
+#portal .quiz-results,
+#portal .vl-info,
+#portal .profile-card,
+#portal .planner-summary,
+#portal .planner-week-card,
+#portal .analytics-course-row,
+#portal .rec-card,
+#portal .kpi-detail,
+#portal .kpi-list-item,
+#portal .admin-panel-body,
+#portal .admin-course-btn,
+#portal .calendar-event-card,
+#portal .blog-card,
+#portal .pe-section-card,
+#portal .pe-flag,
+#portal .exam-setup-card,
+#portal .exam-header {
+  background: rgba(255,255,255,.86);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.92);
+  box-shadow: 0 14px 38px rgba(15,95,140,.12);
+}
+#portal .stat-card,
+#portal .widget,
+#portal .course-card-new,
+#portal .quiz-question-card,
+#portal .quiz-results,
+#portal .profile-card,
+#portal .planner-summary,
+#portal .kpi-detail,
+#portal .admin-panel-body,
+#portal .exam-setup-card { border-radius: 26px; }
+#portal .pasture-row,
+#portal .lesson-row,
+#portal .lb-row,
+#portal .planner-week-card,
+#portal .analytics-course-row,
+#portal .rec-card,
+#portal .calendar-event-card,
+#portal .pe-flag,
+#portal .pe-section-card,
+#portal .kpi-list-item,
+#portal .admin-course-btn { border-radius: 18px; }
+
+#portal .stat-card:hover,
+#portal .course-card-new:hover,
+#portal .blog-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 28px 62px rgba(15,95,140,.2);
+  background: rgba(255,255,255,.96);
+}
+
+/* ---------- stats ---------- */
+#portal .stat-value { font-size: 38px; letter-spacing: -.035em; color: #0a1a2b; }
+#portal .stat-label {
+  font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: #4a6c8c;
+}
+
+/* ---------- animal / level card: blue instead of amber ---------- */
+#portal .animal-card {
+  background: linear-gradient(140deg, #0f5f8c 0%, #167db5 58%, #38bdf8 130%);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 26px;
+  box-shadow: 0 24px 60px rgba(15,95,140,.28);
+  position: relative; overflow: hidden;
+}
+#portal .animal-card::after {
+  content: ""; position: absolute; width: 300px; height: 300px; right: -90px; top: -110px;
+  background: radial-gradient(circle, rgba(255,255,255,.2), transparent 68%);
+}
+#portal .ac-name { color: #fff; font-size: 24px; letter-spacing: -.02em; }
+#portal .ac-tagline { color: rgba(255,255,255,.82); }
+#portal .ac-level { color: #cbe9fb; }
+#portal .ac-next-label { color: rgba(255,255,255,.7); }
+#portal .ac-next-name { color: #fff; font-weight: 700; }
+
+/* ---------- buttons: pills ---------- */
+#portal .btn-primary,
+#portal .barn-btn,
+#portal .next-btn {
+  background: linear-gradient(135deg, #167db5, #0f5f8c);
+  border-radius: 999px; padding: 14px 30px;
+  box-shadow: 0 14px 30px rgba(15,95,140,.28);
+}
+#portal .btn-primary:hover,
+#portal .barn-btn:hover,
+#portal .next-btn:hover {
+  background: linear-gradient(135deg, #1f92cf, #12699a);
+  transform: translateY(-2px);
+}
+#portal .complete-btn {
+  background: linear-gradient(135deg, #059669, #047857);
+  border-radius: 999px; padding: 14px 30px;
+  box-shadow: 0 14px 30px rgba(5,150,105,.28);
+}
+#portal .admin-btn-sm { border-radius: 999px; padding: 9px 18px; }
+#portal .admin-btn-sm:not(.danger):not(.ghost) { background: linear-gradient(135deg, #167db5, #0f5f8c); }
+#portal .admin-btn-sm.danger { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+
+/* pill tabs + filters */
+#portal .cat-btn,
+#portal .lb-tab,
+#portal .admin-subtab-btn {
+  background: rgba(255,255,255,.8); border: 1px solid rgba(15,95,140,.16);
+  border-radius: 999px; color: #4a6c8c; backdrop-filter: blur(8px);
+}
+#portal .cat-btn:hover,
+#portal .lb-tab:hover,
+#portal .admin-subtab-btn:hover { border-color: var(--blue); color: var(--blue-dark); background: #fff; }
+#portal .cat-btn.active,
+#portal .lb-tab.active,
+#portal .admin-subtab-btn.active {
+  background: #0a1a2b; border-color: #0a1a2b; color: #fff;
+  box-shadow: 0 10px 22px rgba(10,26,43,.22);
+}
+
+/* ---------- inputs ---------- */
+#portal input[type="text"],
+#portal input[type="number"],
+#portal input[type="date"],
+#portal input[type="file"],
+#portal select,
+#portal textarea,
+#portal #courseSearch {
+  border-radius: 14px; border: 1.5px solid rgba(15,95,140,.18);
+  background: rgba(255,255,255,.9);
+}
+#portal input:focus,
+#portal select:focus,
+#portal textarea:focus,
+#portal #courseSearch:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 4px rgba(22,125,181,.14);
+  outline: none;
+}
+#portal .form-group label {
+  font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: #4a6c8c;
+}
+
+/* ---------- course cards: accent bar sweep like the landing bento ---------- */
+#portal .course-card-new { position: relative; overflow: hidden; }
+#portal .course-card-new::before {
+  content: ""; position: absolute; left: 0; top: 0; height: 4px; width: 0; z-index: 2;
+  background: linear-gradient(90deg, var(--blue), var(--blue-light));
+  transition: width .45s cubic-bezier(.2,.8,.2,1);
+}
+#portal .course-card-new:hover::before { width: 100%; }
+#portal .cc-title { font-size: 21px; letter-spacing: -.02em; color: #0a1a2b; }
+#portal .cc-desc { color: #4a6c8c; }
+#portal .cc-icon { border-radius: 16px; }
+
+/* ---------- lesson rows ---------- */
+#portal .lesson-row:hover { border-color: var(--blue); background: rgba(240,249,255,.95); }
+#portal .lesson-row.done { border-color: rgba(134,239,172,.9); background: rgba(240,253,244,.9); }
+#portal .lr-title { letter-spacing: -.01em; }
+#portal .lr-xp {
+  background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; border-radius: 999px;
+}
+
+/* ---------- leaderboard ---------- */
+#portal .lb-row.you {
+  border: 2px solid var(--blue);
+  background: linear-gradient(135deg, rgba(240,249,255,.98), rgba(219,234,254,.9));
+}
+#portal .lb-val { font-size: 22px; letter-spacing: -.02em; }
+#portal .lb-avatar { font-size: 13px; font-weight: 800; color: var(--blue-dark); }
+
+/* ---------- profile ---------- */
+#portal .profile-avatar {
+  background: linear-gradient(140deg, #167db5, #0f5f8c);
+  box-shadow: 0 0 0 4px rgba(255,255,255,.9), 0 14px 30px rgba(15,95,140,.24);
+}
+#portal .profile-name { letter-spacing: -.03em; }
+
+/* ---------- KPI database ---------- */
+#portal .kpi-list-item.active {
+  background: linear-gradient(135deg, #167db5, #0f5f8c);
+  border-color: transparent; color: #fff;
+  box-shadow: 0 12px 26px rgba(15,95,140,.26);
+}
+#portal .kpi-detail h2 { letter-spacing: -.03em; }
+#portal .kpi-section h4 { color: var(--blue-dark); letter-spacing: .1em; }
+
+/* ---------- planner / analytics ---------- */
+#portal .planner-summary-stat .val { font-size: 28px; letter-spacing: -.03em; }
+#portal .planner-ontrack,
+#portal .planner-warning { border-radius: 16px; }
+#portal .analytics-score-pill { border-radius: 999px; }
+#portal .analytics-xp-bar { border-radius: 8px 8px 0 0; }
+
+/* ---------- exam ---------- */
+#portal .exam-cta {
+  background: linear-gradient(135deg, #0f5f8c, #167db5 60%, #38bdf8 130%);
+  border: 1px solid rgba(255,255,255,.2); border-radius: 26px;
+  box-shadow: 0 24px 56px rgba(15,95,140,.26);
+}
+#portal .exam-cta-title { color: #fff; }
+#portal .exam-cta-desc { color: rgba(255,255,255,.82); }
+#portal .exam-cta .btn-primary { background: #fff; color: #0a1a2b; }
+#portal .exam-cta .btn-primary:hover { background: #eaf5fd; }
+
+/* ---------- quiz ---------- */
+#portal .option-btn {
+  background: rgba(255,255,255,.9); border-radius: 16px;
+  border: 2px solid rgba(15,95,140,.14);
+}
+#portal .option-btn:hover:not(:disabled) { border-color: var(--blue); background: #f0f9ff; }
+#portal .question-text { letter-spacing: -.02em; }
+#portal .results-title { letter-spacing: -.03em; font-size: 34px; }
+#portal .results-xp {
+  background: linear-gradient(135deg, #167db5, #38bdf8);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* ---------- calendar / blog ---------- */
+#portal .calendar-event-card { border-left-width: 5px; }
+#portal .blog-card { border-radius: 26px; transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s; }
+#portal .blog-card-body h3 { letter-spacing: -.02em; }
+
+/* ---------- prepared event AI ---------- */
+#portal .pe-drop { border-radius: 20px; border-color: rgba(15,95,140,.22); background: rgba(255,255,255,.6); }
+#portal .pe-drop:hover { background: #fff; }
+#portal .pe-score-banner { border-radius: 26px; }
+#portal .pe-level-pill { border-radius: 999px; }
+
+/* ---------- modals + toast ---------- */
+#portal .modal-box, .modal-box { border-radius: 32px; }
+.xp-toast {
+  background: linear-gradient(135deg, #0a1a2b, #0f5f8c);
+  border-radius: 999px; box-shadow: 0 20px 44px rgba(10,26,43,.32);
+}
+
+/* ---------- mobile header ---------- */
+#portal .mobile-header {
+  background: linear-gradient(120deg, #0a1a2b, #0f5f8c);
+  border-radius: 0 0 22px 22px;
+}
+
+/* ---------- empty / loading states ---------- */
+#portal .admin-empty-state,
+#portal .lb-loading { color: #6b8aa8; }

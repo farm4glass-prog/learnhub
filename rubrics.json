@@ -1,0 +1,202 @@
+[
+  {
+    "id": "business-growth-plan",
+    "eventName": "Business Growth Plan",
+    "eventCode": "",
+    "category": "Entrepreneurship Written Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet. Open the current DECA guidelines for this event and paste its penalty rules and evaluation sections in Admin > Rubrics."
+  },
+  {
+    "id": "innovation-plan",
+    "eventName": "Innovation Plan",
+    "eventCode": "",
+    "category": "Entrepreneurship Written Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "start-up-business-plan",
+    "eventName": "Start-Up Business Plan",
+    "eventCode": "",
+    "category": "Entrepreneurship Written Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "independent-business-plan",
+    "eventName": "Independent Business Plan",
+    "eventCode": "",
+    "category": "Entrepreneurship Written Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "international-business-plan",
+    "eventName": "International Business Plan",
+    "eventCode": "",
+    "category": "Entrepreneurship Written Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "franchise-business-plan",
+    "eventName": "Franchise Business Plan",
+    "eventCode": "",
+    "category": "Entrepreneurship Written Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "integrated-marketing-campaign-event",
+    "eventName": "Integrated Marketing Campaign - Event",
+    "eventCode": "IMCE",
+    "category": "Integrated Marketing Campaign Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "integrated-marketing-campaign-product",
+    "eventName": "Integrated Marketing Campaign - Product",
+    "eventCode": "IMCP",
+    "category": "Integrated Marketing Campaign Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "integrated-marketing-campaign-service",
+    "eventName": "Integrated Marketing Campaign - Service",
+    "eventCode": "IMCS",
+    "category": "Integrated Marketing Campaign Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "business-operations-research-business-services",
+    "eventName": "Business Operations Research - Business Services",
+    "eventCode": "",
+    "category": "Business Operations Research Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "business-operations-research-buying-merchandising",
+    "eventName": "Business Operations Research - Buying and Merchandising",
+    "eventCode": "",
+    "category": "Business Operations Research Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "business-operations-research-finance",
+    "eventName": "Business Operations Research - Finance",
+    "eventCode": "",
+    "category": "Business Operations Research Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "business-operations-research-hospitality-tourism",
+    "eventName": "Business Operations Research - Hospitality and Tourism",
+    "eventCode": "",
+    "category": "Business Operations Research Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "business-operations-research-sports-entertainment",
+    "eventName": "Business Operations Research - Sports and Entertainment Marketing",
+    "eventCode": "",
+    "category": "Business Operations Research Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "project-management-business-solutions",
+    "eventName": "Project Management - Business Solutions",
+    "eventCode": "",
+    "category": "Project Management Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "project-management-career-development",
+    "eventName": "Project Management - Career Development",
+    "eventCode": "",
+    "category": "Project Management Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "project-management-community-awareness",
+    "eventName": "Project Management - Community Awareness",
+    "eventCode": "",
+    "category": "Project Management Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "project-management-community-giving",
+    "eventName": "Project Management - Community Giving",
+    "eventCode": "",
+    "category": "Project Management Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "project-management-financial-literacy",
+    "eventName": "Project Management - Financial Literacy",
+    "eventCode": "",
+    "category": "Project Management Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  },
+  {
+    "id": "project-management-sales-project",
+    "eventName": "Project Management - Sales Project",
+    "eventCode": "",
+    "category": "Project Management Event",
+    "pageLimit": null,
+    "penaltyRules": [],
+    "rubricSections": [],
+    "notes": "Rubric not entered yet."
+  }
+]

@@ -3864,3 +3864,122 @@ window.adminSeedRubrics = async function() {
     sync();
   });
 })();
+
+
+/* =========================================================================
+   FARM4GLASS — FARM ICON SET
+   Paste this at the END of script.js (after the mobile nav block).
+
+   Line icons drawn to match the ones already on the site: 24x24 viewBox,
+   currentColor, 1.8 stroke, round caps. They inherit color and size from
+   whatever wrapper you put them in, so a cow dropped into .ac-emoji comes
+   out at 52px and a cow in .sa-emoji comes out at 32px. No emoji anywhere.
+
+   THREE WAYS TO USE THEM
+   ----------------------
+   1. In index.html — put an empty <i> anywhere and it gets filled in:
+        <i class="icon-svg" data-farm-icon="cow"></i>
+
+   2. In script.js template strings:
+        html += farmIcon('barn');
+
+   3. Swapping a level tier's icon — wherever your animal tiers are
+      defined, use farmIcon('goat') in place of the old icon.
+
+   Available: barn, cow, goat, bee, wheat, fence
+   ========================================================================= */
+
+(function () {
+  var OPEN =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ' +
+    'xmlns="http://www.w3.org/2000/svg">';
+
+  var PATHS = {
+    /* gambrel roof, plank doors with the classic cross-brace */
+    barn:
+      '<path d="M3 21V11l4-3.5L12 4l5 3.5 4 3.5v10Z"/>' +
+      '<path d="M10 21v-6.5h4V21"/>' +
+      '<path d="m10 14.5 4 6.5M14 14.5l-4 6.5"/>',
+
+    /* head narrows at the cheeks then widens into the muzzle */
+    cow:
+      '<path d="M6.5 10c0-3 2.5-5 5.5-5s5.5 2 5.5 5c0 1.3-.4 2.4-1.1 3.3.9.6 1.4 1.5 1.4 2.5 0 2.1-2.4 3.7-5.8 3.7S6.2 17.9 6.2 15.8c0-1 .5-1.9 1.4-2.5A5.3 5.3 0 0 1 6.5 10Z"/>' +
+      '<path d="M6.9 8.3 4.4 7.2c-1.4-.6-2.5.9-1.6 2.2.7 1 1.9 1.6 3.3 1.7"/>' +
+      '<path d="m17.1 8.3 2.5-1.1c1.4-.6 2.5.9 1.6 2.2-.7 1-1.9 1.6-3.3 1.7"/>' +
+      '<path d="M8.6 5.8 7.4 4.1M15.4 5.8l1.2-1.7"/>' +
+      '<path d="M10 10h.01M14 10h.01"/>' +
+      '<path d="M10.6 15.6h.01M13.4 15.6h.01"/>',
+
+    /* swept-back horns and the beard do the identifying */
+    goat:
+      '<path d="M8.5 8c0-2.5 1.6-4 3.5-4s3.5 1.5 3.5 4v3.5c0 2.5-1.6 4.5-3.5 4.5s-3.5-2-3.5-4.5Z"/>' +
+      '<path d="M9 5.5C7.8 3.6 5.4 2.7 4 3.6c-1 .7-.6 2.2 1 3.2"/>' +
+      '<path d="M15 5.5c1.2-1.9 3.6-2.8 5-1.9 1 .7.6 2.2-1 3.2"/>' +
+      '<path d="M8.5 8.6 6.6 9.5M15.5 8.6l1.9.9"/>' +
+      '<path d="M10.3 9h.01M13.7 9h.01"/>' +
+      '<path d="M10.8 12.8h2.4"/>' +
+      '<path d="M11 16.2c0 2 .3 3.2 1 4.3.7-1.1 1-2.3 1-4.3"/>',
+
+    bee:
+      '<path d="M12 8.5c-2.5 0-4.5 2.2-4.5 5s2 5 4.5 5 4.5-2.2 4.5-5-2-5-4.5-5Z"/>' +
+      '<path d="M7.8 12h8.4M8 15.6h8"/>' +
+      '<path d="M9.5 8C8 5.5 5 4.5 3.6 6c-1.2 1.3-.2 3.8 2.4 4.6"/>' +
+      '<path d="M14.5 8c1.5-2.5 4.5-3.5 5.9-2 1.2 1.3.2 3.8-2.4 4.6"/>' +
+      '<path d="M10.8 6.2 9.8 4.4M13.2 6.2l1-1.8"/>',
+
+    wheat:
+      '<path d="M12 21V9"/>' +
+      '<path d="M12 12c-2.2 0-4-1.8-4-4 2.2 0 4 1.8 4 4Z"/>' +
+      '<path d="M12 12c2.2 0 4-1.8 4-4-2.2 0-4 1.8-4 4Z"/>' +
+      '<path d="M12 7.5c-2.2 0-4-1.8-4-4 2.2 0 4 1.8 4 4Z"/>' +
+      '<path d="M12 7.5c2.2 0 4-1.8 4-4-2.2 0-4 1.8-4 4Z"/>',
+
+    fence:
+      '<path d="M5 21V6.5L6.5 5 8 6.5V21"/>' +
+      '<path d="M11 21V6.5L12.5 5 14 6.5V21"/>' +
+      '<path d="M17 21V6.5L18.5 5 20 6.5V21"/>' +
+      '<path d="M3 10h18M3 15h18"/>'
+  };
+
+  var ICONS = {};
+  Object.keys(PATHS).forEach(function (k) {
+    ICONS[k] = OPEN + PATHS[k] + '</svg>';
+  });
+
+  window.F4G_FARM_ICONS = ICONS;
+
+  /* Returns a ready-to-drop string, e.g. farmIcon('cow') */
+  window.farmIcon = function (name, extraClass) {
+    if (!ICONS[name]) return '';
+    return '<i class="icon-svg' + (extraClass ? ' ' + extraClass : '') +
+      '" data-farm-icon-done="1">' + ICONS[name] + '</i>';
+  };
+
+  /* Fills any <i data-farm-icon="..."> that hasn't been filled yet */
+  function hydrate(root) {
+    var scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll('[data-farm-icon]').forEach(function (el) {
+      if (el.getAttribute('data-farm-icon-done') === '1') return;
+      var svg = ICONS[el.getAttribute('data-farm-icon')];
+      if (!svg) return;
+      el.innerHTML = svg;
+      el.setAttribute('data-farm-icon-done', '1');
+      el.classList.add('icon-svg');
+    });
+  }
+  window.hydrateFarmIcons = hydrate;
+
+  function start() {
+    hydrate(document);
+    // tabs render their content after load, so keep watching
+    new MutationObserver(function (muts) {
+      for (var i = 0; i < muts.length; i++) {
+        if (muts[i].addedNodes.length) { hydrate(document); return; }
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+
+  if (document.readyState !== 'loading') start();
+  else document.addEventListener('DOMContentLoaded', start);
+})();

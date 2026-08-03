@@ -2360,3 +2360,122 @@ body.f4g-locked { overflow: hidden; }
   #landingPage .landing-footer { padding-top: 54px; }
   #landingPage .landing-footer::before { height: 40px; }
 }
+
+
+/* =========================================================================
+   FARM4GLASS — HOME PAGE FARM SCENE
+   Paste at the VERY END of style.css (after the FARM ACCENTS block).
+
+   Picks up the numbering from your existing accents. Everything is scoped
+   to #landingPage and drawn with pseudo-elements, so: no HTML changes, the
+   portal is untouched, blue stays the brand color, Montserrat stays, no
+   emoji. Each block is labelled — delete any one and the others keep
+   working.
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   ACCENT 4 — Barn behind the hero
+   A big pale barn (gambrel roof, cupola, double doors) peeking up from
+   behind the hero photos. Watermark opacity, so it reads as texture.
+   ------------------------------------------------------------------------- */
+
+#landingPage .landing-hero { position: relative; }
+#landingPage .landing-hero::before {
+  content: "";
+  position: absolute; right: 2%; bottom: -8px; z-index: 0;
+  width: clamp(190px, 24vw, 330px); aspect-ratio: 120 / 100;
+  pointer-events: none; opacity: .10;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 100' fill='%230a1a2b'%3E%3Cpath d='M60 4 66 8V16h-2l30 20 18 22V96H8V58L26 36l30-20h-2V8ZM44 96V70c0-4 3-7 7-7h6v33ZM63 96V63h6c4 0 7 3 7 7v26ZM60 30 68 38 60 46 52 38Z' fill-rule='evenodd'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+
+/* -------------------------------------------------------------------------
+   ACCENT 5 — Bee drifting across the hero
+   Amber body, navy stripes, translucent wings. The flight path is written
+   in % of the bee's own size, so it scales down with the bee on a phone.
+   ------------------------------------------------------------------------- */
+
+#landingPage .landing-hero::after {
+  content: "";
+  position: absolute; right: 9%; top: 13%; z-index: 3;
+  width: clamp(32px, 3.4vw, 46px); aspect-ratio: 110 / 80;
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 110 80' fill='%230a1a2b'%3E%3Cellipse cx='46' cy='17' rx='19' ry='8.5' fill='%23ffffff' fill-opacity='0.75' transform='rotate(-20 46 17)'/%3E%3Cellipse cx='63' cy='20' rx='15' ry='7' fill='%23ffffff' fill-opacity='0.75' transform='rotate(-4 63 20)'/%3E%3Cellipse cx='54' cy='44' rx='25' ry='17' fill='%23f5b820'/%3E%3Crect x='45' y='30' width='7' height='28' rx='3.5' fill='%230a1a2b'/%3E%3Crect x='61' y='31' width='7' height='26' rx='3.5' fill='%230a1a2b'/%3E%3Cpolygon points='30,36 12,44 30,52' fill='%230a1a2b'/%3E%3Ccircle cx='80' cy='42' r='12' fill='%230a1a2b'/%3E%3Crect x='80' y='16' width='3' height='13' rx='1.5' fill='%230a1a2b' transform='rotate(-28 81 29)'/%3E%3Crect x='88' y='18' width='3' height='13' rx='1.5' fill='%230a1a2b' transform='rotate(12 89 31)'/%3E%3C/svg%3E") no-repeat center / contain;
+  filter: drop-shadow(0 6px 10px rgba(15,95,140,.28));
+  animation: f4g-bee 24s ease-in-out infinite;
+}
+@keyframes f4g-bee {
+  0%   { transform: translate(0, 0)            rotate(-6deg); }
+  12%  { transform: translate(-180%, 60%)      rotate(4deg); }
+  26%  { transform: translate(-420%, -30%)     rotate(-5deg); }
+  40%  { transform: translate(-260%, 180%)     rotate(6deg); }
+  55%  { transform: translate(-560%, 250%)     rotate(-4deg); }
+  70%  { transform: translate(-300%, 90%)      rotate(5deg); }
+  85%  { transform: translate(-90%, -60%)      rotate(-3deg); }
+  100% { transform: translate(0, 0)            rotate(-6deg); }
+}
+
+/* -------------------------------------------------------------------------
+   ACCENT 6 — Cow and goat grazing on the pasture hills
+   Sits on top of the hill divider you already have above the footer.
+   Nudge the two percentages if you want them further apart.
+   ------------------------------------------------------------------------- */
+
+#landingPage .landing-footer::after {
+  content: "";
+  position: absolute; left: 0; right: 0; top: 0; height: 50px;
+  pointer-events: none; opacity: .24;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 142 92' fill='%230a1a2b'%3E%3Crect x='17' y='28' width='5' height='32' rx='2.5' transform='rotate(-12 20 28)'/%3E%3Cellipse cx='15' cy='62' rx='5' ry='7.5'/%3E%3Crect x='22' y='26' width='72' height='38' rx='17'/%3E%3Crect x='30' y='56' width='12' height='28' rx='6'/%3E%3Crect x='48' y='56' width='12' height='28' rx='6'/%3E%3Crect x='70' y='56' width='12' height='28' rx='6'/%3E%3Crect x='86' y='56' width='12' height='28' rx='6'/%3E%3Cellipse cx='44' cy='64' rx='9' ry='7'/%3E%3Crect x='92' y='32' width='30' height='30' rx='13'/%3E%3Cellipse cx='122' cy='54' rx='13' ry='10.5'/%3E%3Cellipse cx='95' cy='35' rx='10' ry='4.5' transform='rotate(-34 95 35)'/%3E%3Cpolygon points='103,36 102,24 108,23 110,36'/%3E%3Cpolygon points='112,36 115,25 120,27 118,38'/%3E%3C/svg%3E")  no-repeat 17% bottom / auto 30px,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 92' fill='%230a1a2b'%3E%3Cpolygon points='32,36 27,25 38,32'/%3E%3Crect x='30' y='32' width='58' height='28' rx='13'/%3E%3Crect x='36' y='54' width='9' height='30' rx='4.5'/%3E%3Crect x='50' y='54' width='9' height='30' rx='4.5'/%3E%3Crect x='68' y='54' width='9' height='30' rx='4.5'/%3E%3Crect x='80' y='54' width='9' height='30' rx='4.5'/%3E%3Crect x='78' y='18' width='16' height='28' rx='8'/%3E%3Crect x='86' y='12' width='30' height='20' rx='9'/%3E%3Cellipse cx='116' cy='26' rx='8' ry='6.5'/%3E%3Cpolygon points='99,30 110,30 104,44'/%3E%3Cpolygon points='92,15 77,4 74,10 89,20'/%3E%3Cpolygon points='98,17 85,3 81,8 94,21'/%3E%3Cellipse cx='99' cy='29' rx='10' ry='4' transform='rotate(28 99 29)'/%3E%3C/svg%3E") no-repeat 79% bottom / auto 26px;
+}
+
+/* -------------------------------------------------------------------------
+   ACCENT 7 — Goat on the "about" card
+   White silhouette in the bottom-right corner of the blue gradient panel.
+   ------------------------------------------------------------------------- */
+
+#landingPage .about-section::before {
+  content: "";
+  position: absolute; right: 26px; bottom: 14px; z-index: 0;
+  width: 160px; aspect-ratio: 140 / 92;
+  pointer-events: none; opacity: .13;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 92' fill='%23ffffff'%3E%3Cpolygon points='32,36 27,25 38,32'/%3E%3Crect x='30' y='32' width='58' height='28' rx='13'/%3E%3Crect x='36' y='54' width='9' height='30' rx='4.5'/%3E%3Crect x='50' y='54' width='9' height='30' rx='4.5'/%3E%3Crect x='68' y='54' width='9' height='30' rx='4.5'/%3E%3Crect x='80' y='54' width='9' height='30' rx='4.5'/%3E%3Crect x='78' y='18' width='16' height='28' rx='8'/%3E%3Crect x='86' y='12' width='30' height='20' rx='9'/%3E%3Cellipse cx='116' cy='26' rx='8' ry='6.5'/%3E%3Cpolygon points='99,30 110,30 104,44'/%3E%3Cpolygon points='92,15 77,4 74,10 89,20'/%3E%3Cpolygon points='98,17 85,3 81,8 94,21'/%3E%3Cellipse cx='99' cy='29' rx='10' ry='4' transform='rotate(28 99 29)'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+
+/* -------------------------------------------------------------------------
+   ACCENT 8 — Fence rail along the bottom of the closing CTA
+   Two rails and a pointed post, tiling across the card.
+   ------------------------------------------------------------------------- */
+
+#landingPage .cta-inner { position: relative; overflow: hidden; }
+#landingPage .cta-inner::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: 0; height: 44px;
+  pointer-events: none; opacity: .11;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 44' fill='%230a1a2b'%3E%3Crect x='0' y='13' width='96' height='5' rx='2.5'/%3E%3Crect x='0' y='27' width='96' height='5' rx='2.5'/%3E%3Cpolygon points='43.5,6 48,1 52.5,6'/%3E%3Crect x='43.5' y='5' width='9' height='39' rx='2'/%3E%3C/svg%3E") repeat-x center bottom / 96px 44px;
+}
+
+/* -------------------------------------------------------------------------
+   MOBILE
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 700px) {
+  #landingPage .landing-hero::before { width: 150px; right: -8px; opacity: .07; }
+  #landingPage .landing-hero::after  { width: 30px; right: 7%; top: 9%; }
+  #landingPage .landing-footer::after {
+    height: 38px;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 142 92' fill='%230a1a2b'%3E%3Crect x='17' y='28' width='5' height='32' rx='2.5' transform='rotate(-12 20 28)'/%3E%3Cellipse cx='15' cy='62' rx='5' ry='7.5'/%3E%3Crect x='22' y='26' width='72' height='38' rx='17'/%3E%3Crect x='30' y='56' width='12' height='28' rx='6'/%3E%3Crect x='48' y='56' width='12' height='28' rx='6'/%3E%3Crect x='70' y='56' width='12' height='28' rx='6'/%3E%3Crect x='86' y='56' width='12' height='28' rx='6'/%3E%3Cellipse cx='44' cy='64' rx='9' ry='7'/%3E%3Crect x='92' y='32' width='30' height='30' rx='13'/%3E%3Cellipse cx='122' cy='54' rx='13' ry='10.5'/%3E%3Cellipse cx='95' cy='35' rx='10' ry='4.5' transform='rotate(-34 95 35)'/%3E%3Cpolygon points='103,36 102,24 108,23 110,36'/%3E%3Cpolygon points='112,36 115,25 120,27 118,38'/%3E%3C/svg%3E")  no-repeat 14% bottom / auto 22px,
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 92' fill='%230a1a2b'%3E%3Cpolygon points='32,36 27,25 38,32'/%3E%3Crect x='30' y='32' width='58' height='28' rx='13'/%3E%3Crect x='36' y='54' width='9' height='30' rx='4.5'/%3E%3Crect x='50' y='54' width='9' height='30' rx='4.5'/%3E%3Crect x='68' y='54' width='9' height='30' rx='4.5'/%3E%3Crect x='80' y='54' width='9' height='30' rx='4.5'/%3E%3Crect x='78' y='18' width='16' height='28' rx='8'/%3E%3Crect x='86' y='12' width='30' height='20' rx='9'/%3E%3Cellipse cx='116' cy='26' rx='8' ry='6.5'/%3E%3Cpolygon points='99,30 110,30 104,44'/%3E%3Cpolygon points='92,15 77,4 74,10 89,20'/%3E%3Cpolygon points='98,17 85,3 81,8 94,21'/%3E%3Cellipse cx='99' cy='29' rx='10' ry='4' transform='rotate(28 99 29)'/%3E%3C/svg%3E") no-repeat 82% bottom / auto 19px;
+  }
+  #landingPage .about-section::before { width: 108px; right: 14px; bottom: 10px; opacity: .11; }
+  #landingPage .cta-inner::after { height: 34px; background-size: 74px 34px; }
+}
+
+/* -------------------------------------------------------------------------
+   REDUCED MOTION — the bee parks itself
+   ------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  #landingPage .landing-hero::after { animation: none !important; }
+}

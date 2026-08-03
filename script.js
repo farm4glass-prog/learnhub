@@ -3761,3 +3761,106 @@ window.adminSeedRubrics = async function() {
     alert("Import failed — check the console.");
   }
 };
+
+/* =========================================================================
+   FARM4GLASS — MOBILE NAV WIRING
+   Paste this at the VERY END of script.js.
+
+   It builds the landing-page hamburger and the sidebar scrim in JS, so you
+   don't have to touch index.html at all. Everything is guarded — if an
+   element is already there, it's left alone.
+   ========================================================================= */
+
+(function () {
+  function ready(fn) {
+    if (document.readyState !== 'loading') fn();
+    else document.addEventListener('DOMContentLoaded', fn);
+  }
+
+  ready(function () {
+    /* ---------- 1. landing nav hamburger ---------- */
+    var topNav = document.querySelector('.top-nav');
+
+    if (topNav && !topNav.querySelector('.nav-toggle')) {
+      var toggle = document.createElement('button');
+      toggle.className = 'nav-toggle';
+      toggle.setAttribute('aria-label', 'Menu');
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.innerHTML = '<span></span><span></span><span></span>';
+      topNav.appendChild(toggle);
+
+      toggle.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var open = topNav.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+
+      // close after tapping any link or the login button
+      topNav.querySelectorAll('.nav-links a, .nav-login-btn').forEach(function (el) {
+        el.addEventListener('click', function () {
+          topNav.classList.remove('open');
+          toggle.setAttribute('aria-expanded', 'false');
+        });
+      });
+
+      // close when tapping anywhere else on the page
+      document.addEventListener('click', function (e) {
+        if (topNav.classList.contains('open') && !topNav.contains(e.target)) {
+          topNav.classList.remove('open');
+          toggle.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+
+    /* ---------- 2. portal sidebar ---------- */
+    var sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+
+    // swap the glyph for three bars so it can animate into an X
+    var burger = document.querySelector('.hamburger');
+    if (burger && !burger.querySelector('span')) {
+      burger.innerHTML = '<span></span><span></span><span></span>';
+      burger.setAttribute('aria-label', 'Menu');
+    }
+
+    // scrim behind the open sidebar
+    var scrim = document.querySelector('.f4g-scrim');
+    if (!scrim) {
+      scrim = document.createElement('div');
+      scrim.className = 'f4g-scrim';
+      document.body.appendChild(scrim);
+    }
+
+    function sync() {
+      var open = sidebar.classList.contains('open');
+      scrim.classList.toggle('show', open);
+      document.body.classList.toggle('f4g-locked', open);
+    }
+
+    // watches whatever your existing hamburger handler does to .sidebar
+    new MutationObserver(sync).observe(sidebar, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    scrim.addEventListener('click', function () {
+      sidebar.classList.remove('open');
+    });
+
+    // tapping a tab should close the drawer on phones
+    sidebar.querySelectorAll('.nav-btn, .logout-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (window.matchMedia('(max-width: 768px)').matches) {
+          sidebar.classList.remove('open');
+        }
+      });
+    });
+
+    // never leave the drawer stuck open when rotating to landscape / tablet
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 768) sidebar.classList.remove('open');
+    });
+
+    sync();
+  });
+})();

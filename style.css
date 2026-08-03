@@ -2292,3 +2292,71 @@ body.f4g-locked { overflow: hidden; }
   .analytics-grid, .planner-summary-grid { grid-template-columns: 1fr; }
   #landingPage .hero-photo { width: 42vw; height: 42vw; }
 }
+
+
+/* =========================================================================
+   FARM4GLASS — FARM ACCENTS
+   Paste at the END of style.css (after the mobile layer).
+
+   Three accents, nothing more. Blue stays the brand color, Montserrat stays,
+   no emoji. Each block is labelled — delete any one you don't like and the
+   other two keep working.
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   ACCENT 1 — Barn watermark on the level card
+   A big pale barn sitting behind your animal, on the blue gradient card.
+   ------------------------------------------------------------------------- */
+
+#portal .animal-card::before {
+  content: "";
+  position: absolute; right: -6px; bottom: -20px;
+  width: 165px; height: 165px; z-index: 0;
+  pointer-events: none; opacity: .13;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 21V11l4-3.5L12 4l5 3.5 4 3.5v10Z'/%3E%3Cpath d='M10 21v-6.5h4V21'/%3E%3Cpath d='m10 14.5 4 6.5M14 14.5l-4 6.5'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+/* keep the text and animal above the watermark */
+#portal .animal-card .ac-left,
+#portal .animal-card .ac-right { position: relative; z-index: 1; }
+
+@media (max-width: 768px) {
+  #portal .animal-card::before { width: 120px; height: 120px; right: -12px; bottom: -22px; }
+}
+
+/* -------------------------------------------------------------------------
+   ACCENT 2 — Wheat sprig on the landing eyebrows
+   Slots into the pill labels you already have above each section heading.
+   ------------------------------------------------------------------------- */
+
+#landingPage .section-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+}
+#landingPage .section-tag::before {
+  content: ""; width: 13px; height: 13px; flex-shrink: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f5f8c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21V9'/%3E%3Cpath d='M12 12c-2.2 0-4-1.8-4-4 2.2 0 4 1.8 4 4Z'/%3E%3Cpath d='M12 12c2.2 0 4-1.8 4-4-2.2 0-4 1.8-4 4Z'/%3E%3Cpath d='M12 7.5c-2.2 0-4-1.8-4-4 2.2 0 4 1.8 4 4Z'/%3E%3Cpath d='M12 7.5c2.2 0 4-1.8 4-4-2.2 0-4 1.8-4 4Z'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+#landingPage .section-tag.light::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21V9'/%3E%3Cpath d='M12 12c-2.2 0-4-1.8-4-4 2.2 0 4 1.8 4 4Z'/%3E%3Cpath d='M12 12c2.2 0 4-1.8 4-4-2.2 0-4 1.8-4 4Z'/%3E%3Cpath d='M12 7.5c-2.2 0-4-1.8-4-4 2.2 0 4 1.8 4 4Z'/%3E%3Cpath d='M12 7.5c2.2 0 4-1.8 4-4-2.2 0-4 1.8-4 4Z'/%3E%3C/svg%3E");
+}
+
+/* -------------------------------------------------------------------------
+   ACCENT 3 — Pasture hills above the landing footer
+   Uses the blue you already end the page on, so it reads as rolling field
+   rather than a stock wave divider.
+   ------------------------------------------------------------------------- */
+
+#landingPage .landing-footer {
+  position: relative;
+  border-top: none;
+  padding-top: 72px;
+}
+#landingPage .landing-footer::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0;
+  height: 58px; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 60' preserveAspectRatio='none'%3E%3Cpath d='M0 60V36c130-22 235 6 360 3s185-27 305-25 195 27 300 23 145-17 235-11v34Z' fill='%23ffffff' fill-opacity='.5'/%3E%3Cpath d='M0 60V46c150-16 250 8 380 5s195-21 315-19 190 22 290 18 130-12 215-7v17Z' fill='%23ffffff' fill-opacity='.42'/%3E%3C/svg%3E") no-repeat center bottom / 100% 100%;
+}
+
+@media (max-width: 700px) {
+  #landingPage .landing-footer { padding-top: 54px; }
+  #landingPage .landing-footer::before { height: 40px; }
+}

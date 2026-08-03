@@ -1404,7 +1404,79 @@ function buildRecommendations(courseRows, quizScores, log) {
   return recs.slice(0, 5);
 }
 
+// ========================= KPI VISUALS =========================
+// Each performance indicator gets a banner keyed to its instructional area, so
+// the detail pane opens on something visual instead of a wall of text. Same
+// stroke-SVG language as the rest of the site — no emoji, no photos to host.
+const KPI_ART = {
+  promotion: { color: "#f59e0b", label: "Promotion", svg: `<path d="M3 11v4a1 1 0 0 0 1 1h3l7 4V6l-7 4H4a1 1 0 0 0-1 1z"/><path d="M18 8a5 5 0 0 1 0 8"/><path d="M21 5a9 9 0 0 1 0 14"/>` },
+  distribution: { color: "#167db5", label: "Channel Management", svg: `<rect x="1" y="7" width="13" height="10" rx="1.5"/><path d="M14 10h4l3 3.5V17h-7z"/><circle cx="6" cy="18.5" r="2"/><circle cx="17" cy="18.5" r="2"/>` },
+  selling: { color: "#059669", label: "Selling", svg: `<path d="M3 12l4-4 3 3 5-5"/><path d="M20 4h-5M20 4v5"/><path d="M3 20h18"/><path d="M7 20v-4M12 20v-7M17 20v-10"/>` },
+  pricing: { color: "#38bdf8", label: "Pricing", svg: `<path d="M20.6 12.6 12 4H4v8l8.6 8.6a2 2 0 0 0 2.8 0l5.2-5.2a2 2 0 0 0 0-2.8z"/><circle cx="8" cy="8" r="1.4" fill="currentColor" stroke="none"/>` },
+  product: { color: "#8b5cf6", label: "Product/Service Management", svg: `<path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="m3 7 9 5 9-5M12 12v10"/>` },
+  research: { color: "#167db5", label: "Marketing-Information Management", svg: `<circle cx="10.5" cy="10.5" r="6.5"/><path d="m21 21-5.5-5.5"/><path d="M8 12v-2M10.5 12V8M13 12v-3"/>` },
+  finance: { color: "#059669", label: "Finance", svg: `<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>` },
+  law: { color: "#1e3a5f", label: "Business Law", svg: `<path d="M12 3v18M7 21h10"/><path d="M3 8h18M6 8l-3 6h6zM18 8l-3 6h6z"/>` },
+  communication: { color: "#38bdf8", label: "Communication Skills", svg: `<path d="M14 3H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2v4l4-4h4a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1z"/><path d="M18 8h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-1v3l-3-3"/>` },
+  customer: { color: "#f59e0b", label: "Customer Relations", svg: `<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M19.5 6.5a1.8 1.8 0 0 0-2.5 0 1.8 1.8 0 0 0-2.5 0c-.7.7-.7 1.9 0 2.6l2.5 2.4 2.5-2.4c.7-.7.7-1.9 0-2.6z"/>` },
+  economics: { color: "#167db5", label: "Economics", svg: `<path d="M3 20h18"/><path d="m4 15 5-5 4 3 6-7"/><path d="M19 6h-4M19 6v4"/>` },
+  growth: { color: "#8b5cf6", label: "Professional Development", svg: `<path d="M4 21V10h4v11M10 21V6h4v15M16 21V13h4v8"/><path d="M3 21h18"/>` },
+  entrepreneurship: { color: "#f59e0b", label: "Entrepreneurship", svg: `<path d="M12 2c3.5 3 5 6.5 5 10a5 5 0 0 1-10 0c0-3.5 1.5-7 5-10z"/><path d="M9 17c-1.5 1.5-2 3.5-2 5 1.5 0 3.5-.5 5-2 1.5 1.5 3.5 2 5 2 0-1.5-.5-3.5-2-5"/>` },
+  people: { color: "#059669", label: "Human Resources", svg: `<circle cx="9" cy="7" r="4"/><path d="M2 21v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2"/><path d="M18 8v6M15 11h6"/>` },
+  operations: { color: "#1e3a5f", label: "Operations", svg: `<circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>` },
+  strategy: { color: "#8b5cf6", label: "Strategic Management", svg: `<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>` },
+  info: { color: "#38bdf8", label: "Information Management", svg: `<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>` },
+  default: { color: "#167db5", label: "Performance Indicator", svg: `<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/>` }
+};
+
+// Checked in order — first match wins, so put the specific ones first.
+const KPI_ART_KEYWORDS = [
+  [/promotion|advertis|public relations|sales promotion/i, "promotion"],
+  [/channel|distribut|supply chain|logistic/i, "distribution"],
+  [/\bselling\b|\bsales\b|professional selling/i, "selling"],
+  [/pricing|price/i, "pricing"],
+  [/product\/service|product management|branding/i, "product"],
+  [/marketing-information|market research|marketing research/i, "research"],
+  [/financial analysis|accounting|insurance|credit|investment|financial/i, "finance"],
+  [/business law|legal|ethic|risk management/i, "law"],
+  [/communicat/i, "communication"],
+  [/customer relation/i, "customer"],
+  [/econom/i, "economics"],
+  [/emotional intelligence|professional development|career/i, "growth"],
+  [/entrepreneur/i, "entrepreneurship"],
+  [/human resource|staffing|talent/i, "people"],
+  [/operation|quality management|safety|project management/i, "operations"],
+  [/strategic management|market planning|selling strategy/i, "strategy"],
+  [/information management|knowledge management|technology/i, "info"]
+];
+
+function kpiArtFor(k) {
+  const haystack = `${k.area || ""} ${k.element || ""} ${k.standard || ""} ${k.cluster || ""} ${k.title || ""}`;
+  for (const [re, key] of KPI_ART_KEYWORDS) {
+    if (re.test(haystack)) return KPI_ART[key];
+  }
+  return KPI_ART.default;
+}
+
 // ========================= KPI DATABASE =========================
+// Cluster filter buttons, built from whatever clusters the loaded data actually
+// contains. A cluster string can be compound ("Marketing · Channel Management ·
+// Tier 2"), so the filter keys off the first segment only.
+function kpiPrimaryCluster(k) {
+  return String(k.cluster || "").split("·")[0].split("/")[0].trim() || "Other";
+}
+
+function kpiCategories() {
+  const found = [...new Set(kpis.map(kpiPrimaryCluster))].filter(Boolean).sort();
+  return ["All KPIs", ...found];
+}
+
+window.filterKPIsByCategory = function(cat) {
+  kpiActiveCategory = cat;
+  selectedKPIId = null; // old selection may not be in the new filter
+  renderKPIList();
+};
+
 function renderKPIList() {
   const container = document.getElementById("kpiContent");
   if (!container) return;
@@ -1417,10 +1489,22 @@ function renderKPIList() {
   const q = document.getElementById("kpiSearch")?.value.toLowerCase() || "";
   const bookmarked = userData?.bookmarkedKPIs || [];
 
-  const matches = kpis.filter(k =>
-    `${k.title} ${k.cluster} ${k.code || ""} ${k.area || ""} ${k.tierShort || ""} ${k.levelName || ""}`
-      .toLowerCase().includes(q)
-  );
+  const cats = kpiCategories();
+  if (!cats.includes(kpiActiveCategory)) kpiActiveCategory = "All KPIs";
+
+  const filtersHtml = cats.map(cat => `
+    <button class="cat-btn ${cat === kpiActiveCategory ? "active" : ""}" onclick="filterKPIsByCategory('${cat.replace(/'/g, "\\'")}')">
+      ${cat === "All KPIs" ? cat : `${cat} KPIs`}
+    </button>
+  `).join("");
+
+  const matches = kpis.filter(k => {
+    const inCat = kpiActiveCategory === "All KPIs" || kpiPrimaryCluster(k) === kpiActiveCategory;
+    const inSearch = `${k.title} ${k.cluster} ${k.code || ""} ${k.area || ""} ${k.tierShort || ""} ${k.levelName || ""}`
+      .toLowerCase().includes(q);
+    return inCat && inSearch;
+  });
+
   // 892 indicators is a lot of DOM for a school laptop — show a slice and let
   // search narrow it. Raise KPI_LIST_LIMIT to render more at once.
   const KPI_LIST_LIMIT = 250;
@@ -1443,6 +1527,7 @@ function renderKPIList() {
   const selected = filtered.find(k => k.id === selectedKPIId) || filtered[0];
 
   container.innerHTML = `
+    <div class="category-filters">${filtersHtml}</div>
     <div class="kpi-layout">
       <div class="kpi-list">${listHtml}${moreHtml}</div>
       <div class="kpi-detail" id="kpiDetail">${selected ? renderKPIDetailHtml(selected) : `<div class="admin-empty-state">Select a performance indicator.</div>`}</div>
@@ -1452,6 +1537,7 @@ function renderKPIList() {
 
 function renderKPIDetailHtml(k) {
   const isBookmarked = (userData?.bookmarkedKPIs || []).includes(k.id);
+  const art = kpiArtFor(k);
   const section = (label, body) =>
     body ? `<div class="kpi-section"><h4>${label}</h4><p>${body}</p></div>` : "";
 
@@ -1469,13 +1555,31 @@ function renderKPIDetailHtml(k) {
     section("Sample Answer", k.sampleAnswer)
   ].join("");
 
+  const bannerHtml = `
+    <div style="display:flex;align-items:center;gap:18px;padding:22px 24px;margin-bottom:20px;border-radius:14px;
+                background:linear-gradient(135deg, ${art.color}1f 0%, ${art.color}08 100%);
+                border:1px solid ${art.color}33;">
+      <div style="flex:0 0 auto;width:56px;height:56px;display:flex;align-items:center;justify-content:center;
+                  border-radius:12px;background:${art.color}22;color:${art.color};">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor"
+             stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${art.svg}</svg>
+      </div>
+      <div style="min-width:0;">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:${art.color};">
+          ${k.area || art.label}
+        </div>
+        ${meta ? `<div style="font-size:13px;color:var(--muted);margin-top:4px;">${meta}</div>` : ""}
+      </div>
+    </div>
+  `;
+
   return `
     <div class="kpi-detail-head">
       <span class="kpi-cluster-tag">${k.cluster}</span>
       <button class="bookmark-btn ${isBookmarked ? "active" : ""}" onclick="toggleKPIBookmark('${k.id}')" title="${isBookmarked ? "Remove bookmark" : "Bookmark this PI"}">${icon(isBookmarked ? "bookmarkFilled" : "bookmark")}</button>
     </div>
+    ${bannerHtml}
     <h2>${k.title}</h2>
-    ${meta ? `<div class="kpi-cluster-tag">${meta}</div>` : ""}
     ${section("Instructional Area", k.standard ? `${k.area} — ${k.standard}` : k.area)}
     ${section("Performance Element", k.element)}
     ${(k.appearsIn && k.appearsIn.length > 1) ? section("Also Tested In", k.appearsIn.join(" · ")) : ""}
@@ -2499,6 +2603,42 @@ function youtubeEmbedId(url) {
   return null;
 }
 
+// Admins usually paste a link to the PAGE an image sits on, not the image
+// itself — a Drive "share" link or a Dropbox preview page. Those return HTML,
+// not an image, so the <img> silently fails. Rewrite the common ones into
+// direct-file URLs. Anything already ending in a real image extension is left
+// alone.
+function blogImageUrl(url) {
+  const raw = String(url || "").trim();
+  if (!raw) return "";
+
+  const drive = raw.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([A-Za-z0-9_-]{20,})/);
+  if (drive) return `https://drive.google.com/thumbnail?id=${drive[1]}&sz=w1200`;
+
+  if (raw.includes("dropbox.com")) return raw.replace(/[?&]dl=0/, "").replace("www.dropbox.com", "dl.dropboxusercontent.com");
+
+  return raw;
+}
+
+// Short teaser for the card. Collapses whitespace and cuts on a word boundary.
+function blogPreview(text, max = 220) {
+  const clean = String(text || "").replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 40 ? cut.slice(0, lastSpace) : cut) + "…";
+}
+
+// Full body: blank lines become paragraphs, single newlines become breaks.
+function blogBodyHtml(text) {
+  return String(text || "")
+    .split(/\n\s*\n/)
+    .map(p => p.trim())
+    .filter(Boolean)
+    .map(p => `<p>${p.replace(/\n/g, "<br>")}</p>`)
+    .join("");
+}
+
 function renderBlogList() {
   const container = document.getElementById("blogContent");
   if (!container) return;
@@ -2515,16 +2655,15 @@ function renderBlogList() {
   container.innerHTML = `
     <div class="blog-grid">
       ${blogs.map(post => {
-        const ytId = youtubeEmbedId(post.videoUrl);
+        const cover = blogImageUrl(post.coverImage);
         return `
           <article class="blog-card">
-            ${post.coverImage ? `<img class="blog-cover" src="${post.coverImage}" alt="${post.title}">` : ""}
+            ${cover ? `<img class="blog-cover" src="${cover}" alt="${post.title}" onerror="this.style.display='none'">` : ""}
             <div class="blog-card-body">
               <div class="blog-meta">${post.authorName || "Farm4Glass Team"} · ${post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}</div>
               <h3>${post.title}</h3>
-              <p>${post.body}</p>
-              ${ytId ? `<div class="blog-video"><iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen></iframe></div>` : ""}
-              ${post.videoUrl && !ytId ? `<a class="blog-reel-link" href="${post.videoUrl}" target="_blank" rel="noopener">${icon("play")} Watch Reel ↗</a>` : ""}
+              <p>${blogPreview(post.body)}</p>
+              <button class="admin-btn-sm" style="margin-top:12px;" onclick="openBlogPost('${post.id}')">Read More →</button>
             </div>
           </article>
         `;
@@ -2532,6 +2671,35 @@ function renderBlogList() {
     </div>
   `;
 }
+
+// Full post, rendered in place of the grid inside the Blog tab.
+window.openBlogPost = function(id) {
+  const post = blogs.find(b => b.id === id);
+  if (!post) return;
+
+  const container = document.getElementById("blogContent");
+  if (!container) return;
+
+  const cover = blogImageUrl(post.coverImage);
+  const ytId = youtubeEmbedId(post.videoUrl);
+
+  container.innerHTML = `
+    <div class="blog-post-view">
+      <div class="lv-back" onclick="closeBlogPost()">← Back to Blog</div>
+      ${cover ? `<img class="blog-cover" src="${cover}" alt="${post.title}" style="width:100%;border-radius:14px;margin-bottom:20px;" onerror="this.style.display='none'">` : ""}
+      <h1 style="margin-bottom:8px;">${post.title}</h1>
+      <div class="blog-meta" style="margin-bottom:24px;">${post.authorName || "Farm4Glass Team"} · ${post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}</div>
+      <div class="blog-post-body">${blogBodyHtml(post.body)}</div>
+      ${ytId ? `<div class="blog-video" style="margin-top:24px;"><iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen></iframe></div>` : ""}
+      ${post.videoUrl && !ytId ? `<a class="blog-reel-link" href="${post.videoUrl}" target="_blank" rel="noopener">${icon("play")} Watch Reel ↗</a>` : ""}
+    </div>
+  `;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+window.closeBlogPost = function() {
+  renderBlogList();
+};
 
 function renderAdminBlogSection() {
   const body = document.getElementById("adminSubtabBody");

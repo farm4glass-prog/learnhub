@@ -1311,6 +1311,7 @@ function renderAnalytics() {
         <div>
           <div class="rec-card-title">${r.title}</div>
           <div class="rec-card-desc">${r.desc}</div>
+          ${r.action ? `<button class="admin-btn-sm" style="margin-top:10px;" onclick="${r.action.call}">${r.action.label} →</button>` : ""}
         </div>
       </div>
     `).join("") || `<div class="admin-empty-state">Complete a few lessons to unlock personalized recommendations.</div>`}
@@ -1337,6 +1338,9 @@ function renderAnalytics() {
   `;
 }
 
+// Each recommendation carries an `action`: the button label plus the call that
+// takes the student straight there. Only IDs go inside the onclick — course and
+// lesson titles can contain apostrophes and would break the attribute.
 function buildRecommendations(courseRows, quizScores, log) {
   const recs = [];
 
@@ -1348,7 +1352,11 @@ function buildRecommendations(courseRows, quizScores, log) {
     recs.push({
       icon: "target",
       title: `Retake "${w.lesson.title}"`,
-      desc: `You scored ${w.score}% on this quiz in ${w.course.title} — a quick retake could meaningfully boost your average.`
+      desc: `You scored ${w.score}% on this quiz in ${w.course.title} — a quick retake could meaningfully boost your average.`,
+      action: {
+        label: "Retake Quiz",
+        call: `openLesson('${w.course.id}', '${w.lesson.id}')`
+      }
     });
   });
 
@@ -1360,19 +1368,37 @@ function buildRecommendations(courseRows, quizScores, log) {
         recs.push({
           icon: "bulb",
           title: `Pick back up on ${r.course.title}`,
-          desc: `You're ${r.pct}% through this course but haven't touched it recently — even one more unit keeps your progress moving.`
+          desc: `You're ${r.pct}% through this course but haven't touched it recently — even one more unit keeps your progress moving.`,
+          action: {
+            label: "Continue Course",
+            call: `openCourse('${r.course.id}')`
+          }
         });
       }
     }
   });
 
   if (!userData.streak) {
-    recs.push({ icon: "flame", title: "Start a study streak today", desc: "Complete just one lesson today to start building a streak — consistency compounds fast." });
+    recs.push({
+      icon: "flame",
+      title: "Start a study streak today",
+      desc: "Complete just one lesson today to start building a streak — consistency compounds fast.",
+      action: { label: "Browse Courses", call: `showTab('courses')` }
+    });
   }
 
   const untouched = courseRows.length ? courses.filter(c => c.lessons.length > 0 && !courseRows.some(r => r.course.id === c.id)) : courses.filter(c => c.lessons.length > 0);
   if (untouched.length && recs.length < 4) {
-    recs.push({ icon: "book", title: `Try ${untouched[0].title}`, desc: "You haven't started this course yet — it's a good candidate for your next study session." });
+    const next = untouched[0];
+    recs.push({
+      icon: "book",
+      title: `Try ${next.title}`,
+      desc: "You haven't started this course yet — it's a good candidate for your next study session.",
+      action: {
+        label: `Start ${next.title}`,
+        call: `openCourse('${next.id}')`
+      }
+    });
   }
 
   return recs.slice(0, 5);

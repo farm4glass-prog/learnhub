@@ -30,18 +30,41 @@ function isAdmin(user) {
 
 const app = initializeApp(firebaseConfig);
 
+// ========================= APP CHECK =========================
 // App Check is required by Firebase AI Logic (used by the Prepared Event AI tab).
 // Register the site under Firebase console > Security > App Check with reCAPTCHA v3
 // and paste the site key below. The site key is public — safe to commit.
+//
+// Leaving this blank turns App Check OFF. The rest of the site works normally;
+// only the Prepared Event AI tab is disabled. Registering a PLACEHOLDER key is
+// worse than none at all — reCAPTCHA returns 400s and, if App Check enforcement
+// is on for Firestore, every read fails as "Missing or insufficient permissions".
+//
 // On localhost, the debug flag prints a token in the console; register it under
 // App Check > Apps > Manage debug tokens.
+const RECAPTCHA_V3_SITE_KEY = "";
+
 if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
   self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 }
-initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider("YOUR_RECAPTCHA_V3_SITE_KEY"),
-  isTokenAutoRefreshEnabled: true
-});
+
+let appCheckReady = false;
+if (RECAPTCHA_V3_SITE_KEY && !RECAPTCHA_V3_SITE_KEY.startsWith("YOUR_")) {
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(RECAPTCHA_V3_SITE_KEY),
+      isTokenAutoRefreshEnabled: true
+    });
+    appCheckReady = true;
+  } catch (e) {
+    console.error("App Check failed to initialize:", e);
+  }
+} else {
+  console.warn(
+    "App Check is off — no reCAPTCHA v3 site key set in script.js. " +
+    "Everything works except Prepared Event AI, which needs it."
+  );
+}
 
 const auth = initializeAuth(app, {
   persistence: [browserLocalPersistence, browserSessionPersistence],
@@ -174,13 +197,6 @@ const ANIMALS = [
   { name: "Cow",         tagline: "Mooo-ving up in the DECA world!",      xpNeeded: 2500, level: 6 },
   { name: "Goat",     tagline: "The farm's greatest of all time!",         xpNeeded: Infinity, level: 7 }
 ];
-
-function getAnimal(xp) {
-  for (let i = ANIMALS.length - 1; i >= 0; i--) {
-    if (i === 0 || xp >= ANIMALS[i - 1].xpNeeded) return { ...ANIMALS[i], index: i };
-  }
-  return { ...ANIMALS[0], index: 0 };
-}
 
 function getAnimalForXP(xp) {
   let current = ANIMALS[0];
@@ -379,6 +395,11 @@ document.getElementById("landingLogin")?.addEventListener("click", loginWithGoog
 document.getElementById("heroLogin")?.addEventListener("click", loginWithGoogle);
 document.getElementById("aboutLogin")?.addEventListener("click", loginWithGoogle);
 
+// Bound once here, not inside renderSidebar(). renderSidebar runs on every XP
+// change, and re-binding there stacked up a new listener each time — one click
+// then fired signOut several times over.
+document.getElementById("logoutBtn")?.addEventListener("click", () => signOut(auth));
+
 // ========================= AUTH STATE =========================
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -388,6 +409,9 @@ onAuthStateChanged(auth, async (user) => {
 
     document.getElementById("landingPage")?.classList.add("hidden");
     document.getElementById("portal")?.classList.remove("hidden");
+
+    // Everything that reads Firestore starts here, not at page load.
+    startDataLoads();
 
     try {
       const userRef = doc(db, "users", user.uid);
@@ -482,6 +506,25 @@ async function updateStreak(userRef) {
   }
 }
 
+// ========================= DATA LOADS =========================
+// These all read Firestore, and Firestore rules require a signed-in user.
+// Calling them at page load fired them BEFORE Firebase finished restoring the
+// session, so every one came back "Missing or insufficient permissions".
+// onAuthStateChanged calls startDataLoads() instead, once there's a real user.
+let dataLoadsStarted = false;
+function startDataLoads() {
+  if (dataLoadsStarted) return;
+  dataLoadsStarted = true;
+  loadCourses();
+  loadKPIs();
+  loadCalendarEvents();
+  loadBlogs();
+  loadRubrics();
+}
+
+// This one touches no network, so it can run immediately.
+populateAssociationsDatalist();
+
 // ========================= COURSES LOAD =========================
 // Courses live in the "courses" collection in Firestore so admin edits are
 // saved permanently for every user. courses.json seeds the database the first
@@ -490,7 +533,7 @@ async function loadCourses() {
   try {
     const snap = await getDocs(collection(db, "courses"));
     if (!snap.empty) {
-      courses = snap.docs.map(d => normalizeCourse(d.data()));
+      courses = snap.docs.map((d, i) => normalizeCourse(d.data(), i));
       coursesLoaded = true;
       renderCourseGrid();
       renderFeaturedCourses();
@@ -535,12 +578,6 @@ function normalizeCourse(course, courseIndex = 0) {
     }))
   };
 }
-
-loadCourses();
-loadKPIs();
-loadCalendarEvents();
-loadBlogs();
-populateAssociationsDatalist();
 
 // ========================= KPI LOAD =========================
 // The full DECA Marketing Career Cluster PI list lives in kpis.json (static,
@@ -603,10 +640,6 @@ function renderSidebar() {
   document.getElementById("saName").textContent = animal.name;
   document.getElementById("saXp").textContent = `${userData.xp} / ${animal.xpNeeded === Infinity ? "MAX" : animal.xpNeeded} XP`;
   document.getElementById("saFill").style.width = fill + "%";
-
-  document.getElementById("logoutBtn")?.addEventListener("click", async () => {
-    await signOut(auth);
-  }, { once: true });
 }
 
 // ========================= DASHBOARD =========================
@@ -2777,10 +2810,9 @@ window.reviewExam = function() {
     </div>
   `;
 };
+
 /* =========================================================================
    FARM4GLASS — ADDITIONS
-   Paste this whole file at the END of script.js.
-   Requires the import + small edits described in update-guide.md.
    ========================================================================= */
 
 
@@ -2909,10 +2941,14 @@ let peResultEvent = null;
 let adminEditingRubricId = null;
 let peModel = null;
 
+// Verify this against the current Firebase AI Logic model list before launch —
+// a model name that doesn't exist fails at request time, not at page load.
 const PE_MODEL_NAME = "gemini-3.5-flash";
 const PE_MAX_MB = 15;
 
 // ---- load rubrics -------------------------------------------------------
+// Called from startDataLoads(), never at page load — see the DATA LOADS
+// section above for why.
 async function loadRubrics() {
   try {
     const snap = await getDocs(collection(db, "rubrics"));
@@ -2936,7 +2972,6 @@ async function loadRubrics() {
   if (document.getElementById("prepared")?.classList.contains("active")) renderPreparedEventTab();
   if (adminActiveSubTab === "rubrics" && document.getElementById("admin")?.classList.contains("active")) renderAdminRubricsSection();
 }
-loadRubrics();
 
 function rubricIsReady(r) {
   return !!(r && ((r.rubricSections && r.rubricSections.length) || (r.penaltyRules && r.penaltyRules.length)));
@@ -3095,6 +3130,9 @@ window.peClearFile = function() {
 window.analyzePreparedEvent = async function() {
   const rubric = rubrics.find(r => r.id === peSelectedEventId);
 
+  if (!appCheckReady) {
+    return alert("This tab needs App Check turned on. Add your reCAPTCHA v3 site key to RECAPTCHA_V3_SITE_KEY at the top of script.js, then reload.");
+  }
   if (!rubric) return alert("Pick your event first.");
   if (!peFile) return alert("Upload your written entry as a PDF first.");
   if (!rubricIsReady(rubric)) {
@@ -3224,13 +3262,15 @@ function renderPreparedEventTab() {
        </div>`
     : "";
 
-  const canRun = selected && ready && peFile && !peBusy;
+  const canRun = appCheckReady && selected && ready && peFile && !peBusy;
 
   container.innerHTML = `
     <div class="pe-layout">
       <div>
         <div class="widget">
           <div class="widget-header"><span>Submit your entry</span></div>
+
+          ${!appCheckReady ? `<div class="planner-warning">${icon("alert")} AI review is turned off until a reCAPTCHA v3 site key is added to script.js. Everything else on the site works normally.</div>` : ""}
 
           <div class="form-group">
             <label>Your DECA Event</label>

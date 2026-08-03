@@ -1916,3 +1916,379 @@ h1, h2, .logo-text, .nav-links a, .hero-title,
 /* ---------- empty / loading states ---------- */
 #portal .admin-empty-state,
 #portal .lb-loading { color: #6b8aa8; }
+
+/* =========================================================================
+   FARM4GLASS — MOBILE & iOS LAYER
+   Paste this at the VERY END of style.css (after the portal v2 block).
+
+   Additive only. Every rule is inside a max-width media query or is a
+   safe-area/overflow guard, so nothing about the desktop look changes.
+   Same colors, same fonts, same components — they just stop getting cut off.
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   0. GLOBAL GUARDS
+   ------------------------------------------------------------------------- */
+
+/* Stop iOS from inflating text in landscape */
+html { -webkit-text-size-adjust: 100%; }
+
+/* Nothing should ever push the page wider than the phone */
+body { overflow-x: hidden; }
+img, iframe, video, canvas, table { max-width: 100%; }
+
+/* A flex child (.main) will happily grow past its parent unless told not to.
+   This is what lets a wide grid inside the portal blow out the whole page. */
+.main { min-width: 0; }
+
+/* 100vh on iOS Safari doesn't account for the URL bar, so the bottom of the
+   page sits below the fold. 100dvh does. */
+@supports (height: 100dvh) {
+  body, #portal, .main { min-height: 100dvh; }
+}
+
+/* Notch + home bar. Requires viewport-fit=cover in the meta tag. */
+.top-nav {
+  height: auto;
+  min-height: calc(68px + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
+}
+#landingPage { padding-top: calc(68px + env(safe-area-inset-top)); }
+
+/* -------------------------------------------------------------------------
+   1. LANDING NAV — HAMBURGER
+   The three-line button is created by the JS snippet; these are its styles.
+   ------------------------------------------------------------------------- */
+
+.nav-toggle { display: none; }
+
+@media (max-width: 860px) {
+  .top-nav { position: fixed; }
+  #landingPage .top-nav { padding-left: 18px; padding-right: 12px; }
+
+  .nav-logo { gap: 9px; }
+  .nav-logo .logo-icon { width: 32px; height: 32px; }
+  #landingPage .top-nav .logo-text { font-size: 17px; }
+
+  /* the button itself — 44px tap target, three bars that fold into an X */
+  .nav-toggle {
+    display: flex; flex-direction: column; justify-content: center;
+    gap: 5px; width: 44px; height: 44px; padding: 0 10px;
+    background: none; border: none; cursor: pointer; flex-shrink: 0;
+  }
+  .nav-toggle span {
+    display: block; width: 24px; height: 2.5px; border-radius: 2px;
+    background: #0a1a2b;
+    transition: transform .3s cubic-bezier(.2,.8,.2,1), opacity .2s;
+  }
+  .top-nav.open .nav-toggle span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .top-nav.open .nav-toggle span:nth-child(2) { opacity: 0; }
+  .top-nav.open .nav-toggle span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+  /* the panel that expands underneath */
+  .top-nav .nav-links {
+    position: absolute; top: 100%; left: 0; right: 0;
+    flex-direction: column; align-items: stretch; gap: 0;
+    padding: 4px 20px 16px;
+    background: rgba(255,255,255,.97);
+    backdrop-filter: saturate(1.7) blur(16px);
+    border-bottom: 1px solid rgba(15,95,140,.12);
+    box-shadow: 0 18px 40px rgba(15,95,140,.18);
+    max-height: 0; opacity: 0; overflow: hidden;
+    transition: max-height .34s cubic-bezier(.2,.8,.2,1), opacity .22s ease;
+  }
+  .top-nav.open .nav-links {
+    max-height: 75vh; opacity: 1; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #landingPage .top-nav .nav-links a {
+    font-size: 16px; padding: 15px 2px;
+    border-bottom: 1px solid rgba(15,95,140,.09);
+  }
+  .top-nav .nav-links .nav-login-btn {
+    width: 100%; margin-top: 14px; padding: 14px; font-size: 15px;
+  }
+
+  /* fallback: if the login button sits outside .nav-links in the HTML,
+     keep it compact so it still fits beside the hamburger */
+  .top-nav > .nav-login-btn {
+    margin-left: auto; margin-right: 4px;
+    padding: 9px 16px; font-size: 13px;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   2. LANDING PAGE
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 700px) {
+  #landingPage .landing-hero { padding: 40px 20px 56px; gap: 30px; }
+  #landingPage .hero-eyebrow { margin-bottom: 20px; font-size: 12px; }
+  #landingPage .hero-title { font-size: clamp(38px, 11.5vw, 58px); letter-spacing: -.03em; }
+  #landingPage .hero-title .hero-script { font-size: clamp(30px, 9vw, 46px); }
+  #landingPage .hero-subtitle { font-size: 16px; margin-top: 20px; line-height: 1.6; }
+
+  #landingPage .hero-btns { flex-direction: column; align-items: stretch; gap: 12px; margin-top: 30px; }
+  #landingPage .hero-btns .btn-primary,
+  #landingPage .hero-btns .btn-ghost { width: 100%; text-align: center; padding: 15px 20px; }
+
+  #landingPage .hero-stats-row { gap: 22px 30px; margin-top: 34px; }
+  #landingPage .hs-num { font-size: 27px; }
+
+  /* THE BIG ONE: the hero photos and badge are position:absolute, and
+     #landingPage has overflow-x:hidden — so on a phone they were being
+     clipped off the right edge. Put them back in normal flow. */
+  #landingPage .hero-visual {
+    position: static; min-height: 0;
+    display: flex; flex-wrap: wrap; justify-content: center;
+    align-items: center; gap: 16px;
+  }
+  #landingPage .hero-photo {
+    position: static; inset: auto;
+    width: 40vw; height: 40vw; max-width: 168px; max-height: 168px;
+    border-width: 5px; flex-shrink: 0;
+  }
+  #landingPage .hero-badge {
+    position: static; inset: auto;
+    flex-basis: 100%; min-width: 0; width: 100%;
+  }
+
+  /* section rhythm */
+  #landingPage .features-section,
+  #landingPage .story-section,
+  #landingPage .team-section,
+  #landingPage .guests-section,
+  #landingPage .cta-section { padding-left: 20px; padding-right: 20px; padding-bottom: 68px; }
+  #landingPage .section-head { margin-bottom: 34px; }
+  #landingPage .section-head h2 { font-size: clamp(28px, 8.5vw, 42px); }
+  #landingPage .section-tag { margin-bottom: 16px; font-size: 11px; padding: 6px 13px; }
+
+  #landingPage .feature-card,
+  #landingPage .team-card,
+  #landingPage .guest-card { padding: 24px; border-radius: 20px; }
+  #landingPage .feature-card h3 { font-size: 19px; }
+
+  #landingPage .about-section { padding: 48px 22px; margin: 0 16px 68px; border-radius: 24px; }
+  #landingPage .animal-showcase { padding: 22px 16px; gap: 10px; }
+
+  #landingPage .story-section p { font-size: 16px; line-height: 1.75; }
+  #landingPage .story-mission { font-size: 17px !important; padding-left: 16px; }
+
+  #landingPage .marquee { margin: 6px 0 60px; padding: 15px 0; }
+  #landingPage .marquee-track span { font-size: 17px; }
+  #landingPage .marquee-track { gap: 22px; }
+
+  #landingPage .cta-inner { padding: 48px 22px; border-radius: 26px; }
+  #landingPage .cta-inner p { font-size: 16px; }
+
+  #landingPage .team-card img,
+  #landingPage .guest-card img { width: 108px; height: 108px; }
+}
+
+/* -------------------------------------------------------------------------
+   3. PORTAL — LAYOUTS WITH NO MOBILE FALLBACK
+   These fixed-pixel grid columns were the other source of horizontal cutoff.
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+  .kpi-layout   { grid-template-columns: 1fr; }
+  .admin-layout { grid-template-columns: 1fr; }
+  .analytics-grid { grid-template-columns: repeat(2, 1fr); }
+  .planner-summary-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .kpi-list { max-height: 320px; }
+  .admin-members-table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .admin-members-row { min-width: 600px; }
+  .admin-option-inputs { grid-template-columns: 1fr; }
+  .admin-field-row input,
+  .admin-field-row select { min-width: 0; }
+}
+
+/* -------------------------------------------------------------------------
+   4. PORTAL — SIDEBAR, SCRIM, HEADER
+   ------------------------------------------------------------------------- */
+
+/* scrim behind the open sidebar (element is created by the JS snippet) */
+.f4g-scrim {
+  position: fixed; inset: 0; z-index: 150;
+  background: rgba(10,26,43,.5);
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s ease;
+}
+.f4g-scrim.show { opacity: 1; pointer-events: auto; }
+body.f4g-locked { overflow: hidden; }
+
+@media (min-width: 769px) { .f4g-scrim { display: none; } }
+
+@media (max-width: 768px) {
+  #portal .sidebar {
+    width: min(84vw, 300px);
+    padding-top: calc(22px + env(safe-area-inset-top));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    box-shadow: 0 0 60px rgba(10,26,43,.45);
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  #portal .sidebar-nav { flex-shrink: 0; }
+  #portal .nav-btn { padding: 13px 16px; }
+
+  .main { padding: 16px 16px calc(28px + env(safe-area-inset-bottom)); }
+
+  #portal .mobile-header {
+    margin: -16px -16px 16px;
+    padding: calc(13px + env(safe-area-inset-top)) 14px 13px;
+    font-size: 16px; gap: 8px;
+  }
+
+  /* the portal hamburger — three bars instead of a glyph */
+  .hamburger {
+    display: flex; flex-direction: column; justify-content: center;
+    gap: 5px; width: 44px; height: 44px; padding: 0 10px;
+    flex-shrink: 0; font-size: 0;
+  }
+  .hamburger span {
+    display: block; width: 22px; height: 2.5px; border-radius: 2px;
+    background: #fff;
+    transition: transform .3s cubic-bezier(.2,.8,.2,1), opacity .2s;
+  }
+  .sidebar.open ~ .main .hamburger span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+  .sidebar.open ~ .main .hamburger span:nth-child(2) { opacity: 0; }
+  .sidebar.open ~ .main .hamburger span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+}
+
+/* -------------------------------------------------------------------------
+   5. PORTAL — CONTENT
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  /* iOS zooms the page whenever you focus an input under 16px */
+  input, select, textarea, #courseSearch { font-size: 16px !important; }
+
+  /* background-attachment: fixed is buggy on iOS Safari (jumps + scaling) */
+  #portal { background-attachment: scroll; }
+
+  /* headings */
+  #portal h1, #courses h1, #leaderboard h1, #profile h1 { font-size: 28px; }
+  #portal .dash-header h1 { font-size: 28px; }
+  #portal .section-title { font-size: 18px; }
+  .page-sub, .dash-sub { font-size: 14px; }
+
+  /* dashboard header stacks so the button stops pushing the title out */
+  .dash-header { flex-direction: column; align-items: stretch; gap: 14px; margin-bottom: 22px; }
+  .barn-btn { width: 100%; }
+
+  /* stats */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .stat-card { padding: 18px 12px; }
+  #portal .stat-value { font-size: 26px; }
+  #portal .stat-label { font-size: 10px; letter-spacing: .05em; }
+
+  /* level card */
+  .animal-card { flex-wrap: wrap; gap: 16px; padding: 20px; }
+  .ac-left { flex: 1 1 100%; }
+  .ac-emoji { font-size: 42px; }
+  #portal .ac-name { font-size: 21px; }
+  .ac-right { flex: 1 1 100%; text-align: left; display: flex; align-items: center; gap: 10px; }
+  .ac-next-label { margin-bottom: 0; }
+
+  /* widgets */
+  .widget { padding: 18px; }
+  .widget-header { font-size: 15px; margin-bottom: 14px; }
+
+  .streak-days { gap: 4px; }
+  .streak-circle { width: 32px; height: 32px; font-size: 12px; }
+  .streak-day-label { font-size: 9px; }
+  .streak-count-box { font-size: 30px; }
+
+  .badges-grid { gap: 8px; }
+  .badge-icon-wrap { width: 46px; height: 46px; border-radius: 12px; }
+  .badge-name { font-size: 9px; }
+
+  /* courses */
+  .cat-btn { padding: 7px 14px; font-size: 12px; }
+  .category-filters { gap: 8px; margin-bottom: 20px; }
+  .cc-body { padding: 20px; }
+  #portal .cc-title { font-size: 19px; }
+  .search-wrap { max-width: none; }
+
+  /* lessons + video */
+  .lesson-row { padding: 15px 16px; gap: 12px; }
+  .lr-title { font-size: 15px; }
+  .video-container iframe { height: auto; aspect-ratio: 16 / 9; }
+  .blog-video iframe { height: auto; aspect-ratio: 16 / 9; }
+  .vl-info { padding: 20px; }
+  .complete-btn { width: 100%; }
+
+  /* quiz */
+  .quiz-header, .quiz-question-card { padding: 20px; }
+  .quiz-header h2 { font-size: 21px; }
+  .question-text { font-size: 17px; margin-bottom: 20px; }
+  .option-btn { padding: 14px 16px; font-size: 15px; }
+  .next-btn { width: 100%; }
+  .quiz-results { padding: 34px 20px; }
+  .results-emoji { font-size: 54px; }
+  #portal .results-title { font-size: 26px; }
+  .results-btns { flex-direction: column; }
+  .results-btns .btn-primary,
+  .results-btns .btn-ghost { width: 100%; text-align: center; }
+
+  /* exam */
+  .exam-cta { flex-direction: column; align-items: stretch; padding: 18px; gap: 14px; }
+  .exam-cta .btn-primary { width: 100%; text-align: center; }
+  .exam-header { padding: 16px 18px; }
+  .exam-nav-row { gap: 10px; }
+
+  /* leaderboard */
+  .lb-row { padding: 14px 16px; gap: 12px; }
+  .lb-rank { width: 26px; font-size: 17px; }
+  .lb-name { font-size: 15px; }
+  #portal .lb-val { font-size: 18px; }
+
+  /* profile */
+  .profile-card { flex-direction: column; text-align: center; padding: 24px; gap: 16px; }
+  .badges-grid-large { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .badge-icon-lg { width: 58px; height: 58px; border-radius: 15px; }
+  .form-group input,
+  .planner-form-widget select { max-width: 100%; }
+
+  /* planner + analytics */
+  .planner-form-widget { max-width: none; }
+  .planner-week-card { padding: 16px 18px; }
+  .analytics-course-row { padding: 14px 16px; }
+
+  /* KPI */
+  .kpi-detail { padding: 22px; }
+  .kpi-detail h2 { font-size: 21px; }
+
+  /* prepared event AI */
+  .pe-flag { padding: 14px 16px; gap: 10px; flex-wrap: wrap; }
+  .pe-flag-pts { margin-left: 0; }
+  .pe-score-banner { padding: 20px; }
+
+  /* modals + toast */
+  .modal-box { padding: 36px 24px; }
+  .modal-emoji { font-size: 56px; }
+  .modal-box h2 { font-size: 24px; }
+  .modal-box p { font-size: 15px; margin-bottom: 22px; }
+
+  .xp-toast {
+    left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom));
+    text-align: center; font-size: 17px; padding: 13px 20px;
+  }
+  .f4g-notice { bottom: calc(16px + env(safe-area-inset-bottom)); }
+}
+
+/* -------------------------------------------------------------------------
+   6. SMALL PHONES (iPhone SE / mini, 375px and under)
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 380px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 16px 8px; }
+  .streak-circle { width: 28px; height: 28px; font-size: 11px; }
+  .streak-days { gap: 3px; }
+  .badges-grid-large { grid-template-columns: repeat(2, 1fr); }
+  .analytics-grid, .planner-summary-grid { grid-template-columns: 1fr; }
+  #landingPage .hero-photo { width: 42vw; height: 42vw; }
+}

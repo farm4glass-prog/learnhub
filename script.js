@@ -102,7 +102,10 @@ const ICONS = {
   bookmarkFilled: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg>`,
   mail: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 6 8 7 8-7"/></svg>`,
   timer: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4"/><path d="M12 14 15 11"/><circle cx="12" cy="14" r="8"/></svg>`,
-  check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>`
+  check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>`,
+  file: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h6"/></svg>`,
+  download: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 21h16"/></svg>`,
+  external: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>`
 };
 
 function icon(name) {
@@ -185,6 +188,78 @@ function courseProgress(course) {
   const done = (userData?.completedLessons || []).filter(id => course.lessons.some(l => l.id === id)).length;
   const total = course.lessons.length;
   return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
+}
+
+// ========================= UNITS =========================
+// A course still stores a flat "lessons" array — that's what Firestore has,
+// what the admin editor writes, and what the practice exam pools from. A UNIT
+// is a view over that array: the video, the article, and the practice quiz
+// that all belong to the same topic, grouped so students see one row per unit
+// instead of three.
+//
+// Lessons are matched into a unit by their ID. Both naming schemes work:
+//   marketing-u1-video / marketing-u1-quiz / marketing-u1-article  -> marketing-u1
+//   marketing-video-1712345 / marketing-quiz-1712345               -> marketing-1712345
+
+function unitKeyFor(lesson) {
+  const id = String(lesson?.id || "");
+  let m = id.match(/^(.*)-(?:video|quiz|article)$/);
+  if (m) return m[1];
+  m = id.match(/^(.*)-(?:video|quiz|article)-(\d+)$/);
+  if (m) return `${m[1]}-${m[2]}`;
+  return id;
+}
+
+// "Unit 1: Business Law — Practice Quiz" -> "Unit 1: Business Law"
+function stripUnitSuffix(title) {
+  return String(title || "")
+    .replace(/\s*[\u2014\u2013-]\s*(Practice Quiz|Quiz|Article|Reading|PDF)\s*$/i, "")
+    .trim();
+}
+
+function buildUnits(course) {
+  const map = new Map();
+
+  (course?.lessons || []).forEach(lesson => {
+    const key = unitKeyFor(lesson);
+    if (!map.has(key)) {
+      map.set(key, { key, courseId: course.id, video: null, article: null, quiz: null, lessons: [] });
+    }
+    const unit = map.get(key);
+    unit.lessons.push(lesson);
+    if (lesson.type === "quiz") unit.quiz = lesson;
+    else if (lesson.type === "article") unit.article = lesson;
+    else unit.video = lesson;
+  });
+
+  const units = [...map.values()];
+  units.forEach((unit, i) => {
+    const source = unit.video || unit.article || unit.quiz;
+    unit.title = stripUnitSuffix(source?.title) || `Unit ${i + 1}`;
+    const numbered = unit.title.match(/^Unit\s+(\d+)/i);
+    unit.number = numbered ? numbered[1] : String(i + 1);
+    unit.xp = unit.lessons.reduce((sum, l) => sum + (l.xp || 0), 0);
+  });
+
+  return units;
+}
+
+function findUnit(courseId, unitKey) {
+  const course = courses.find(c => c.id === courseId);
+  if (!course) return null;
+  return buildUnits(course).find(u => u.key === unitKey) || null;
+}
+
+// Which tab a given lesson lives on inside its unit.
+function tabForLesson(lesson) {
+  if (!lesson) return "video";
+  if (lesson.type === "quiz") return "practice";
+  if (lesson.type === "article") return "article";
+  return "video";
+}
+
+function unitPartDone(lesson) {
+  return !!lesson && (userData?.completedLessons || []).includes(lesson.id);
 }
 
 // ========================= FARM ANIMALS =========================
@@ -359,6 +434,8 @@ let courses = [];
 let coursesLoaded = false;
 let currentCourseId = null;
 let currentLesson = null;
+let currentUnitKey = null;
+let currentUnitTab = "video";
 let quizState = {};
 let lbMode = "xp";
 let adminSelectedCourseId = null;
@@ -714,6 +791,7 @@ function renderFeaturedCourses() {
 
 // One row in the dashboard course list.
 function pastureRow(course, pct, isSuggestion) {
+  const unitCount = buildUnits(course).length;
   const row = document.createElement("div");
   row.className = "pasture-row";
   row.onclick = () => openCourse(course.id);
@@ -721,7 +799,7 @@ function pastureRow(course, pct, isSuggestion) {
     <div class="pasture-icon" style="background:${course.color}22;color:${course.color};">${icon(groupIcon(course.group))}</div>
     <div class="pasture-info">
       <div class="pasture-title">${course.title}</div>
-      <div class="pasture-pct">${isSuggestion ? `${course.lessons.length} lessons · not started` : `${pct}% complete`}</div>
+      <div class="pasture-pct">${isSuggestion ? `${unitCount} units · not started` : `${pct}% complete`}</div>
       <div class="pasture-bar-outer">
         <div class="pasture-bar-inner" style="width:${pct}%;background:${course.color || "#22c55e"};"></div>
       </div>
@@ -839,8 +917,7 @@ function renderFilteredCourses(list) {
     const pct = course.lessons.length
       ? Math.round((completed / course.lessons.length) * 100)
       : 0;
-    const level = course.level || "Beginner";
-    const levelClass = level.toLowerCase().replace(/\s+/g, "-");
+    const unitCount = buildUnits(course).length;
 
     const card = document.createElement("div");
     card.className = "course-card-new";
@@ -851,7 +928,7 @@ function renderFilteredCourses(list) {
         <div class="cc-title">${course.title}</div>
         <div class="cc-desc">${course.description}</div>
         <div class="cc-meta">
-          <span> ${course.lessons.length} lessons</span>
+          <span> ${unitCount} ${unitCount === 1 ? "unit" : "units"}</span>
           <span> ${course.duration || "Self-paced"}</span>
         </div>
         <div class="cc-progress-bar">
@@ -875,15 +952,19 @@ function renderFilteredCourses(list) {
   }
 }
 
-// ========================= OPEN COURSE =========================
+// ========================= OPEN COURSE (unit list) =========================
+// One row per unit. Everything inside a unit — video, practice questions,
+// article — opens together in the unit view, behind a tab bar.
 window.openCourse = function(id) {
   currentCourseId = id;
+  currentUnitKey = null;
   const course = courses.find(c => c.id === id);
   if (!course) return;
 
-  const completed = userData?.completedLessons || [];
   const bookmarked = userData?.bookmarkedLessons || [];
   showTab("lessonView");
+
+  const units = buildUnits(course);
 
   const examQuestionCount = course.lessons
     .filter(l => l.type === "quiz")
@@ -907,60 +988,209 @@ window.openCourse = function(id) {
         </div>
       ` : ""}
       <div class="lessons-list">
-        ${course.lessons.map((lesson, i) => {
-          const isDone = completed.includes(lesson.id);
-          const isBookmarked = bookmarked.includes(lesson.id);
-          const typeIcon = lesson.type === "quiz" ? icon("quiz") : icon("play");
-          return `
-            <div class="lesson-row ${isDone ? "done" : ""}" onclick="openLesson('${course.id}', '${lesson.id}')">
-              <div class="lr-status ${isDone ? "completed" : "pending"}">${isDone ? "✓" : typeIcon}</div>
-              <div class="lr-info">
-                <div class="lr-title">${lesson.title}</div>
-                <div class="lr-meta"><span class="lr-type-icon">${lesson.type === "quiz" ? icon("quiz") : icon("play")}</span> ${lesson.type === "quiz" ? "Quiz" : "Video"} · ${lesson.duration}</div>
-              </div>
-              <button class="bookmark-btn ${isBookmarked ? "active" : ""}" onclick="event.stopPropagation(); toggleLessonBookmark('${lesson.id}')" title="${isBookmarked ? "Remove bookmark" : "Bookmark this lesson"}">${icon(isBookmarked ? "bookmarkFilled" : "bookmark")}</button>
-              <span class="lr-xp">+${lesson.xp} XP</span>
-              <span class="lr-arrow">›</span>
-            </div>
-          `;
-        }).join("")}
+        ${units.map(unit => unitRowHtml(course, unit, bookmarked)).join("")
+          || `<div class="admin-empty-state">No units in this course yet — check back soon.</div>`}
       </div>
     </div>
   `;
 };
 
+function unitRowHtml(course, unit, bookmarked) {
+  const parts = [
+    { key: "video",    label: "Video",             lesson: unit.video },
+    { key: "practice", label: "Practice questions", lesson: unit.quiz },
+    { key: "article",  label: "Article",            lesson: unit.article }
+  ];
+
+  const allDone = unit.lessons.length > 0 && unit.lessons.every(l => unitPartDone(l));
+  const bookmarkTarget = (unit.video || unit.quiz || unit.article)?.id || "";
+  const isBookmarked = bookmarked.includes(bookmarkTarget);
+
+  const chips = parts.map(p => {
+    if (!p.lesson) return `<span class="unit-chip missing">${p.label}</span>`;
+    return `<span class="unit-chip ${unitPartDone(p.lesson) ? "done" : ""}">${
+      unitPartDone(p.lesson) ? icon("check") : ""
+    }${p.label}</span>`;
+  }).join("");
+
+  return `
+    <div class="lesson-row unit-row ${allDone ? "done" : ""}" onclick="openUnit('${course.id}', '${unit.key}')">
+      <div class="lr-status ${allDone ? "completed" : "pending"}">${allDone ? "✓" : unit.number}</div>
+      <div class="lr-info">
+        <div class="lr-title">${unit.title}</div>
+        <div class="unit-chips">${chips}</div>
+      </div>
+      <button class="bookmark-btn ${isBookmarked ? "active" : ""}" onclick="event.stopPropagation(); toggleLessonBookmark('${bookmarkTarget}')" title="${isBookmarked ? "Remove bookmark" : "Bookmark this unit"}">${icon(isBookmarked ? "bookmarkFilled" : "bookmark")}</button>
+      <span class="lr-xp">+${unit.xp} XP</span>
+      <span class="lr-arrow">›</span>
+    </div>
+  `;
+}
+
+// ========================= UNIT VIEW (tabbed) =========================
+window.openUnit = function(courseId, unitKey, tab) {
+  const course = courses.find(c => c.id === courseId);
+  const unit = findUnit(courseId, unitKey);
+  if (!course || !unit) return;
+
+  currentCourseId = courseId;
+  currentUnitKey = unitKey;
+
+  // Land on the first tab that actually has something in it.
+  const available = ["video", "practice", "article"].filter(t => unitLessonForTab(unit, t));
+  currentUnitTab = tab && available.includes(tab) ? tab : (available[0] || "video");
+
+  showTab("lessonView");
+
+  document.getElementById("lessonViewContent").innerHTML = `
+    <div class="unit-view-wrap">
+      <div class="lv-back" onclick="openCourse('${course.id}')">← ${course.title}</div>
+      <div class="unit-view-head">
+        <h1>${unit.title}</h1>
+        <div class="unit-view-meta">${unit.lessons.length} ${unit.lessons.length === 1 ? "part" : "parts"} · ${unit.xp} XP total</div>
+      </div>
+      <div class="unit-tabs" id="unitTabs" role="tablist"></div>
+      <div class="unit-pane" id="unitPane"></div>
+    </div>
+  `;
+
+  renderUnitTabs();
+  renderUnitPane();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+function unitLessonForTab(unit, tab) {
+  if (tab === "practice") return unit.quiz;
+  if (tab === "article") return unit.article;
+  return unit.video;
+}
+
+window.switchUnitTab = function(tab) {
+  currentUnitTab = tab;
+  renderUnitTabs();
+  renderUnitPane();
+};
+
+function renderUnitTabs() {
+  const bar = document.getElementById("unitTabs");
+  const unit = findUnit(currentCourseId, currentUnitKey);
+  if (!bar || !unit) return;
+
+  const tabs = [
+    { key: "video",    label: "Video",              iconName: "play" },
+    { key: "practice", label: "Practice questions", iconName: "quiz" },
+    { key: "article",  label: "Article",            iconName: "file" }
+  ];
+
+  bar.innerHTML = tabs.map(t => {
+    const lesson = unitLessonForTab(unit, t.key);
+    const done = unitPartDone(lesson);
+    return `
+      <button class="unit-tab ${t.key === currentUnitTab ? "active" : ""} ${lesson ? "" : "empty"}"
+              role="tab" aria-selected="${t.key === currentUnitTab}"
+              onclick="switchUnitTab('${t.key}')">
+        ${icon(done ? "check" : t.iconName)}<span>${t.label}</span>
+      </button>
+    `;
+  }).join("");
+}
+
+function renderUnitPane() {
+  const pane = document.getElementById("unitPane");
+  const course = courses.find(c => c.id === currentCourseId);
+  const unit = findUnit(currentCourseId, currentUnitKey);
+  if (!pane || !course || !unit) return;
+
+  if (currentUnitTab === "practice") {
+    if (!unit.quiz) {
+      pane.innerHTML = emptyPaneHtml("Practice questions for this unit are coming soon.");
+      return;
+    }
+    currentLesson = unit.quiz;
+    openQuiz(course, unit.quiz, true);
+    return;
+  }
+
+  if (currentUnitTab === "article") {
+    if (!unit.article || !unit.article.url) {
+      pane.innerHTML = emptyPaneHtml("The reading for this unit hasn't been added yet.");
+      return;
+    }
+    currentLesson = unit.article;
+    pane.innerHTML = unitArticleHtml(unit.article);
+    return;
+  }
+
+  if (!unit.video || !unit.video.url) {
+    pane.innerHTML = emptyPaneHtml("The video for this unit hasn't been added yet.");
+    return;
+  }
+  currentLesson = unit.video;
+  pane.innerHTML = unitVideoHtml(unit.video);
+}
+
+function emptyPaneHtml(message) {
+  return `<div class="admin-empty-state">${message}</div>`;
+}
+
+function youtubeIdFromUrl(url) {
+  const raw = String(url || "");
+  if (raw.includes("v=")) return raw.split("v=")[1].split("&")[0];
+  if (raw.includes("youtu.be/")) return raw.split("youtu.be/")[1].split("?")[0];
+  return raw.split("/").pop().split("?")[0];
+}
+
+function unitVideoHtml(lesson) {
+  const isCompleted = unitPartDone(lesson);
+  const videoId = youtubeIdFromUrl(lesson.url);
+
+  return `
+    <div class="video-container">
+      <iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>
+    </div>
+    <div class="vl-info">
+      <div class="vl-meta">Video lesson · ${lesson.duration} · +${lesson.xp} XP on completion</div>
+      <button class="complete-btn" id="completeBtn" onclick="completeLesson('${lesson.id}', ${lesson.xp})" ${isCompleted ? "disabled" : ""}>
+        ${isCompleted ? "✓ Completed" : "Mark as Complete (+" + lesson.xp + " XP)"}
+      </button>
+    </div>
+  `;
+}
+
+// PDF articles. iOS Safari refuses to render a PDF inside <object>, so the
+// open/download buttons sit ABOVE the viewer — on a phone they're the real
+// way in, not a fallback.
+function unitArticleHtml(lesson) {
+  const isCompleted = unitPartDone(lesson);
+  const url = lesson.url;
+
+  return `
+    <div class="unit-pdf-actions">
+      <a class="unit-pdf-link" href="${url}" target="_blank" rel="noopener">${icon("external")} Open in new tab</a>
+      <a class="unit-pdf-link" href="${url}" download>${icon("download")} Download PDF</a>
+    </div>
+    <object class="unit-pdf" data="${url}" type="application/pdf">
+      <div class="admin-empty-state">Your browser can't show the PDF inline — use the buttons above to read it.</div>
+    </object>
+    <div class="vl-info">
+      <div class="vl-meta">Article · ${lesson.duration} · +${lesson.xp} XP on completion</div>
+      <button class="complete-btn" id="completeBtn" onclick="completeLesson('${lesson.id}', ${lesson.xp})" ${isCompleted ? "disabled" : ""}>
+        ${isCompleted ? "✓ Completed" : "Mark as Read (+" + lesson.xp + " XP)"}
+      </button>
+    </div>
+  `;
+}
+
 // ========================= OPEN LESSON =========================
+// Kept for bookmarks and analytics links — it now routes into the unit view
+// and selects the right tab instead of opening a bare lesson page.
 window.openLesson = function(courseId, lessonId) {
   const course = courses.find(c => c.id === courseId);
   const lesson = course?.lessons.find(l => l.id === lessonId);
   if (!course || !lesson) return;
   currentLesson = lesson;
-
-  if (lesson.type === "youtube") openVideoLesson(course, lesson);
-  else if (lesson.type === "quiz") openQuiz(course, lesson);
+  openUnit(courseId, unitKeyFor(lesson), tabForLesson(lesson));
 };
-
-function openVideoLesson(course, lesson) {
-  const isCompleted = (userData?.completedLessons || []).includes(lesson.id);
-  const videoId = lesson.url.includes("v=") ? lesson.url.split("v=")[1].split("&")[0] : lesson.url.split("/").pop();
-  const container = document.getElementById("lessonViewContent");
-
-  container.innerHTML = `
-    <div class="video-lesson-wrap">
-      <div class="vl-back" onclick="openCourse('${course.id}')">← ${course.title}</div>
-      <div class="video-container">
-        <iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>
-      </div>
-      <div class="vl-info">
-        <h2>${lesson.title}</h2>
-        <div class="vl-meta">Video lesson · ${lesson.duration} · +${lesson.xp} XP on completion</div>
-        <button class="complete-btn" id="completeBtn" onclick="completeLesson('${lesson.id}', ${lesson.xp})" ${isCompleted ? "disabled" : ""}>
-          ${isCompleted ? "✓ Completed" : "Mark as Complete (+"+lesson.xp+" XP)"}
-        </button>
-      </div>
-    </div>
-  `;
-}
 
 // ========================= COMPLETE LESSON =========================
 window.completeLesson = async function(lessonId, xp) {
@@ -975,7 +1205,8 @@ window.completeLesson = async function(lessonId, xp) {
     const newAnimal = getAnimalForXP(newXP);
 
     const completed = [...(userData.completedLessons || []), lessonId];
-    const activityLog = [...(userData.activityLog || []), { date: new Date().toISOString().slice(0, 10), xp, lessonId, type: "video" }].slice(-300);
+    const type = currentLesson?.type === "article" ? "article" : "video";
+    const activityLog = [...(userData.activityLog || []), { date: new Date().toISOString().slice(0, 10), xp, lessonId, type }].slice(-300);
     await updateDoc(userRef, {
       xp: newXP,
       completedLessons: completed,
@@ -995,8 +1226,9 @@ window.completeLesson = async function(lessonId, xp) {
     await checkAndAwardBadges();
 
     renderSidebar();
-    document.querySelector("#completeBtn") && (document.querySelector("#completeBtn").disabled = true);
-    document.querySelector("#completeBtn") && (document.querySelector("#completeBtn").textContent = "✓ Completed");
+    const btn = document.querySelector("#completeBtn");
+    if (btn) { btn.disabled = true; btn.textContent = "✓ Completed"; }
+    if (currentUnitKey) renderUnitTabs();
     renderDashboard();
   } catch (e) {
     console.error("Failed to save lesson completion:", e);
@@ -1005,23 +1237,35 @@ window.completeLesson = async function(lessonId, xp) {
 };
 
 // ========================= QUIZ ENGINE =========================
-function openQuiz(course, lesson) {
+// The quiz renders into the unit's tab pane when it's opened from a unit, and
+// into the full lesson view otherwise (which is what the practice exam and any
+// direct link still use).
+function quizMount() {
+  if (quizState.inUnit) {
+    return document.getElementById("unitPane") || document.getElementById("lessonViewContent");
+  }
+  return document.getElementById("lessonViewContent");
+}
+
+function openQuiz(course, lesson, inUnit) {
   quizState = {
     course, lesson,
     questions: lesson.questions || [],
     current: 0,
     score: 0,
-    answered: false
+    answered: false,
+    inUnit: !!inUnit
   };
 
   if (!quizState.questions.length) {
-    const container = document.getElementById("lessonViewContent");
-    container.innerHTML = `
-      <div class="quiz-wrap">
-        <div class="quiz-back" onclick="openCourse('${course.id}')">← ${course.title}</div>
-        <div class="admin-empty-state">This quiz doesn't have any questions yet. Check back soon!</div>
-      </div>
-    `;
+    const mount = quizMount();
+    if (!mount) return;
+    mount.innerHTML = quizState.inUnit
+      ? emptyPaneHtml("This quiz doesn't have any questions yet. Check back soon!")
+      : `<div class="quiz-wrap">
+           <div class="quiz-back" onclick="openCourse('${course.id}')">← ${course.title}</div>
+           <div class="admin-empty-state">This quiz doesn't have any questions yet. Check back soon!</div>
+         </div>`;
     return;
   }
 
@@ -1032,33 +1276,41 @@ function renderQuizQuestion() {
   const { questions, current, lesson, course } = quizState;
   const q = questions[current];
   const pct = Math.round((current / questions.length) * 100);
-  const container = document.getElementById("lessonViewContent");
+  const mount = quizMount();
+  if (!mount) return;
 
-  container.innerHTML = `
-    <div class="quiz-wrap">
-      <div class="quiz-back" onclick="openCourse('${course.id}')">← ${course.title}</div>
-      <div class="quiz-header">
-        <h2>${lesson.title}</h2>
-        <div class="quiz-progress-row">
-          <span>Question ${current + 1} of ${questions.length}</span>
-          <span>Score: ${quizState.score}/${current}</span>
-        </div>
-        <div class="quiz-pbar-outer"><div class="quiz-pbar-inner" style="width:${pct}%"></div></div>
+  const header = `
+    <div class="quiz-header">
+      ${quizState.inUnit ? "" : `<h2>${lesson.title}</h2>`}
+      <div class="quiz-progress-row">
+        <span>Question ${current + 1} of ${questions.length}</span>
+        <span>Score: ${quizState.score}/${current}</span>
       </div>
-      <div class="quiz-question-card">
-        <div class="question-text">${q.q}</div>
-        <div class="options-list">
-          ${q.options.map((opt, i) => `
-            <button class="option-btn" onclick="selectAnswer(${i})">${opt}</button>
-          `).join("")}
-        </div>
-        <div class="explanation-box" id="explanationBox">${q.explanation || ""}</div>
-        <button class="next-btn" id="nextBtn" onclick="nextQuestion()">
-          ${current + 1 === questions.length ? "See Results" : "Next Question →"}
-        </button>
-      </div>
+      <div class="quiz-pbar-outer"><div class="quiz-pbar-inner" style="width:${pct}%"></div></div>
     </div>
   `;
+
+  const card = `
+    <div class="quiz-question-card">
+      <div class="question-text">${q.q}</div>
+      <div class="options-list">
+        ${q.options.map((opt, i) => `
+          <button class="option-btn" onclick="selectAnswer(${i})">${opt}</button>
+        `).join("")}
+      </div>
+      <div class="explanation-box" id="explanationBox">${q.explanation || ""}</div>
+      <button class="next-btn" id="nextBtn" onclick="nextQuestion()">
+        ${current + 1 === questions.length ? "See Results" : "Next Question →"}
+      </button>
+    </div>
+  `;
+
+  mount.innerHTML = quizState.inUnit
+    ? header + card
+    : `<div class="quiz-wrap">
+         <div class="quiz-back" onclick="openCourse('${course.id}')">← ${course.title}</div>
+         ${header}${card}
+       </div>`;
 }
 
 window.selectAnswer = function(idx) {
@@ -1100,20 +1352,19 @@ async function renderQuizResults() {
   const passed = pct >= 60;
   const xpEarned = passed ? lesson.xp : Math.round(lesson.xp * 0.3);
 
-  const container = document.getElementById("lessonViewContent");
-  container.innerHTML = `
-    <div class="quiz-wrap">
-      <div class="quiz-results">
-        <div class="results-title">${pct === 100 ? "Perfect Score!" : pct >= 80 ? "Great Job!" : pct >= 60 ? "Good Work!" : "Keep Studying!"}</div>
-        <div class="results-score">${score} / ${questions.length} correct (${pct}%)</div>
-        <div class="results-xp">+${xpEarned} XP Earned </div>
-        <div class="results-btns">
-          <button class="btn-primary" onclick="retakeQuiz()">Retake Quiz</button>
-          <button class="btn-primary" onclick="openCourse('${course.id}')">Back to Course</button>
-        </div>
+  const mount = quizMount();
+  const results = `
+    <div class="quiz-results">
+      <div class="results-title">${pct === 100 ? "Perfect Score!" : pct >= 80 ? "Great Job!" : pct >= 60 ? "Good Work!" : "Keep Studying!"}</div>
+      <div class="results-score">${score} / ${questions.length} correct (${pct}%)</div>
+      <div class="results-xp">+${xpEarned} XP Earned </div>
+      <div class="results-btns">
+        <button class="btn-primary" onclick="retakeQuiz()">Retake Quiz</button>
+        <button class="btn-primary" onclick="openCourse('${course.id}')">Back to Course</button>
       </div>
     </div>
   `;
+  if (mount) mount.innerHTML = quizState.inUnit ? results : `<div class="quiz-wrap">${results}</div>`;
 
   if (pct >= 80) {
     const card = document.querySelector(".quiz-results");
@@ -1153,6 +1404,7 @@ async function renderQuizResults() {
     }
     await checkAndAwardBadges();
     renderSidebar();
+    if (currentUnitKey) renderUnitTabs();
     renderDashboard();
   } catch (e) {
     console.error("Failed to save quiz results:", e);
@@ -1330,7 +1582,7 @@ function renderAnalytics() {
             ${r.quizUnits.map(l => {
               const score = quizScores[l.id];
               const cls = score >= 80 ? "good" : score >= 60 ? "mid" : "low";
-              return `<div class="analytics-unit-row">${l.title}<span class="analytics-score-pill ${cls}">${score}%</span></div>`;
+              return `<div class="analytics-unit-row">${stripUnitSuffix(l.title)}<span class="analytics-score-pill ${cls}">${score}%</span></div>`;
             }).join("")}
           </div>
         ` : ""}
@@ -1352,10 +1604,10 @@ function buildRecommendations(courseRows, quizScores, log) {
   weakUnits.sort((a, b) => a.score - b.score).slice(0, 3).forEach(w => {
     recs.push({
       icon: "target",
-      title: `Retake "${w.lesson.title}"`,
-      desc: `You scored ${w.score}% on this quiz in ${w.course.title} — a quick retake could meaningfully boost your average.`,
+      title: `Retake "${stripUnitSuffix(w.lesson.title)}"`,
+      desc: `You scored ${w.score}% on this unit's practice questions in ${w.course.title} — a quick retake could meaningfully boost your average.`,
       action: {
-        label: "Retake Quiz",
+        label: "Retake Questions",
         call: `openLesson('${w.course.id}', '${w.lesson.id}')`
       }
     });
@@ -1515,8 +1767,6 @@ function renderKPIList() {
     String(a.title || "").localeCompare(String(b.title || ""))
   );
 
-  // 892 indicators is a lot of DOM for a school laptop — show a slice and let
-  // search narrow it. Raise KPI_LIST_LIMIT to render more at once.
   // 892 indicators is a lot of DOM for a school laptop — show a slice and let
   // search narrow it. Raise KPI_LIST_LIMIT to render more at once.
   const KPI_LIST_LIMIT = 250;
@@ -1813,12 +2063,15 @@ function renderAdminCoursesSection() {
     adminSelectedCourseId = courses[0].id;
   }
 
-  const courseListHtml = courses.map(c => `
-    <button class="admin-course-btn ${c.id === adminSelectedCourseId ? "active" : ""}" onclick="adminSelectCourse('${c.id}')">
-      ${c.title}
-      <span class="admin-course-sub">${c.lessons.length} lessons</span>
-    </button>
-  `).join("");
+  const courseListHtml = courses.map(c => {
+    const n = buildUnits(c).length;
+    return `
+      <button class="admin-course-btn ${c.id === adminSelectedCourseId ? "active" : ""}" onclick="adminSelectCourse('${c.id}')">
+        ${c.title}
+        <span class="admin-course-sub">${n} ${n === 1 ? "unit" : "units"}</span>
+      </button>
+    `;
+  }).join("");
 
   body.innerHTML = `
     <div class="admin-seed-banner">
@@ -1966,6 +2219,12 @@ window.adminDeleteKPI = async function(id) {
   }
 };
 
+// ========================= ADMIN: COURSE EDITOR (by unit) =========================
+// One block per unit, with its three parts inside it: the video, the article
+// PDF, and the practice questions. The article and the quiz are created the
+// first time you save something into them, so a unit never carries an empty
+// part that would show up as a dead tab for students.
+
 function renderAdminCourseEditor() {
   const editor = document.getElementById("adminCourseEditor");
   if (!editor) return;
@@ -1975,76 +2234,101 @@ function renderAdminCourseEditor() {
     return;
   }
 
-  const lessonsHtml = course.lessons.map((lesson, idx) => {
-    if (lesson.type === "quiz") {
-      const questionsHtml = (lesson.questions || []).map((q, qi) => `
-        <div class="admin-question-card">
-          <strong>Q${qi + 1}:</strong> ${q.q}
-          <div style="margin-top:6px;font-size:13px;color:var(--muted);">
-            ${q.options.map((o, oi) => `${oi === q.answer ? "✓ " : "· "}${o}`).join("<br>")}
-          </div>
-          <button class="admin-btn-sm danger" style="margin-top:8px;" onclick="adminDeleteQuestion('${lesson.id}', ${qi})">${icon("trash")} Remove question</button>
-        </div>
-      `).join("") || `<div style="color:var(--muted);font-size:13px;margin-bottom:10px;">No practice questions yet.</div>`;
+  const units = buildUnits(course);
 
-      return `
-        <div class="admin-lesson-block quiz-block" id="admin-lesson-${lesson.id}">
-          <div class="admin-lesson-head">
-            <h4>${icon("quiz")} ${lesson.title}</h4>
-            <button class="admin-btn-sm danger" onclick="adminDeleteLesson('${lesson.id}')">${icon("trash")} Delete quiz</button>
-          </div>
-          ${questionsHtml}
-          <div class="admin-add-question-form">
-            <textarea rows="2" placeholder="Question text" id="q-text-${lesson.id}"></textarea>
-            <div class="admin-option-inputs">
-              <input type="text" placeholder="Option A" id="q-opt0-${lesson.id}">
-              <input type="text" placeholder="Option B" id="q-opt1-${lesson.id}">
-              <input type="text" placeholder="Option C" id="q-opt2-${lesson.id}">
-              <input type="text" placeholder="Option D" id="q-opt3-${lesson.id}">
-            </div>
-            <div class="admin-field-row">
-              <select id="q-answer-${lesson.id}">
-                <option value="0">Correct: Option A</option>
-                <option value="1">Correct: Option B</option>
-                <option value="2">Correct: Option C</option>
-                <option value="3">Correct: Option D</option>
-              </select>
-            </div>
-            <textarea rows="2" placeholder="Explanation (shown after answering)" id="q-exp-${lesson.id}"></textarea>
-            <button class="admin-btn-sm" onclick="adminAddQuestion('${lesson.id}')">${icon("plus")} Add question</button>
-          </div>
+  const unitsHtml = units.map(unit => {
+    const v = unit.video;
+    const a = unit.article;
+    const q = unit.quiz;
+
+    const videoHtml = `
+      <div class="admin-unit-part">
+        <div class="admin-unit-part-label">${icon("play")} Video</div>
+        <div class="admin-field-row">
+          <input type="text" id="v-title-${unit.key}" placeholder="Unit title (e.g. Unit 1: Business Law)" value="${(v ? v.title : unit.title).replace(/"/g, "&quot;")}">
+          <input type="text" id="v-url-${unit.key}" placeholder="YouTube URL" value="${v ? (v.url || "") : ""}">
+          <input type="number" id="v-xp-${unit.key}" placeholder="XP" style="max-width:90px;" value="${v ? v.xp : 25}">
+          <button class="admin-btn-sm" onclick="adminSaveVideo('${unit.key}')">Save</button>
         </div>
-      `;
-    }
+      </div>
+    `;
+
+    const articleHtml = `
+      <div class="admin-unit-part">
+        <div class="admin-unit-part-label">${icon("file")} Article (PDF)</div>
+        <div class="admin-field-row">
+          <input type="text" id="art-url-${unit.key}" placeholder="PDF URL (e.g. pdfs/unit-1-business-law.pdf)" value="${a ? (a.url || "") : ""}">
+          <input type="number" id="art-xp-${unit.key}" placeholder="XP" style="max-width:90px;" value="${a ? a.xp : 15}">
+          <button class="admin-btn-sm" onclick="adminSaveArticle('${unit.key}')">Save</button>
+          ${a ? `<button class="admin-btn-sm danger" onclick="adminDeleteLesson('${a.id}')">${icon("trash")}</button>` : ""}
+        </div>
+        <div style="font-size:12px;color:var(--muted);">Upload the PDF to a <code>pdfs/</code> folder in the site and paste the path here. Leave blank and students see no Article tab for this unit.</div>
+      </div>
+    `;
+
+    const questionsHtml = q
+      ? ((q.questions || []).map((question, qi) => `
+          <div class="admin-question-card">
+            <strong>Q${qi + 1}:</strong> ${question.q}
+            <div style="margin-top:6px;font-size:13px;color:var(--muted);">
+              ${question.options.map((o, oi) => `${oi === question.answer ? "✓ " : "· "}${o}`).join("<br>")}
+            </div>
+            <button class="admin-btn-sm danger" style="margin-top:8px;" onclick="adminDeleteQuestion('${unit.key}', ${qi})">${icon("trash")} Remove question</button>
+          </div>
+        `).join("") || `<div style="color:var(--muted);font-size:13px;margin-bottom:10px;">No practice questions yet.</div>`)
+      : `<div style="color:var(--muted);font-size:13px;margin-bottom:10px;">No practice quiz on this unit yet — adding a question below creates one.</div>`;
+
+    const practiceHtml = `
+      <div class="admin-unit-part">
+        <div class="admin-unit-part-label">${icon("quiz")} Practice questions</div>
+        ${questionsHtml}
+        <div class="admin-add-question-form">
+          <textarea rows="2" placeholder="Question text" id="q-text-${unit.key}"></textarea>
+          <div class="admin-option-inputs">
+            <input type="text" placeholder="Option A" id="q-opt0-${unit.key}">
+            <input type="text" placeholder="Option B" id="q-opt1-${unit.key}">
+            <input type="text" placeholder="Option C" id="q-opt2-${unit.key}">
+            <input type="text" placeholder="Option D" id="q-opt3-${unit.key}">
+          </div>
+          <div class="admin-field-row">
+            <select id="q-answer-${unit.key}">
+              <option value="0">Correct: Option A</option>
+              <option value="1">Correct: Option B</option>
+              <option value="2">Correct: Option C</option>
+              <option value="3">Correct: Option D</option>
+            </select>
+          </div>
+          <textarea rows="2" placeholder="Explanation (shown after answering)" id="q-exp-${unit.key}"></textarea>
+          <button class="admin-btn-sm" onclick="adminAddQuestion('${unit.key}')">${icon("plus")} Add question</button>
+        </div>
+      </div>
+    `;
 
     return `
-      <div class="admin-lesson-block" id="admin-lesson-${lesson.id}">
+      <div class="admin-lesson-block admin-unit-block" id="admin-unit-${unit.key}">
         <div class="admin-lesson-head">
-          <h4>${icon("play")} ${lesson.title}</h4>
-          <button class="admin-btn-sm danger" onclick="adminDeleteLesson('${lesson.id}')">${icon("trash")} Delete video + quiz</button>
+          <h4>${unit.title}</h4>
+          <button class="admin-btn-sm danger" onclick="adminDeleteUnit('${unit.key}')">${icon("trash")} Delete unit</button>
         </div>
-        <div class="admin-field-row">
-          <input type="text" value="${lesson.title.replace(/"/g, "&quot;")}" id="v-title-${lesson.id}" placeholder="Title">
-          <input type="text" value="${lesson.url || ""}" id="v-url-${lesson.id}" placeholder="YouTube URL">
-          <input type="number" value="${lesson.xp}" id="v-xp-${lesson.id}" placeholder="XP" style="max-width:90px;">
-          <button class="admin-btn-sm" onclick="adminUpdateVideo('${lesson.id}')">Save</button>
-        </div>
+        ${videoHtml}
+        ${articleHtml}
+        ${practiceHtml}
       </div>
     `;
   }).join("");
 
   editor.innerHTML = `
     <h3 style="margin-bottom:16px;">${course.title}</h3>
-    ${lessonsHtml || `<div class="admin-empty-state">No lessons yet. Add the first video unit below.</div>`}
+    ${unitsHtml || `<div class="admin-empty-state">No units yet. Add the first one below.</div>`}
     <div class="admin-lesson-block" style="border-style:dashed;">
       <h4 style="margin-bottom:10px;">${icon("plus")} Add a new unit</h4>
       <div class="admin-field-row">
         <input type="text" placeholder="Unit title (e.g. Unit 21: Marketing Math)" id="new-unit-title">
         <input type="text" placeholder="YouTube URL" id="new-unit-url">
         <input type="number" placeholder="XP (default 25)" id="new-unit-xp" style="max-width:120px;">
-        <button class="admin-btn-sm" onclick="adminAddUnit('${course.id}')">${icon("plus")} Add video + quiz</button>
+        <button class="admin-btn-sm" onclick="adminAddUnit('${course.id}')">${icon("plus")} Add unit</button>
       </div>
-      <div style="font-size:12px;color:var(--muted);">Adding a video automatically creates a paired practice quiz right after it — add questions to it once it's created.</div>
+      <div style="font-size:12px;color:var(--muted);">A new unit starts with its video and an empty practice quiz. Add the PDF article and the questions from the unit block once it appears.</div>
     </div>
   `;
 }
@@ -2055,21 +2339,78 @@ async function saveCourseLessons(courseId, lessons) {
   if (course) course.lessons = lessons;
 }
 
-window.adminUpdateVideo = async function(lessonId) {
+// Puts a newly created part right after the last existing part of its unit, so
+// the flat lessons array stays grouped in reading order.
+function insertIntoUnit(lessons, unitKey, newLesson) {
+  let lastIdx = -1;
+  lessons.forEach((l, i) => { if (unitKeyFor(l) === unitKey) lastIdx = i; });
+  if (lastIdx === -1) return [...lessons, newLesson];
+  return [...lessons.slice(0, lastIdx + 1), newLesson, ...lessons.slice(lastIdx + 1)];
+}
+
+window.adminSaveVideo = async function(unitKey) {
   const course = courses.find(c => c.id === adminSelectedCourseId);
   if (!course) return;
-  const lesson = course.lessons.find(l => l.id === lessonId);
-  if (!lesson) return;
 
-  lesson.title = document.getElementById(`v-title-${lessonId}`).value.trim() || lesson.title;
-  lesson.url = document.getElementById(`v-url-${lessonId}`).value.trim() || lesson.url;
-  lesson.xp = Number(document.getElementById(`v-xp-${lessonId}`).value) || lesson.xp;
+  const title = document.getElementById(`v-title-${unitKey}`).value.trim();
+  const url = document.getElementById(`v-url-${unitKey}`).value.trim();
+  const xp = Number(document.getElementById(`v-xp-${unitKey}`).value) || 25;
+  if (!title) return alert("Please give the unit a title.");
+
+  let lessons = [...course.lessons];
+  const existing = lessons.find(l => unitKeyFor(l) === unitKey && l.type !== "quiz" && l.type !== "article");
+
+  if (existing) {
+    existing.title = title;
+    existing.url = url;
+    existing.xp = xp;
+  } else {
+    lessons = insertIntoUnit(lessons, unitKey, {
+      id: `${unitKey}-video`, title, type: "youtube", url, xp, duration: "10 min"
+    });
+  }
 
   try {
-    await saveCourseLessons(course.id, course.lessons);
-    alert("Video updated!");
+    await saveCourseLessons(course.id, lessons);
+    renderAdminPanel();
     renderCourseGrid();
     renderFeaturedCourses();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+};
+
+window.adminSaveArticle = async function(unitKey) {
+  const course = courses.find(c => c.id === adminSelectedCourseId);
+  if (!course) return;
+
+  const url = document.getElementById(`art-url-${unitKey}`).value.trim();
+  const xp = Number(document.getElementById(`art-xp-${unitKey}`).value) || 15;
+
+  let lessons = [...course.lessons];
+  const existing = lessons.find(l => unitKeyFor(l) === unitKey && l.type === "article");
+
+  if (!url) {
+    if (!existing) return alert("Paste the PDF path first, then save.");
+    if (!confirm("Clearing the URL removes the Article tab from this unit. Continue?")) return;
+    lessons = lessons.filter(l => l.id !== existing.id);
+  } else if (existing) {
+    existing.url = url;
+    existing.xp = xp;
+  } else {
+    const unit = buildUnits(course).find(u => u.key === unitKey);
+    lessons = insertIntoUnit(lessons, unitKey, {
+      id: `${unitKey}-article`,
+      title: `${unit ? unit.title : "Unit"} — Article`,
+      type: "article", url, xp, duration: "5 min"
+    });
+  }
+
+  try {
+    await saveCourseLessons(course.id, lessons);
+    renderAdminPanel();
+    renderCourseGrid();
   } catch (e) {
     console.error(e);
     alert("Couldn't save — check the console.");
@@ -2086,14 +2427,29 @@ window.adminAddUnit = async function(courseId) {
 
   if (!title || !url) return alert("Please enter a title and a YouTube URL.");
 
-  const stamp = Date.now();
-  const videoLesson = { id: `${courseId}-video-${stamp}`, title, type: "youtube", url, xp, duration: "10 min" };
-  const quizLesson = { id: `${courseId}-quiz-${stamp}`, title: `${title} — Practice Quiz`, type: "quiz", xp, duration: "5 min", questions: [] };
-
-  const newLessons = [...course.lessons, videoLesson, quizLesson];
+  const unitKey = `${courseId}-u${Date.now()}`;
+  const videoLesson = { id: `${unitKey}-video`, title, type: "youtube", url, xp, duration: "10 min" };
+  const quizLesson = { id: `${unitKey}-quiz`, title: `${title} — Practice Quiz`, type: "quiz", xp, duration: "5 min", questions: [] };
 
   try {
-    await saveCourseLessons(courseId, newLessons);
+    await saveCourseLessons(courseId, [...course.lessons, videoLesson, quizLesson]);
+    renderAdminPanel();
+    renderCourseGrid();
+    renderFeaturedCourses();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+};
+
+window.adminDeleteUnit = async function(unitKey) {
+  const course = courses.find(c => c.id === adminSelectedCourseId);
+  if (!course) return;
+  if (!confirm("Delete this whole unit — video, article, and practice questions? This cannot be undone.")) return;
+
+  const newLessons = course.lessons.filter(l => unitKeyFor(l) !== unitKey);
+  try {
+    await saveCourseLessons(course.id, newLessons);
     renderAdminPanel();
     renderCourseGrid();
     renderFeaturedCourses();
@@ -2106,7 +2462,7 @@ window.adminAddUnit = async function(courseId) {
 window.adminDeleteLesson = async function(lessonId) {
   const course = courses.find(c => c.id === adminSelectedCourseId);
   if (!course) return;
-  if (!confirm("Delete this lesson? This cannot be undone.")) return;
+  if (!confirm("Delete this part of the unit? This cannot be undone.")) return;
 
   const newLessons = course.lessons.filter(l => l.id !== lessonId);
   try {
@@ -2120,23 +2476,34 @@ window.adminDeleteLesson = async function(lessonId) {
   }
 };
 
-window.adminAddQuestion = async function(lessonId) {
+window.adminAddQuestion = async function(unitKey) {
   const course = courses.find(c => c.id === adminSelectedCourseId);
   if (!course) return;
-  const lesson = course.lessons.find(l => l.id === lessonId);
-  if (!lesson) return;
 
-  const qText = document.getElementById(`q-text-${lessonId}`).value.trim();
-  const opts = [0, 1, 2, 3].map(i => document.getElementById(`q-opt${i}-${lessonId}`).value.trim());
-  const answer = Number(document.getElementById(`q-answer-${lessonId}`).value);
-  const explanation = document.getElementById(`q-exp-${lessonId}`).value.trim();
+  const qText = document.getElementById(`q-text-${unitKey}`).value.trim();
+  const opts = [0, 1, 2, 3].map(i => document.getElementById(`q-opt${i}-${unitKey}`).value.trim());
+  const answer = Number(document.getElementById(`q-answer-${unitKey}`).value);
+  const explanation = document.getElementById(`q-exp-${unitKey}`).value.trim();
 
   if (!qText || opts.some(o => !o)) return alert("Please fill in the question and all four options.");
 
-  lesson.questions = [...(lesson.questions || []), { q: qText, options: opts, answer, explanation }];
+  let lessons = [...course.lessons];
+  let quiz = lessons.find(l => unitKeyFor(l) === unitKey && l.type === "quiz");
+
+  if (!quiz) {
+    const unit = buildUnits(course).find(u => u.key === unitKey);
+    quiz = {
+      id: `${unitKey}-quiz`,
+      title: `${unit ? unit.title : "Unit"} — Practice Quiz`,
+      type: "quiz", xp: 25, duration: "5 min", questions: []
+    };
+    lessons = insertIntoUnit(lessons, unitKey, quiz);
+  }
+
+  quiz.questions = [...(quiz.questions || []), { q: qText, options: opts, answer, explanation }];
 
   try {
-    await saveCourseLessons(course.id, course.lessons);
+    await saveCourseLessons(course.id, lessons);
     renderAdminPanel();
   } catch (e) {
     console.error(e);
@@ -2144,13 +2511,13 @@ window.adminAddQuestion = async function(lessonId) {
   }
 };
 
-window.adminDeleteQuestion = async function(lessonId, questionIndex) {
+window.adminDeleteQuestion = async function(unitKey, questionIndex) {
   const course = courses.find(c => c.id === adminSelectedCourseId);
   if (!course) return;
-  const lesson = course.lessons.find(l => l.id === lessonId);
-  if (!lesson) return;
+  const quiz = course.lessons.find(l => unitKeyFor(l) === unitKey && l.type === "quiz");
+  if (!quiz) return;
 
-  lesson.questions = (lesson.questions || []).filter((_, i) => i !== questionIndex);
+  quiz.questions = (quiz.questions || []).filter((_, i) => i !== questionIndex);
 
   try {
     await saveCourseLessons(course.id, course.lessons);
@@ -2301,7 +2668,7 @@ function renderPlanResults(plan) {
       </div>
       <div class="planner-week-items">
         ${w.items.map(item => `
-          <div class="planner-week-item">${icon(item.type === "quiz" ? "quiz" : "play")} ${item.title} <span style="color:var(--muted);margin-left:auto;">${item.duration}</span></div>
+          <div class="planner-week-item">${icon(item.type === "quiz" ? "quiz" : item.type === "article" ? "file" : "play")} ${item.title} <span style="color:var(--muted);margin-left:auto;">${item.duration}</span></div>
         `).join("")}
       </div>
     </div>
@@ -2328,14 +2695,14 @@ function renderPlanResults(plan) {
 // ========================================================================
 
 window.toggleLessonBookmark = async function(lessonId) {
-  if (!currentUser || !userData) return;
+  if (!currentUser || !userData || !lessonId) return;
   const current = userData.bookmarkedLessons || [];
   const updated = current.includes(lessonId) ? current.filter(id => id !== lessonId) : [...current, lessonId];
 
   try {
     await updateDoc(doc(db, "users", currentUser.uid), { bookmarkedLessons: updated });
     userData.bookmarkedLessons = updated;
-    if (currentCourseId) openCourse(currentCourseId);
+    if (currentCourseId && !currentUnitKey) openCourse(currentCourseId);
     renderProfileBookmarks();
   } catch (e) {
     console.error("Failed to update bookmark:", e);
@@ -2370,8 +2737,8 @@ function renderProfileBookmarks() {
     if (!lesson) return "";
     return `
       <div class="bookmark-row" onclick="openLesson('${course.id}', '${lesson.id}')">
-        ${icon(lesson.type === "quiz" ? "quiz" : "play")}
-        <span>${lesson.title}</span>
+        ${icon(lesson.type === "quiz" ? "quiz" : lesson.type === "article" ? "file" : "play")}
+        <span>${stripUnitSuffix(lesson.title)}</span>
         <span class="bookmark-row-sub">${course.title}</span>
       </div>
     `;
@@ -2390,12 +2757,12 @@ function renderProfileBookmarks() {
   }).join("");
 
   if (!lessonRows && !kpiRows) {
-    container.innerHTML = `<div class="admin-empty-state">Bookmark lessons and performance indicators to find them here.</div>`;
+    container.innerHTML = `<div class="admin-empty-state">Bookmark units and performance indicators to find them here.</div>`;
     return;
   }
 
   container.innerHTML = `
-    ${lessonRows ? `<div class="bookmark-group-label">Lessons</div>${lessonRows}` : ""}
+    ${lessonRows ? `<div class="bookmark-group-label">Units</div>${lessonRows}` : ""}
     ${kpiRows ? `<div class="bookmark-group-label">Performance Indicators</div>${kpiRows}` : ""}
   `;
 }
@@ -2806,16 +3173,18 @@ window.adminDeleteBlog = async function(id) {
 // ========================================================================
 // ========================= PRACTICE EXAMS ===============================
 // ========================================================================
-// A full timed exam pooled from every practice quiz question already entered
-// for a course's units (via the admin Courses editor).
+// A full timed exam pooled from every practice question already entered for a
+// course's units (via the admin Courses editor).
 
 window.openExamSetup = function(courseId) {
   const course = courses.find(c => c.id === courseId);
   if (!course) return;
 
+  currentUnitKey = null;
+
   const pool = course.lessons
     .filter(l => l.type === "quiz")
-    .flatMap(l => (l.questions || []).map(q => ({ ...q, sourceTitle: l.title })));
+    .flatMap(l => (l.questions || []).map(q => ({ ...q, sourceTitle: stripUnitSuffix(l.title) })));
 
   const maxQ = pool.length;
   const container = document.getElementById("lessonViewContent");
@@ -2853,7 +3222,7 @@ window.startPracticeExam = function(courseId) {
 
   const pool = course.lessons
     .filter(l => l.type === "quiz")
-    .flatMap(l => (l.questions || []).map(q => ({ ...q, sourceTitle: l.title })));
+    .flatMap(l => (l.questions || []).map(q => ({ ...q, sourceTitle: stripUnitSuffix(l.title) })));
 
   const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, count);
 
@@ -3016,11 +3385,6 @@ window.reviewExam = function() {
     </div>
   `;
 };
-
-/* =========================================================================
-   FARM4GLASS — ADDITIONS
-   ========================================================================= */
-
 
 /* =========================================================================
    PART 1 — CELEBRATION HELPERS (confetti, count-up, milestone notices)
@@ -3631,7 +3995,6 @@ function renderPreparedEventHistory() {
 
 /* =========================================================================
    PART 3 — ADMIN: RUBRICS
-   Replaces the old Checklists admin sub-tab.
    ========================================================================= */
 
 function parsePenaltyLines(text) {
@@ -3776,10 +4139,8 @@ window.adminSeedRubrics = async function() {
 
 /* =========================================================================
    FARM4GLASS — MOBILE NAV WIRING
-   Paste this at the VERY END of script.js.
-
-   It builds the landing-page hamburger and the sidebar scrim in JS, so you
-   don't have to touch index.html at all. Everything is guarded — if an
+   Builds the landing-page hamburger and the sidebar scrim in JS, so
+   index.html doesn't have to carry them. Everything is guarded — if an
    element is already there, it's left alone.
    ========================================================================= */
 
@@ -3849,7 +4210,7 @@ window.adminSeedRubrics = async function() {
       document.body.classList.toggle('f4g-locked', open);
     }
 
-    // watches whatever your existing hamburger handler does to .sidebar
+    // watches whatever the existing hamburger handler does to .sidebar
     new MutationObserver(sync).observe(sidebar, {
       attributes: true,
       attributeFilter: ['class']
@@ -3880,23 +4241,11 @@ window.adminSeedRubrics = async function() {
 
 /* =========================================================================
    FARM4GLASS — FARM ICON SET
-   Paste this at the END of script.js (after the mobile nav block).
-
    Line icons drawn to match the ones already on the site: 24x24 viewBox,
-   currentColor, 1.8 stroke, round caps. They inherit color and size from
-   whatever wrapper you put them in, so a cow dropped into .ac-emoji comes
-   out at 52px and a cow in .sa-emoji comes out at 32px. No emoji anywhere.
+   currentColor, 1.8 stroke, round caps.
 
-   THREE WAYS TO USE THEM
-   ----------------------
-   1. In index.html — put an empty <i> anywhere and it gets filled in:
-        <i class="icon-svg" data-farm-icon="cow"></i>
-
-   2. In script.js template strings:
-        html += farmIcon('barn');
-
-   3. Swapping a level tier's icon — wherever your animal tiers are
-      defined, use farmIcon('goat') in place of the old icon.
+     <i class="icon-svg" data-farm-icon="cow"></i>   in HTML
+     farmIcon('barn')                                in JS
 
    Available: barn, cow, goat, bee, wheat, fence
    ========================================================================= */
@@ -3954,18 +4303,18 @@ window.adminSeedRubrics = async function() {
       '<path d="M3 10h18M3 15h18"/>'
   };
 
-  var ICONS = {};
+  var FARM_ICONS = {};
   Object.keys(PATHS).forEach(function (k) {
-    ICONS[k] = OPEN + PATHS[k] + '</svg>';
+    FARM_ICONS[k] = OPEN + PATHS[k] + '</svg>';
   });
 
-  window.F4G_FARM_ICONS = ICONS;
+  window.F4G_FARM_ICONS = FARM_ICONS;
 
   /* Returns a ready-to-drop string, e.g. farmIcon('cow') */
   window.farmIcon = function (name, extraClass) {
-    if (!ICONS[name]) return '';
+    if (!FARM_ICONS[name]) return '';
     return '<i class="icon-svg' + (extraClass ? ' ' + extraClass : '') +
-      '" data-farm-icon-done="1">' + ICONS[name] + '</i>';
+      '" data-farm-icon-done="1">' + FARM_ICONS[name] + '</i>';
   };
 
   /* Fills any <i data-farm-icon="..."> that hasn't been filled yet */
@@ -3973,7 +4322,7 @@ window.adminSeedRubrics = async function() {
     var scope = root && root.querySelectorAll ? root : document;
     scope.querySelectorAll('[data-farm-icon]').forEach(function (el) {
       if (el.getAttribute('data-farm-icon-done') === '1') return;
-      var svg = ICONS[el.getAttribute('data-farm-icon')];
+      var svg = FARM_ICONS[el.getAttribute('data-farm-icon')];
       if (!svg) return;
       el.innerHTML = svg;
       el.setAttribute('data-farm-icon-done', '1');

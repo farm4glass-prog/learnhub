@@ -366,6 +366,7 @@ let adminActiveSubTab = "courses";
 let kpis = [];
 let kpisLoaded = false;
 let selectedKPIId = null;
+let kpiActiveCategory = "Marketing";
 let calendarEvents = [];
 let calendarEventsLoaded = false;
 let adminEditingEventId = null;
@@ -1473,8 +1474,9 @@ function kpiCategories() {
 
 window.filterKPIsByCategory = function(cat) {
   kpiActiveCategory = cat;
-  selectedKPIId = null; // old selection may not be in the new filter
+  selectedKPIId = null; // renderKPIList picks the first PI in the new filter
   renderKPIList();
+  document.querySelector("#kpi .kpi-list")?.scrollTo({ top: 0 });
 };
 
 function renderKPIList() {
@@ -1504,6 +1506,63 @@ function renderKPIList() {
       .toLowerCase().includes(q);
     return inCat && inSearch;
   });
+
+  // Instructional area first, then PI code, then title — so Channel Management
+  // sits together, Pricing sits together, and so on.
+  matches.sort((a, b) =>
+    String(a.area || "").localeCompare(String(b.area || "")) ||
+    String(a.code || "").localeCompare(String(b.code || "")) ||
+    String(a.title || "").localeCompare(String(b.title || ""))
+  );
+
+  // 892 indicators is a lot of DOM for a school laptop — show a slice and let
+  // search narrow it. Raise KPI_LIST_LIMIT to render more at once.
+  const KPI_LIST_LIMIT = 250;
+  const filtered = matches.slice(0, KPI_LIST_LIMIT);
+
+  if (!selectedKPIId || !filtered.some(k => k.id === selectedKPIId)) {
+    selectedKPIId = filtered.length ? filtered[0].id : null;
+  }
+
+  let lastArea = null;
+  const listHtml = filtered.map(k => {
+    const art = kpiArtFor(k);
+    const area = k.area || art.label;
+    let heading = "";
+    if (area !== lastArea) {
+      lastArea = area;
+      heading = `<div class="bookmark-group-label">${area}</div>`;
+    }
+    const isActive = k.id === selectedKPIId;
+    return heading + `
+      <button class="kpi-list-item ${isActive ? "active" : ""}" onclick="selectKPI('${k.id}')">
+        <span class="kpi-item-icon" style="color:${isActive ? "#fff" : art.color};">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round">${art.svg}</svg>
+        </span>
+        <span class="kpi-item-text">
+          ${k.title}
+          <span class="kpi-cluster-tag">${k.code ? k.code + " · " : ""}${k.cluster}</span>
+        </span>
+        ${bookmarked.includes(k.id) ? `<span class="kpi-bookmark-dot">${icon("bookmarkFilled")}</span>` : ""}
+      </button>
+    `;
+  }).join("") || `<div class="admin-empty-state">No matching performance indicators.</div>`;
+
+  const moreHtml = matches.length > filtered.length
+    ? `<div class="admin-empty-state">Showing ${filtered.length} of ${matches.length} — keep typing to narrow it down.</div>`
+    : "";
+
+  const selected = filtered.find(k => k.id === selectedKPIId) || filtered[0];
+
+  container.innerHTML = `
+    <div class="category-filters">${filtersHtml}</div>
+    <div class="kpi-layout">
+      <div class="kpi-list">${listHtml}${moreHtml}</div>
+      <div class="kpi-detail" id="kpiDetail">${selected ? renderKPIDetailHtml(selected) : `<div class="admin-empty-state">Select a performance indicator.</div>`}</div>
+    </div>
+  `;
+}
 
   // 892 indicators is a lot of DOM for a school laptop — show a slice and let
   // search narrow it. Raise KPI_LIST_LIMIT to render more at once.

@@ -766,15 +766,43 @@ function normalizeCourse(course, courseIndex = 0) {
 // free to serve). Firestore's "kpis" collection holds ONLY admin changes —
 // edited study notes, brand-new PIs, and { id, hidden: true } markers — so
 // student page loads cost almost no Firestore reads.
+// Every PI file the site loads. Add a cluster by dropping its JSON next to
+// index.html and adding the filename here — nothing else needs to change.
+const KPI_FILES = ["kpis.json", "kpis-finance.json"];
+
 async function loadKPIs() {
   let base = [];
-  try {
-    const r = await fetch("kpis.json");
-    if (!r.ok) throw new Error(`kpis.json returned ${r.status}`);
-    base = await r.json();
-  } catch (e) {
-    console.error("Failed to load kpis.json:", e);
-  }
+
+  const files = await Promise.all(KPI_FILES.map(async name => {
+    try {
+      const r = await fetch(name);
+      if (!r.ok) throw new Error(`${name} returned ${r.status}`);
+      return await r.json();
+    } catch (e) {
+      console.error(`Failed to load ${name}:`, e);
+      return [];
+    }
+  }));
+
+  // The Business Administration Core is shared across clusters, so the same PI
+  // code shows up in several files. Merge on the code rather than the id: keep
+  // one entry, prefer whichever copy actually has study notes, and collect
+  // every cluster it appears in.
+  const byCode = new Map();
+  files.flat().forEach(k => {
+    if (!k || !k.id) return;
+    const key = k.code || k.id;
+    const prev = byCode.get(key);
+    if (!prev) { byCode.set(key, { ...k, appearsIn: [...(k.appearsIn || [])] }); return; }
+
+    const prevHasNotes = !!(prev.explanation || prev.sampleAnswer);
+    const nextHasNotes = !!(k.explanation || k.sampleAnswer);
+    const merged = (!prevHasNotes && nextHasNotes) ? { ...prev, ...k } : { ...k, ...prev };
+    merged.appearsIn = [...new Set([...(prev.appearsIn || []), ...(k.appearsIn || [])])];
+    byCode.set(key, merged);
+  });
+
+  base = [...byCode.values()];
   if (!base.length) base = KPI_SEED;
 
   let overrides = [];

@@ -1,0 +1,179 @@
+/* =========================================================================
+   FARM4GLASS — COURSE UNITS
+   Loaded after style.css. Everything here is new: unit rows on the course
+   page, the Video / Practice / Article tab bar, the PDF viewer, and the
+   per-unit blocks in the admin course editor.
+
+   Same variables, same fonts, same pill language as the rest of the portal.
+   ========================================================================= */
+
+/* ----- unit rows on the course page ----- */
+.unit-row .lr-status { font-size: 14px; font-weight: 800; color: var(--muted); }
+.unit-row.done .lr-status { color: #166534; }
+
+.unit-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.unit-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  border-radius: 999px; padding: 3px 10px;
+  font-size: 11.5px; font-weight: 700;
+  background: rgba(22, 125, 181, .1);
+  color: var(--blue-dark);
+}
+.unit-chip .icon-svg { width: 12px; height: 12px; }
+.unit-chip.done { background: #dcfce7; color: #166534; }
+.unit-chip.missing { background: transparent; color: var(--muted); border: 1px dashed var(--border); }
+
+/* ----- unit view ----- */
+.unit-view-wrap { max-width: 900px; }
+.unit-view-head { margin-bottom: 20px; }
+.unit-view-head h1 { font-size: 30px; font-weight: 900; letter-spacing: -.03em; margin-bottom: 6px; }
+.unit-view-meta { color: var(--muted); font-size: 14px; font-weight: 600; }
+
+/* ----- the tab bar ----- */
+.unit-tabs {
+  display: flex; gap: 8px; margin-bottom: 22px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; padding-bottom: 2px;
+}
+.unit-tabs::-webkit-scrollbar { display: none; }
+
+.unit-tab {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: 999px;
+  background: rgba(255, 255, 255, .8);
+  border: 1px solid rgba(15, 95, 140, .16);
+  backdrop-filter: blur(8px);
+  font-family: inherit; font-size: 13.5px; font-weight: 700;
+  color: #4a6c8c; cursor: pointer; white-space: nowrap;
+  transition: transform .14s cubic-bezier(.2,.8,.2,1), background .2s, border-color .2s, color .2s, box-shadow .2s;
+}
+.unit-tab:hover { border-color: var(--blue); color: var(--blue-dark); background: #fff; }
+.unit-tab:active { transform: translateY(1px) scale(.985); }
+.unit-tab .icon-svg { width: 15px; height: 15px; }
+
+.unit-tab.active {
+  background: #0a1a2b; border-color: #0a1a2b; color: #fff;
+  box-shadow: 0 10px 22px rgba(10, 26, 43, .22);
+}
+.unit-tab.empty { opacity: .45; }
+.unit-tab:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.unit-pane { min-height: 120px; }
+.unit-pane .video-container { margin-bottom: 20px; }
+.unit-pane .vl-info { padding: 22px; }
+.unit-pane .quiz-header { padding: 20px 24px; }
+
+/* ----- PDF article ----- */
+.unit-pdf-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.unit-pdf-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 999px;
+  border: 1.5px solid var(--blue); color: var(--blue-dark);
+  background: rgba(255, 255, 255, .8);
+  font-size: 13.5px; font-weight: 700; text-decoration: none;
+  transition: background .2s, color .2s, transform .14s cubic-bezier(.2,.8,.2,1);
+}
+.unit-pdf-link:hover { background: var(--blue); color: #fff; transform: translateY(-1px); }
+.unit-pdf-link .icon-svg { width: 15px; height: 15px; }
+
+.unit-pdf {
+  display: block; width: 100%;
+  height: min(72vh, 780px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  margin-bottom: 20px;
+}
+
+/* ----- admin: one block per unit ----- */
+.admin-unit-block { background: rgba(248, 250, 252, .7); }
+.admin-unit-part {
+  border-top: 1px dashed var(--border);
+  padding-top: 14px; margin-top: 14px;
+}
+.admin-unit-part:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+.admin-unit-part-label {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11.5px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--blue-dark);
+  margin-bottom: 10px;
+}
+.admin-unit-part-label .icon-svg { width: 14px; height: 14px; }
+
+/* ----- mobile ----- */
+@media (max-width: 768px) {
+  .unit-view-head h1 { font-size: 24px; }
+  .unit-tabs { gap: 6px; margin-bottom: 18px; }
+  .unit-tab { padding: 9px 15px; font-size: 12.5px; }
+  .unit-pane .vl-info { padding: 18px; }
+  .unit-pdf { height: 62vh; border-radius: 14px; }
+  .unit-pdf-actions .unit-pdf-link { flex: 1 1 auto; justify-content: center; }
+  .unit-chip { font-size: 11px; padding: 3px 9px; }
+}
+
+@media (max-width: 380px) {
+  .unit-chips { gap: 5px; }
+  .unit-tab { padding: 9px 13px; }
+}
+
+/* =========================================================================
+   FARM4GLASS — CERTIFICATES + PROFILE EVENTS
+   ========================================================================= */
+
+/* ----- course-complete banner ----- */
+.cert-cta {
+  display: flex; justify-content: space-between; align-items: center; gap: 20px;
+  padding: 20px 24px; margin-bottom: 24px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 2px solid #f59e0b;
+}
+.cert-cta-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 16px; font-weight: 800; color: #92400e;
+}
+.cert-cta-title .icon-svg { width: 19px; height: 19px; }
+.cert-cta-desc { font-size: 13px; color: #a16207; margin-top: 4px; }
+.cert-cta .btn-primary { flex: none; }
+
+#portal .cert-cta {
+  border-radius: 26px;
+  box-shadow: 0 24px 56px rgba(217, 119, 6, .18);
+}
+#portal .cert-cta .btn-primary { background: #0a1a2b; }
+#portal .cert-cta .btn-primary:hover { background: #17334f; }
+
+/* ----- certificate rows on the profile ----- */
+.cert-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 4px; border-bottom: 1px solid var(--border);
+}
+.cert-row:last-child { border-bottom: none; }
+.cert-row > .icon-svg { width: 22px; height: 22px; color: var(--amber); flex-shrink: 0; }
+.cert-row-info { flex: 1; min-width: 0; }
+.cert-row-title { font-size: 14.5px; font-weight: 700; }
+.cert-row-sub { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+.cert-row .admin-btn-sm { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.cert-row .admin-btn-sm .icon-svg { width: 14px; height: 14px; }
+
+/* ----- event chips on the profile card ----- */
+.profile-events { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.profile-event-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: 999px; padding: 5px 12px;
+  font-size: 12px; font-weight: 700;
+  background: rgba(22, 125, 181, .1); color: var(--blue-dark);
+}
+.profile-event-chip .icon-svg { width: 13px; height: 13px; }
+.profile-event-empty { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+
+#portal .form-group select { width: 100%; max-width: 400px; }
+
+@media (max-width: 768px) {
+  .cert-cta { flex-direction: column; align-items: stretch; padding: 18px; }
+  .cert-cta .btn-primary { width: 100%; text-align: center; }
+  .cert-row { flex-wrap: wrap; }
+  .cert-row .admin-btn-sm { margin-left: auto; }
+  .profile-events { justify-content: center; }
+}

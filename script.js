@@ -3478,24 +3478,33 @@ window.f4gNotice = f4gNotice;
 
 
 /* =========================================================================
-   PART 2 — PREPARED EVENT AI
+   PART 2 — PREPARED EVENT CHECKER
    -------------------------------------------------------------------------
-   A student picks their event, uploads their written entry as a PDF, and
-   Gemini (via Firebase AI Logic) reviews it against the rubric an admin has
-   entered for that event in Admin > Rubrics.
+   A student picks their event and uploads their written entry as a PDF. The
+   PDF is read IN THE BROWSER with PDF.js — it is never uploaded anywhere, not
+   to Firebase, not to Google, not to us. Nothing leaves the student's laptop.
 
-   IMPORTANT DESIGN RULE: the model is given ONLY the rubric text and penalty
-   rules stored in Firestore. It is instructed never to invent an official
-   point value. If the admin hasn't entered a point value for a rule, the
-   model reports the issue without inventing a number. That keeps the tool
-   from confidently telling a student they'll lose points they won't — the
-   one failure mode that would actually hurt someone at a conference.
+   Every check here is deterministic: page count, word count, and whether
+   required text (section headings, "Statement of Assurances", and so on) is
+   actually present in the document. There is no guessing and no model, so a
+   result is either right or it's a bug — it can never be a confident
+   hallucination that costs a student points at a conference.
+
+   Penalty point values shown come ONLY from what an admin typed into
+   Admin > Rubrics. If no value was entered, the check says to confirm it in
+   the current DECA guidelines rather than inventing a number.
+
+   The AI review code is kept below but DORMANT — flip PE_AI_ENABLED to true
+   once App Check and a valid model name are set up, and it comes back as a
+   second, clearly-labelled opinion on top of these hard checks.
 
    Rubric doc shape (Firestore "rubrics" collection, one doc per event):
      {
        id, eventName, eventCode, category,
        pageLimit: number|null,
-       penaltyRules:   [{ rule, points }],            // points may be null
+       wordLimit: number|null,
+       requiredText:   [{ phrase, points }],   // points may be null
+       penaltyRules:   [{ rule, points }],     // points may be null
        rubricSections: [{ section, criteria }],
        notes: "any extra guideline text pasted by an admin"
      }
@@ -3511,10 +3520,14 @@ let peResultEvent = null;
 let adminEditingRubricId = null;
 let peModel = null;
 
-// Verify this against the current Firebase AI Logic model list before launch —
-// a model name that doesn't exist fails at request time, not at page load.
-const PE_MODEL_NAME = "gemini-3.5-flash";
-const PE_MAX_MB = 15;
+// Set to true only after App Check is configured AND PE_MODEL_NAME is verified
+// against the current Firebase AI Logic model list. The checks above work
+// regardless of this flag.
+const PE_AI_ENABLED = false;
+const PE_MODEL_NAME = "gemini-3-flash";
+
+const PE_MAX_MB = 25;
+const PDFJS_VERSION = "4.6.82";
 
 // ---- load rubrics -------------------------------------------------------
 // Called from startDataLoads(), never at page load — see the DATA LOADS
@@ -3543,11 +3556,462 @@ async function loadRubrics() {
   if (adminActiveSubTab === "rubrics" && document.getElementById("admin")?.classList.contains("active")) renderAdminRubricsSection();
 }
 
+// Enough entered to run the deterministic checks?
+function rubricHasChecks(r) {
+  return !!(r && (r.pageLimit || r.wordLimit || (r.requiredText && r.requiredText.length)));
+}
+
+// Enough entered for the (dormant) AI review?
 function rubricIsReady(r) {
   return !!(r && ((r.rubricSections && r.rubricSections.length) || (r.penaltyRules && r.penaltyRules.length)));
 }
 
-// ---- model --------------------------------------------------------------
+// ---- PDF.js -------------------------------------------------------------
+// Loaded on demand the first time someone runs a check, so it costs nothing
+// for students who never open this tab.
+let pdfjsPromise = null;
+function loadPdfJs() {
+  if (pdfjsPromise) return pdfjsPromise;
+  pdfjsPromise = (async () => {
+    const base = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}`;
+    const lib = await import(`${base}/pdf.min.mjs`);
+    lib.GlobalWorkerOptions.workerSrc = `${base}/pdf.worker.min.mjs`;
+    return lib;
+  })();
+  return pdfjsPromise;
+}
+
+async function extractPdfText(file) {
+  const pdfjs = await loadPdfJs();
+  const data = await file.arrayBuffer();
+  const pdf = await pdfjs.getDocument({ data }).promise;
+
+  const pages = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    pages.push(content.items.map(it => it.str).join(" "));
+  }
+
+  return { pageCount: pdf.numPages, pages, text: pages.join("\n\n") };
+}
+
+// Matching is done on a flattened form so curly quotes, double spaces, line
+// breaks mid-heading, and capitalization don't cause false misses.
+function normalizeForMatch(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/[\u2018\u2019\u02bc]/g, "'")
+    .replace(/[\u201c\u201d]/g, '"')
+    .replace(/[^a-z0-9']+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function countWords(text) {
+  const clean = String(text || "").replace(/\s+/g, " ").trim();
+  return clean ? clean.split(" ").length : 0;
+}
+
+// Looks for a penalty rule the admin already entered that covers this check,
+// so the point value shown is always one they typed — never one we assumed.
+function penaltyPointsFor(rubric, re) {
+  const rule = (rubric.penaltyRules || []).find(p => re.test(p.rule || ""));
+  return rule && rule.points != null ? rule.points : null;
+}
+
+// ---- the checks ---------------------------------------------------------
+function buildEntryChecks(rubric, doc) {
+  const checks = [];
+  const words = countWords(doc.text);
+  const normPages = doc.pages.map(normalizeForMatch);
+  const normAll = normPages.join(" \n ");
+
+  // A scanned/photographed entry has almost no extractable text. Say so
+  // loudly rather than reporting every section as missing.
+  const looksScanned = words < 40 && doc.pageCount > 0;
+  if (looksScanned) {
+    checks.push({
+      label: "Text could not be read from this PDF",
+      status: "warn",
+      detail: `Only ${words} words were readable across ${doc.pageCount} ${doc.pageCount === 1 ? "page" : "pages"}. This usually means the entry was scanned or exported as images rather than text.`,
+      fix: "Re-export straight from Google Docs or Word (File > Download > PDF) instead of scanning or screenshotting. Page count below is still accurate.",
+      points: null
+    });
+  }
+
+  // Page limit
+  if (rubric.pageLimit) {
+    const over = doc.pageCount - rubric.pageLimit;
+    checks.push({
+      label: `Page limit (${rubric.pageLimit} pages)`,
+      status: over > 0 ? "fail" : "pass",
+      detail: over > 0
+        ? `Your entry is ${doc.pageCount} pages — ${over} over the limit.`
+        : `Your entry is ${doc.pageCount} pages, within the ${rubric.pageLimit}-page limit.`,
+      fix: over > 0 ? "Cut or condense until you're at or under the limit. Appendices usually count unless your guidelines say otherwise — check yours." : "",
+      points: over > 0 ? penaltyPointsFor(rubric, /page limit|page maximum|exceed.*page|too many pages/i) : null
+    });
+  }
+
+  // Word limit
+  if (rubric.wordLimit && !looksScanned) {
+    const over = words - rubric.wordLimit;
+    checks.push({
+      label: `Word limit (${rubric.wordLimit.toLocaleString()} words)`,
+      status: over > 0 ? "fail" : "pass",
+      detail: over > 0
+        ? `Your entry is about ${words.toLocaleString()} words — roughly ${over.toLocaleString()} over.`
+        : `Your entry is about ${words.toLocaleString()} words, within the limit.`,
+      fix: over > 0 ? "This count comes from the text in the PDF, so it includes headings and captions. Trim the longest sections first." : "",
+      points: over > 0 ? penaltyPointsFor(rubric, /word limit|word count|exceed.*word/i) : null
+    });
+  }
+
+  // Required text (section headings, signed pages, and so on)
+  (rubric.requiredText || []).forEach(item => {
+    const needle = normalizeForMatch(item.phrase);
+    if (!needle) return;
+
+    const pageIdx = normPages.findIndex(p => p.includes(needle));
+    const found = pageIdx >= 0 || normAll.includes(needle);
+
+    checks.push({
+      label: item.phrase,
+      status: looksScanned ? "warn" : (found ? "pass" : "fail"),
+      detail: looksScanned
+        ? "Couldn't check — no readable text in this PDF."
+        : (found
+            ? `Found${pageIdx >= 0 ? ` on page ${pageIdx + 1}` : ""}.`
+            : "Not found anywhere in the entry."),
+      fix: (!found && !looksScanned)
+        ? "Check the exact wording against your event's guidelines — this looks for the text as written, so a differently-worded heading won't match."
+        : "",
+      points: (!found && !looksScanned) ? (item.points ?? null) : null
+    });
+  });
+
+  const fails = checks.filter(c => c.status === "fail");
+  const warns = checks.filter(c => c.status === "warn");
+  const knownPoints = fails.reduce((sum, c) => sum + (c.points ?? 0), 0);
+  const unknownPoints = fails.some(c => c.points == null);
+
+  return {
+    checks,
+    pageCount: doc.pageCount,
+    wordCount: words,
+    failCount: fails.length,
+    warnCount: warns.length,
+    knownPoints,
+    unknownPoints,
+    scanned: looksScanned,
+    checkedAt: new Date().toISOString()
+  };
+}
+
+// ---- file handling ------------------------------------------------------
+window.peHandleFile = function(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+
+  if (file.type !== "application/pdf") {
+    alert("Please upload your entry as a PDF. Export it from Google Docs or Word with File > Download > PDF.");
+    input.value = "";
+    return;
+  }
+  if (file.size > PE_MAX_MB * 1024 * 1024) {
+    alert(`That PDF is ${(file.size / 1048576).toFixed(1)} MB. The limit is ${PE_MAX_MB} MB — try exporting at a lower image quality.`);
+    input.value = "";
+    return;
+  }
+
+  peFile = file;
+  peResult = null;
+  renderPreparedEventTab();
+};
+
+window.peSelectEvent = function(id) {
+  peSelectedEventId = id;
+  peResult = null;
+  renderPreparedEventTab();
+};
+
+window.peClearFile = function() {
+  peFile = null;
+  peResult = null;
+  renderPreparedEventTab();
+};
+
+// ---- run the checks ------------------------------------------------------
+window.checkPreparedEntry = async function() {
+  const rubric = rubrics.find(r => r.id === peSelectedEventId);
+  if (!rubric) return alert("Pick your event first.");
+  if (!peFile) return alert("Upload your written entry as a PDF first.");
+  if (!rubricHasChecks(rubric)) {
+    return alert(`No checks have been set up for ${rubric.eventName} yet. An admin needs to add a page limit, a word limit, or required text under Admin > Rubrics.`);
+  }
+
+  peBusy = true;
+  peResult = null;
+  renderPreparedEventTab();
+
+  try {
+    const doc = await extractPdfText(peFile);
+    peResult = buildEntryChecks(rubric, doc);
+    peResultEvent = rubric;
+    peBusy = false;
+    renderPreparedEventTab();
+
+    const banner = document.querySelector(".pe-score-banner");
+    if (banner) f4gBurstFrom(banner, peResult.failCount === 0 ? 34 : 16);
+
+    await savePreparedEventReview(rubric, peResult);
+    await awardPreparedEventXP();
+  } catch (e) {
+    console.error("Prepared Event check failed:", e);
+    peBusy = false;
+    renderPreparedEventTab();
+    alert("Couldn't read that PDF. If it's password-protected or damaged, try re-exporting it. The browser console has the exact error.");
+  }
+};
+
+async function savePreparedEventReview(rubric, result) {
+  if (!currentUser || !userData) return;
+  try {
+    // Store a compact record so the user doc stays small.
+    const entry = {
+      eventId: rubric.id,
+      eventName: rubric.eventName,
+      fileName: peFile ? peFile.name : "",
+      date: new Date().toISOString(),
+      pageCount: result.pageCount ?? 0,
+      wordCount: result.wordCount ?? 0,
+      failCount: result.failCount ?? 0,
+      knownPoints: result.knownPoints ?? 0,
+      unknownPoints: !!result.unknownPoints
+    };
+    const reviews = [...(userData.preparedEventReviews || []), entry].slice(-10);
+    await updateDoc(doc(db, "users", currentUser.uid), { preparedEventReviews: reviews });
+    userData.preparedEventReviews = reviews;
+  } catch (e) {
+    console.error("Couldn't save that check:", e);
+  }
+}
+
+// One XP award per day so the tab can't be farmed.
+async function awardPreparedEventXP() {
+  if (!currentUser || !userData) return;
+  const today = new Date().toISOString().slice(0, 10);
+  if (userData.lastPreparedEventXPDate === today) return;
+
+  const xp = 40;
+  try {
+    const newXP = userData.xp + xp;
+    const oldAnimal = getAnimalForXP(userData.xp);
+    const newAnimal = getAnimalForXP(newXP);
+    const activityLog = [...(userData.activityLog || []), { date: today, xp, lessonId: "prepared-event-check", type: "review" }].slice(-300);
+
+    await updateDoc(doc(db, "users", currentUser.uid), {
+      xp: newXP,
+      activityLog,
+      lastPreparedEventXPDate: today
+    });
+
+    userData.xp = newXP;
+    userData.activityLog = activityLog;
+    userData.lastPreparedEventXPDate = today;
+
+    showXPToast(xp);
+    if (newAnimal.index > oldAnimal.index) setTimeout(() => showLevelUpModal(newAnimal), 800);
+    await checkAndAwardBadges();
+    renderSidebar();
+  } catch (e) {
+    console.error("Couldn't award check XP:", e);
+  }
+}
+
+// ---- rendering -----------------------------------------------------------
+function renderPreparedEventTab() {
+  const container = document.getElementById("preparedContent");
+  if (!container) return;
+
+  if (!rubricsLoaded) {
+    container.innerHTML = `<div class="admin-empty-state">Loading events...</div>`;
+    return;
+  }
+  if (!rubrics.length) {
+    container.innerHTML = `<div class="admin-empty-state">No events have been set up yet. An admin can add them under Admin &gt; Rubrics.</div>`;
+    return;
+  }
+
+  const selected = rubrics.find(r => r.id === peSelectedEventId) || null;
+  const ready = rubricHasChecks(selected);
+
+  const optionsHtml = [`<option value="">Select your event...</option>`]
+    .concat(rubrics.map(r =>
+      `<option value="${r.id}" ${r.id === peSelectedEventId ? "selected" : ""}>${r.eventName}${rubricHasChecks(r) ? "" : " — checks not set up yet"}</option>`
+    )).join("");
+
+  const fileHtml = peFile
+    ? `<div class="pe-file">
+         ${icon("check")}
+         <span>${peFile.name}</span>
+         <span class="pe-file-size">${(peFile.size / 1048576).toFixed(1)} MB</span>
+         <button class="admin-btn-sm ghost" onclick="peClearFile()">Remove</button>
+       </div>`
+    : "";
+
+  const canRun = selected && ready && peFile && !peBusy;
+
+  container.innerHTML = `
+    <div class="pe-layout">
+      <div>
+        <div class="widget">
+          <div class="widget-header"><span>Check your entry</span></div>
+
+          <div class="form-group">
+            <label>Your DECA Event</label>
+            <select id="peEvent" onchange="peSelectEvent(this.value)">${optionsHtml}</select>
+          </div>
+
+          ${selected && !ready ? `<div class="planner-warning">${icon("alert")} No checks have been set up for ${selected.eventName} yet. An admin can add its page limit and required sections under Admin &gt; Rubrics.</div>` : ""}
+
+          <div class="form-group">
+            <label>Written Entry (PDF)</label>
+            <div class="pe-drop" onclick="document.getElementById('peFileInput').click()">
+              ${icon("clipboard")}
+              <div class="pe-drop-title">Choose your PDF</div>
+              <div class="pe-drop-sub">Up to ${PE_MAX_MB} MB · export from Docs or Word as PDF so page breaks match what a judge sees</div>
+            </div>
+            <input type="file" id="peFileInput" accept="application/pdf" style="display:none" onchange="peHandleFile(this)">
+            ${fileHtml}
+          </div>
+
+          <button class="btn-primary" onclick="checkPreparedEntry()" ${canRun ? "" : "disabled style='opacity:.5;cursor:default;'"}>
+            ${peBusy ? "Checking..." : "Check My Entry"}
+          </button>
+
+          ${peBusy ? `<div class="pe-thinking" style="margin-top:16px;"><span></span><span></span><span></span> Reading your PDF in this browser — usually a couple of seconds.</div>` : ""}
+
+          <div class="pe-disclaimer">
+            Your file stays on this device. It's read here in your browser and never uploaded — not to Farm4Glass, not to anyone.
+          </div>
+        </div>
+
+        ${renderPreparedEventHistory()}
+      </div>
+
+      <div>${peResult ? renderPreparedEventResult() : renderPreparedEventPlaceholder(selected)}</div>
+    </div>
+  `;
+}
+
+function renderPreparedEventPlaceholder(selected) {
+  return `
+    <div class="widget">
+      <div class="widget-header"><span>What gets checked</span></div>
+      <div class="pe-list">
+        <div class="pe-list-row">${icon("file")}<span>Page count, measured against ${selected && selected.pageLimit ? `the ${selected.pageLimit}-page limit for ${selected.eventName}` : "your event's page limit"}.</span></div>
+        <div class="pe-list-row">${icon("search")}<span>Word count across the whole entry, including headings and captions.</span></div>
+        <div class="pe-list-row">${icon("check")}<span>Whether required text is actually in the document — section headings, the Statement of Assurances, anything your guidelines demand by name.</span></div>
+        <div class="pe-list-row">${icon("alert")}<span>Each miss comes back with the penalty points on file for it, and where in your entry to look.</span></div>
+      </div>
+      <div class="pe-disclaimer">
+        These are mechanical checks, not a score. They catch the formatting mistakes that cost easy points — they can't tell you whether your writing is any good, and they don't check margins, fonts, or spacing. Always read the current DECA guidelines for your event yourself, and have your advisor review the entry before you submit.
+      </div>
+    </div>
+  `;
+}
+
+function renderPreparedEventResult() {
+  const r = peResult;
+  const clean = r.failCount === 0 && r.warnCount === 0;
+
+  const headline = clean
+    ? "Everything checked out"
+    : r.failCount === 0
+      ? `${r.warnCount} thing${r.warnCount === 1 ? "" : "s"} to look at`
+      : `${r.failCount} issue${r.failCount === 1 ? "" : "s"} found`;
+
+  const pointsLine = r.failCount === 0
+    ? ""
+    : r.knownPoints > 0
+      ? `<div class="pe-score-num">${r.knownPoints}${r.unknownPoints ? "+" : ""}</div>
+         <div class="pe-score-label">penalty points at risk${r.unknownPoints ? " (some rules had no point value on file)" : ""}</div>`
+      : `<div class="pe-score-label">Point values for these aren't on file — confirm them in your event's current guidelines.</div>`;
+
+  const checksHtml = r.checks.map(c => `
+    <div class="pe-flag ${c.status}">
+      <div style="flex:1;">
+        <div class="pe-flag-title">${c.label}</div>
+        <div class="pe-flag-body">${c.detail || ""}</div>
+        ${c.fix ? `<div class="pe-flag-fix"><strong>Fix:</strong> ${c.fix}</div>` : ""}
+      </div>
+      <span class="pe-flag-pts">${
+        c.status === "pass" ? "OK"
+        : c.points != null ? `-${c.points}`
+        : c.status === "warn" ? "check"
+        : "check guidelines"
+      }</span>
+    </div>
+  `).join("");
+
+  return `
+    <div class="pe-score-banner ${clean ? "" : "flagged"}">
+      <div class="pe-score-num" style="${r.failCount ? "display:none;" : ""}">${clean ? icon("check") : ""}</div>
+      ${pointsLine}
+      <div class="pe-score-label">${headline}</div>
+      <div class="pe-score-note">
+        ${r.pageCount} ${r.pageCount === 1 ? "page" : "pages"} · about ${r.wordCount.toLocaleString()} words.
+        Count the pages yourself before you submit — a cover sheet added later changes this.
+      </div>
+    </div>
+
+    <h2 class="section-title">Checks</h2>
+    ${checksHtml || `<div class="admin-empty-state">No checks are set up for this event yet.</div>`}
+
+    <div class="pe-disclaimer">
+      Mechanical checks only — not an official score, and not a substitute for the current DECA guidelines for your event.
+      They don't check margins, font size, spacing, or anything about the quality of your writing.
+      Verify every formatting item yourself and have your advisor read the entry before you submit.
+    </div>
+  `;
+}
+
+function renderPreparedEventHistory() {
+  const reviews = (userData?.preparedEventReviews || []).slice().reverse();
+  if (!reviews.length) return "";
+
+  return `
+    <div class="widget" style="margin-top:20px;">
+      <div class="widget-header"><span>Your Past Checks</span></div>
+      ${reviews.map(rev => `
+        <div class="pe-history-row">
+          ${icon("clipboard")}
+          <span>${rev.eventName}</span>
+          <span class="pe-history-meta">${rev.failCount ?? 0} issue${(rev.failCount ?? 0) === 1 ? "" : "s"} · ${new Date(rev.date).toLocaleDateString()}</span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+
+/* =========================================================================
+   PART 2b — AI REVIEW (DORMANT)
+   -------------------------------------------------------------------------
+   Left in place, wired to nothing, and gated behind PE_AI_ENABLED at the top
+   of PART 2. Turning it on needs three things, in this order:
+     1. Firebase App Check registered with a reCAPTCHA v3 site key, pasted
+        into RECAPTCHA_V3_SITE_KEY near the top of this file.
+     2. PE_MODEL_NAME verified against the current Firebase AI Logic model
+        list — a name that doesn't exist fails at request time, not page load.
+     3. PE_AI_ENABLED = true, plus a button in renderPreparedEventTab that
+        calls analyzePreparedEvent().
+   Until then the deterministic checks above are the whole feature, and they
+   don't depend on any of it.
+   ========================================================================= */
+
 const PE_SYSTEM_INSTRUCTION = `
 You are an experienced DECA advisor giving a high school student PRACTICE feedback
 on a written/prepared event entry before they submit it. You are not an official
@@ -3577,22 +4041,6 @@ function getPreparedEventModel() {
   const schema = Schema.object({
     properties: {
       overallSummary: Schema.string(),
-      pageCountObserved: Schema.number(),
-      pageCountConfidence: Schema.string(),
-      estimatedPenaltyPoints: Schema.number(),
-      penaltyPointsUncertain: Schema.boolean(),
-      penaltyChecks: Schema.array({
-        items: Schema.object({
-          properties: {
-            rule: Schema.string(),
-            status: Schema.string(),      // "pass" | "fail" | "unclear"
-            points: Schema.number(),      // null when unknown
-            evidence: Schema.string(),
-            howToFix: Schema.string()
-          },
-          optionalProperties: ["points"]
-        })
-      }),
       rubricFeedback: Schema.array({
         items: Schema.object({
           properties: {
@@ -3605,8 +4053,7 @@ function getPreparedEventModel() {
       }),
       strengths: Schema.array({ items: Schema.string() }),
       topPriorities: Schema.array({ items: Schema.string() })
-    },
-    optionalProperties: ["pageCountObserved", "pageCountConfidence"]
+    }
   });
 
   const ai = getAI(app, { backend: new GoogleAIBackend() });
@@ -3623,41 +4070,29 @@ function getPreparedEventModel() {
 }
 
 function buildPreparedEventPrompt(rubric) {
-  const penalties = (rubric.penaltyRules || []).length
-    ? rubric.penaltyRules.map(p => `- ${p.rule}${p.points != null ? ` [${p.points} penalty points]` : " [point value not recorded — report as unknown]"}`).join("\n")
-    : "(no penalty rules have been entered for this event yet — skip the penalty section)";
-
   const sections = (rubric.rubricSections || []).length
     ? rubric.rubricSections.map(s => `- ${s.section}: ${s.criteria}`).join("\n")
     : "(no rubric sections have been entered for this event yet)";
 
   return `
 EVENT: ${rubric.eventName}${rubric.eventCode ? ` (${rubric.eventCode})` : ""}
-${rubric.pageLimit ? `STATED PAGE LIMIT: ${rubric.pageLimit} pages` : "PAGE LIMIT: not recorded — do not guess one"}
-
-PENALTY RULES FOR THIS EVENT:
-${penalties}
 
 RUBRIC SECTIONS AND CRITERIA FOR THIS EVENT:
 ${sections}
 
 ${rubric.notes ? `ADDITIONAL GUIDELINE NOTES:\n${rubric.notes}\n` : ""}
-The attached PDF is the student's written entry.
+The attached PDF is the student's written entry. Page counts, word counts, and
+required-section checks have already been done mechanically — do not repeat them
+and do not comment on them. Focus only on the quality of the writing.
 
 Do all of the following:
-1. Count the pages of the entry and report what you observe, plus how confident
-   you are. Tell the student to verify the count themselves.
-2. Work through every penalty rule above and mark it pass, fail, or unclear.
-   Sum only the point values you were actually given into estimatedPenaltyPoints,
-   and set penaltyPointsUncertain to true if any failing rule had no point value.
-3. For each rubric section above, say which performance level the entry currently
+1. For each rubric section above, say which performance level the entry currently
    reads at and exactly what would move it up one level.
-4. List genuine strengths — things the student should not change.
-5. List the 3-5 highest-impact fixes, in priority order.
+2. List genuine strengths — things the student should not change.
+3. List the 3-5 highest-impact fixes, in priority order.
 `.trim();
 }
 
-// ---- file handling ------------------------------------------------------
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -3667,330 +4102,31 @@ function fileToBase64(file) {
   });
 }
 
-window.peHandleFile = function(input) {
-  const file = input.files && input.files[0];
-  if (!file) return;
-
-  if (file.type !== "application/pdf") {
-    alert("Please upload your entry as a PDF. Export it from Google Docs or Word with File > Download > PDF.");
-    input.value = "";
-    return;
-  }
-  if (file.size > PE_MAX_MB * 1024 * 1024) {
-    alert(`That PDF is ${(file.size / 1048576).toFixed(1)} MB. The limit is ${PE_MAX_MB} MB — try exporting at a lower image quality.`);
-    input.value = "";
-    return;
-  }
-
-  peFile = file;
-  renderPreparedEventTab();
-};
-
-window.peSelectEvent = function(id) {
-  peSelectedEventId = id;
-  renderPreparedEventTab();
-};
-
-window.peClearFile = function() {
-  peFile = null;
-  renderPreparedEventTab();
-};
-
-// ---- the analysis --------------------------------------------------------
 window.analyzePreparedEvent = async function() {
+  if (!PE_AI_ENABLED) return;
   const rubric = rubrics.find(r => r.id === peSelectedEventId);
 
   if (!appCheckReady) {
-    return alert("This tab needs App Check turned on. Add your reCAPTCHA v3 site key to RECAPTCHA_V3_SITE_KEY at the top of script.js, then reload.");
+    return alert("This needs App Check turned on. Add your reCAPTCHA v3 site key to RECAPTCHA_V3_SITE_KEY at the top of script.js, then reload.");
   }
   if (!rubric) return alert("Pick your event first.");
   if (!peFile) return alert("Upload your written entry as a PDF first.");
   if (!rubricIsReady(rubric)) {
-    return alert(`The rubric for ${rubric.eventName} hasn't been added yet. An admin needs to enter it under Admin > Rubrics before this event can be reviewed.`);
+    return alert(`The rubric for ${rubric.eventName} hasn't been added yet. An admin needs to enter it under Admin > Rubrics.`);
   }
-
-  peBusy = true;
-  peResult = null;
-  renderPreparedEventTab();
 
   try {
     const base64 = await fileToBase64(peFile);
     const model = getPreparedEventModel();
-
     const result = await model.generateContent([
       { inlineData: { mimeType: "application/pdf", data: base64 } },
       { text: buildPreparedEventPrompt(rubric) }
     ]);
-
-    peResult = JSON.parse(result.response.text());
-    peResultEvent = rubric;
-    peBusy = false;
-    renderPreparedEventTab();
-
-    const banner = document.querySelector(".pe-score-banner");
-    if (banner) f4gBurstFrom(banner, (peResult.estimatedPenaltyPoints || 0) === 0 ? 34 : 18);
-
-    await savePreparedEventReview(rubric, peResult);
-    await awardPreparedEventXP();
+    console.log("AI review:", JSON.parse(result.response.text()));
   } catch (e) {
     console.error("Prepared Event AI failed:", e);
-    peBusy = false;
-    renderPreparedEventTab();
-
-    const msg = String(e && e.message ? e.message : e);
-    if (msg.includes("App Check") || msg.includes("appCheck") || msg.includes("403")) {
-      alert("The AI review couldn't run — this is almost always an App Check or API setup issue. Check the browser console, and see the setup steps in the update guide.");
-    } else {
-      alert("The AI review couldn't finish. Check the browser console for the exact error, then try again.");
-    }
   }
 };
-
-async function savePreparedEventReview(rubric, result) {
-  if (!currentUser || !userData) return;
-  try {
-    // Store a compact record so the user doc stays small.
-    const entry = {
-      eventId: rubric.id,
-      eventName: rubric.eventName,
-      fileName: peFile ? peFile.name : "",
-      date: new Date().toISOString(),
-      estimatedPenaltyPoints: result.estimatedPenaltyPoints ?? 0,
-      penaltyPointsUncertain: !!result.penaltyPointsUncertain,
-      failCount: (result.penaltyChecks || []).filter(c => c.status === "fail").length,
-      overallSummary: (result.overallSummary || "").slice(0, 600),
-      topPriorities: (result.topPriorities || []).slice(0, 5)
-    };
-    const reviews = [...(userData.preparedEventReviews || []), entry].slice(-10);
-    await updateDoc(doc(db, "users", currentUser.uid), { preparedEventReviews: reviews });
-    userData.preparedEventReviews = reviews;
-  } catch (e) {
-    console.error("Couldn't save that review:", e);
-  }
-}
-
-// One XP award per day so the tab can't be farmed.
-async function awardPreparedEventXP() {
-  if (!currentUser || !userData) return;
-  const today = new Date().toISOString().slice(0, 10);
-  if (userData.lastPreparedEventXPDate === today) return;
-
-  const xp = 40;
-  try {
-    const newXP = userData.xp + xp;
-    const oldAnimal = getAnimalForXP(userData.xp);
-    const newAnimal = getAnimalForXP(newXP);
-    const activityLog = [...(userData.activityLog || []), { date: today, xp, lessonId: "prepared-event-ai", type: "review" }].slice(-300);
-
-    await updateDoc(doc(db, "users", currentUser.uid), {
-      xp: newXP,
-      activityLog,
-      lastPreparedEventXPDate: today
-    });
-
-    userData.xp = newXP;
-    userData.activityLog = activityLog;
-    userData.lastPreparedEventXPDate = today;
-
-    showXPToast(xp);
-    if (newAnimal.index > oldAnimal.index) setTimeout(() => showLevelUpModal(newAnimal), 800);
-    await checkAndAwardBadges();
-    renderSidebar();
-  } catch (e) {
-    console.error("Couldn't award review XP:", e);
-  }
-}
-
-// ---- rendering -----------------------------------------------------------
-function renderPreparedEventTab() {
-  const container = document.getElementById("preparedContent");
-  if (!container) return;
-
-  if (!rubricsLoaded) {
-    container.innerHTML = `<div class="admin-empty-state">Loading events...</div>`;
-    return;
-  }
-  if (!rubrics.length) {
-    container.innerHTML = `<div class="admin-empty-state">No events have been set up yet. An admin can add them under Admin &gt; Rubrics.</div>`;
-    return;
-  }
-
-  const selected = rubrics.find(r => r.id === peSelectedEventId) || null;
-  const ready = rubricIsReady(selected);
-
-  const optionsHtml = [`<option value="">Select your event...</option>`]
-    .concat(rubrics.map(r =>
-      `<option value="${r.id}" ${r.id === peSelectedEventId ? "selected" : ""}>${r.eventName}${rubricIsReady(r) ? "" : " — rubric not added yet"}</option>`
-    )).join("");
-
-  const fileHtml = peFile
-    ? `<div class="pe-file">
-         ${icon("check")}
-         <span>${peFile.name}</span>
-         <span class="pe-file-size">${(peFile.size / 1048576).toFixed(1)} MB</span>
-         <button class="admin-btn-sm ghost" onclick="peClearFile()">Remove</button>
-       </div>`
-    : "";
-
-  const canRun = appCheckReady && selected && ready && peFile && !peBusy;
-
-  container.innerHTML = `
-    <div class="pe-layout">
-      <div>
-        <div class="widget">
-          <div class="widget-header"><span>Submit your entry</span></div>
-
-          ${!appCheckReady ? `<div class="planner-warning">${icon("alert")} AI review is turned off until a reCAPTCHA v3 site key is added to script.js. Everything else on the site works normally.</div>` : ""}
-
-          <div class="form-group">
-            <label>Your DECA Event</label>
-            <select id="peEvent" onchange="peSelectEvent(this.value)">${optionsHtml}</select>
-          </div>
-
-          ${selected && !ready ? `<div class="planner-warning">${icon("alert")} The rubric for ${selected.eventName} hasn't been entered yet, so a review would have nothing to compare against. An admin can add it under Admin &gt; Rubrics.</div>` : ""}
-
-          <div class="form-group">
-            <label>Written Entry (PDF)</label>
-            <div class="pe-drop" onclick="document.getElementById('peFileInput').click()">
-              ${icon("clipboard")}
-              <div class="pe-drop-title">Choose your PDF</div>
-              <div class="pe-drop-sub">Up to ${PE_MAX_MB} MB · export from Docs or Word as PDF so page breaks match what a judge sees</div>
-            </div>
-            <input type="file" id="peFileInput" accept="application/pdf" style="display:none" onchange="peHandleFile(this)">
-            ${fileHtml}
-          </div>
-
-          <button class="btn-primary" onclick="analyzePreparedEvent()" ${canRun ? "" : "disabled style='opacity:.5;cursor:default;'"}>
-            ${peBusy ? "Reviewing..." : "Review My Entry"}
-          </button>
-
-          ${peBusy ? `<div class="pe-thinking" style="margin-top:16px;"><span></span><span></span><span></span> Reading your entry against the ${selected ? selected.eventName : ""} rubric — this takes about a minute.</div>` : ""}
-        </div>
-
-        ${renderPreparedEventHistory()}
-      </div>
-
-      <div>${peResult ? renderPreparedEventResult() : renderPreparedEventPlaceholder(selected)}</div>
-    </div>
-  `;
-}
-
-function renderPreparedEventPlaceholder(selected) {
-  return `
-    <div class="widget">
-      <div class="widget-header"><span>How this works</span></div>
-      <div class="pe-list">
-        <div class="pe-list-row">${icon("clipboard")}<span>Pick your event and upload your written entry as a PDF.</span></div>
-        <div class="pe-list-row">${icon("search")}<span>Your entry gets read against ${selected ? `the ${selected.eventName} rubric` : "that event's rubric"} and its penalty-point rules.</span></div>
-        <div class="pe-list-row">${icon("alert")}<span>You get back every penalty rule marked pass, fail, or unclear — with where in your entry the problem is.</span></div>
-        <div class="pe-list-row">${icon("target")}<span>Then section-by-section feedback: what level you're reading at now, and what moves you up one.</span></div>
-      </div>
-      <div class="pe-disclaimer">
-        This is practice feedback from an AI, not an official score. It can miss things and it can be wrong —
-        especially about formatting rules and page counts. Always check the current DECA guidelines for your
-        event yourself, and have your advisor review your entry before you submit it.
-      </div>
-    </div>
-  `;
-}
-
-function renderPreparedEventResult() {
-  const r = peResult;
-  const penalties = r.penaltyChecks || [];
-  const fails = penalties.filter(c => c.status === "fail");
-  const unclear = penalties.filter(c => c.status === "unclear");
-  const clean = fails.length === 0 && unclear.length === 0;
-
-  const levelClass = (lvl = "") => {
-    const l = lvl.toLowerCase();
-    if (l.startsWith("exceed")) return "exceeds";
-    if (l.startsWith("meet")) return "meets";
-    if (l.startsWith("below")) return "below";
-    return "little";
-  };
-
-  const penaltyHtml = penalties.map(c => `
-    <div class="pe-flag ${c.status}">
-      <div style="flex:1;">
-        <div class="pe-flag-title">${c.rule}</div>
-        <div class="pe-flag-body">${c.evidence || ""}</div>
-        ${c.status !== "pass" && c.howToFix ? `<div class="pe-flag-fix"><strong>Fix:</strong> ${c.howToFix}</div>` : ""}
-      </div>
-      <span class="pe-flag-pts">${
-        c.status === "pass" ? "OK"
-        : c.points != null ? `-${c.points}`
-        : "check guidelines"
-      }</span>
-    </div>
-  `).join("") || `<div class="admin-empty-state">No penalty rules are on file for this event.</div>`;
-
-  const sectionsHtml = (r.rubricFeedback || []).map(s => `
-    <div class="pe-section-card">
-      <div class="pe-section-head">
-        <span class="pe-section-name">${s.section}</span>
-        <span class="pe-level-pill ${levelClass(s.level)}">${s.level}</span>
-      </div>
-      <div class="pe-flag-body">${s.whyThisLevel || ""}</div>
-      ${s.howToImprove ? `<div class="pe-flag-fix"><strong>To move up:</strong> ${s.howToImprove}</div>` : ""}
-    </div>
-  `).join("");
-
-  return `
-    <div class="pe-score-banner ${clean ? "" : "flagged"}">
-      <div class="pe-score-num">${r.estimatedPenaltyPoints ?? 0}${r.penaltyPointsUncertain ? "+" : ""}</div>
-      <div class="pe-score-label">estimated penalty points${r.penaltyPointsUncertain ? " (some rules had no point value on file)" : ""}</div>
-      <div class="pe-score-note">
-        ${r.overallSummary || ""}
-        ${r.pageCountObserved ? `<br><br>Pages counted: ${r.pageCountObserved}${r.pageCountConfidence ? ` (${r.pageCountConfidence})` : ""} — count it yourself before you submit.` : ""}
-      </div>
-    </div>
-
-    ${(r.topPriorities || []).length ? `
-      <div class="widget" style="margin-bottom:20px;">
-        <div class="widget-header"><span>Fix these first</span></div>
-        <div class="pe-list">
-          ${r.topPriorities.map(p => `<div class="pe-list-row">${icon("target")}<span>${p}</span></div>`).join("")}
-        </div>
-      </div>` : ""}
-
-    <h2 class="section-title">Penalty Point Check</h2>
-    ${penaltyHtml}
-
-    ${sectionsHtml ? `<h2 class="section-title" style="margin-top:28px;">Rubric Feedback</h2>${sectionsHtml}` : ""}
-
-    ${(r.strengths || []).length ? `
-      <h2 class="section-title" style="margin-top:28px;">What's Already Working</h2>
-      <div class="widget">
-        <div class="pe-list">
-          ${r.strengths.map(s => `<div class="pe-list-row">${icon("check")}<span>${s}</span></div>`).join("")}
-        </div>
-      </div>` : ""}
-
-    <div class="pe-disclaimer">
-      Practice feedback from an AI — not an official score, and not a substitute for the current DECA guidelines
-      for your event. Verify every formatting and penalty item yourself, and have your advisor read your entry
-      before you submit.
-    </div>
-  `;
-}
-
-function renderPreparedEventHistory() {
-  const reviews = (userData?.preparedEventReviews || []).slice().reverse();
-  if (!reviews.length) return "";
-
-  return `
-    <div class="widget" style="margin-top:20px;">
-      <div class="widget-header"><span>Your Past Reviews</span></div>
-      ${reviews.map(rev => `
-        <div class="pe-history-row">
-          ${icon("clipboard")}
-          <span>${rev.eventName}</span>
-          <span class="pe-history-meta">${rev.estimatedPenaltyPoints}${rev.penaltyPointsUncertain ? "+" : ""} pts · ${new Date(rev.date).toLocaleDateString()}</span>
-        </div>
-      `).join("")}
-    </div>
-  `;
-}
 
 
 /* =========================================================================
@@ -4002,6 +4138,15 @@ function parsePenaltyLines(text) {
     const [rule, pts] = line.split("||").map(s => (s || "").trim());
     const points = pts === "" || pts == null ? null : Number(pts);
     return { rule, points: Number.isFinite(points) ? points : null };
+  });
+}
+
+// Required text lines, same "value || points" convention as the penalty rules.
+function parseRequiredLines(text) {
+  return text.split("\n").map(s => s.trim()).filter(Boolean).map(line => {
+    const [phrase, pts] = line.split("||").map(s => (s || "").trim());
+    const points = pts === "" || pts == null ? null : Number(pts);
+    return { phrase, points: Number.isFinite(points) ? points : null };
   });
 }
 
@@ -4028,8 +4173,8 @@ function renderAdminRubricsSection() {
         </div>
       </div>
       <div style="font-size:12px;color:var(--muted);">
-        ${r.category || ""} · ${(r.rubricSections || []).length} sections · ${(r.penaltyRules || []).length} penalty rules
-        ${rubricIsReady(r) ? "" : " · <strong>not ready</strong>"}
+        ${r.category || ""} · ${r.pageLimit ? `${r.pageLimit}-page limit · ` : ""}${(r.requiredText || []).length} required · ${(r.penaltyRules || []).length} penalty rules
+        ${rubricHasChecks(r) ? "" : " · <strong>no checks set up</strong>"}
       </div>
     </div>
   `).join("") || `<div class="admin-empty-state">No events yet.</div>`;
@@ -4040,10 +4185,13 @@ function renderAdminRubricsSection() {
   const sectionText = editing
     ? (editing.rubricSections || []).map(s => `${s.section} || ${s.criteria}`).join("\n")
     : "";
+  const requiredText = editing
+    ? (editing.requiredText || []).map(t => `${t.phrase}${t.points != null ? ` || ${t.points}` : ""}`).join("\n")
+    : "";
 
   body.innerHTML = `
     <div class="admin-seed-banner">
-      <div>Paste each event's rubric and penalty rules straight from the current DECA guidelines. The AI only ever grades against what's entered here — an event with nothing entered stays locked for students.</div>
+      <div>Paste each event's limits and required text straight from the current DECA guidelines. The entry checker only ever tests what's entered here — an event with nothing entered stays locked for students, and a required phrase is matched on its exact wording.</div>
     </div>
     <div class="admin-layout">
       <div class="admin-course-list">${listHtml}</div>
@@ -4054,6 +4202,8 @@ function renderAdminRubricsSection() {
           <input type="text" id="rubric-code" placeholder="Event code (e.g. EBG)" value="${editing ? (editing.eventCode || "") : ""}">
           <input type="text" id="rubric-category" placeholder="Category (e.g. Entrepreneurship Written Event)" value="${editing ? (editing.category || "") : ""}">
           <input type="number" id="rubric-pagelimit" placeholder="Page limit (leave blank if none)" value="${editing && editing.pageLimit != null ? editing.pageLimit : ""}">
+          <input type="number" id="rubric-wordlimit" placeholder="Word limit (leave blank if none)" value="${editing && editing.wordLimit != null ? editing.wordLimit : ""}">
+          <textarea id="rubric-required" rows="7" placeholder="Text the entry MUST contain, one per line. Add penalty points after || if you know them:&#10;Statement of Assurances || 5&#10;Executive Summary&#10;Bibliography || 5&#10;&#10;Matched on exact wording (case and spacing don't matter), so use the heading as students actually type it.">${requiredText}</textarea>
           <textarea id="rubric-penalties" rows="7" placeholder="One penalty rule per line. Add the point value after || if you know it:&#10;Written entry exceeds the page limit || 5&#10;Statement of Assurances missing or unsigned || 5&#10;Sections not in the required order">${penaltyText}</textarea>
           <textarea id="rubric-sections" rows="9" placeholder="One rubric section per line, as:  Section name || what the judge is looking for&#10;Executive Summary || Concise overview of the whole entry; hooks the reader; states the ask">${sectionText}</textarea>
           <textarea id="rubric-notes" rows="3" placeholder="Any extra guideline notes (formatting, appendix rules, etc.)">${editing ? (editing.notes || "") : ""}</textarea>
@@ -4087,9 +4237,13 @@ window.adminSaveRubric = async function() {
   if (!eventName) return alert("Please enter an event name.");
 
   const id = adminEditingRubricId || eventName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || `rubric-${Date.now()}`;
+  const wordLimitRaw = document.getElementById("rubric-wordlimit").value.trim();
+
   const rubricDoc = {
     id, eventName, eventCode, category,
     pageLimit: pageLimitRaw === "" ? null : Number(pageLimitRaw),
+    wordLimit: wordLimitRaw === "" ? null : Number(wordLimitRaw),
+    requiredText: parseRequiredLines(document.getElementById("rubric-required").value),
     penaltyRules: parsePenaltyLines(document.getElementById("rubric-penalties").value),
     rubricSections: parseSectionLines(document.getElementById("rubric-sections").value),
     notes

@@ -321,6 +321,110 @@ const DECA_ASSOCIATIONS = [
   "Wisconsin DECA", "Wyoming DECA", "DECA Germany"
 ];
 
+// ========================= DECA COMPETITIVE EVENTS =========================
+// Used by the dropdowns on the Profile page. Grouped so the <select> can show
+// optgroups. DECA revises its event list most years — when that happens, edit
+// these three constants and nothing else needs to change.
+
+const DECA_ROLEPLAY_EVENTS = {
+  "Principles of Business Administration": [
+    "Principles of Business Management and Administration (PBM)",
+    "Principles of Entrepreneurship (PEN)",
+    "Principles of Finance (PFN)",
+    "Principles of Hospitality and Tourism (PHT)",
+    "Principles of Marketing (PMK)"
+  ],
+  "Individual Series": [
+    "Accounting Applications Series (ACT)",
+    "Apparel and Accessories Marketing Series (AAM)",
+    "Automotive Services Marketing Series (ASM)",
+    "Business Finance Series (BFS)",
+    "Business Services Marketing Series (BSM)",
+    "Entrepreneurship Series (ENT)",
+    "Food Marketing Series (FMS)",
+    "Hotel and Lodging Management Series (HLM)",
+    "Human Resources Management Series (HRM)",
+    "Marketing Communications Series (MCS)",
+    "Quick Serve Restaurant Management Series (QSRM)",
+    "Restaurant and Food Service Management Series (RFSM)",
+    "Retail Merchandising Series (RMS)",
+    "Sports and Entertainment Marketing Series (SEM)"
+  ],
+  "Team Decision Making": [
+    "Business Law and Ethics (BLTDM)",
+    "Buying and Merchandising (BTDM)",
+    "Entrepreneurship (ETDM)",
+    "Financial Services (FTDM)",
+    "Hospitality Services (HTDM)",
+    "Marketing Management (MTDM)",
+    "Sports and Entertainment Marketing (STDM)",
+    "Travel and Tourism (TTDM)"
+  ],
+  "Personal Financial Literacy": [
+    "Personal Financial Literacy (PFL)"
+  ],
+  "Professional Selling and Consulting": [
+    "Financial Consulting (FCE)",
+    "Hospitality and Tourism Professional Selling (HTPS)",
+    "Professional Selling (PSE)"
+  ]
+};
+
+const DECA_WRITTEN_EVENTS = {
+  "Business Operations Research": [
+    "Business Services Operations Research (BOR)",
+    "Buying and Merchandising Operations Research (BMOR)",
+    "Finance Operations Research (FOR)",
+    "Hospitality and Tourism Operations Research (HTOR)",
+    "Sports and Entertainment Marketing Operations Research (SEOR)"
+  ],
+  "Entrepreneurship": [
+    "Business Growth Plan (EBG)",
+    "Franchise Business Plan (EFB)",
+    "Independent Business Plan (EIB)",
+    "Innovation Plan (EIP)",
+    "International Business Plan (IBP)",
+    "Start-Up Business Plan (ESB)"
+  ],
+  "Integrated Marketing Campaign": [
+    "Integrated Marketing Campaign — Event (IMCE)",
+    "Integrated Marketing Campaign — Product (IMCP)",
+    "Integrated Marketing Campaign — Service (IMCS)"
+  ],
+  "Project Management": [
+    "Business Solutions Project (PMBS)",
+    "Career Development Project (PMCD)",
+    "Community Awareness Project (PMCA)",
+    "Community Giving Project (PMCG)",
+    "Financial Literacy Project (PMFL)",
+    "Sales Project (PMSP)"
+  ]
+};
+
+const DECA_CLUSTER_EXAMS = [
+  "Business Administration Core",
+  "Business Management and Administration",
+  "Entrepreneurship",
+  "Finance",
+  "Hospitality and Tourism",
+  "Marketing",
+  "Personal Financial Literacy"
+];
+
+// Builds <option> markup, with <optgroup> when the source is grouped.
+function eventOptionsHtml(source, selectedValue, placeholder) {
+  const opt = v =>
+    `<option value="${v.replace(/"/g, "&quot;")}" ${v === selectedValue ? "selected" : ""}>${v}</option>`;
+
+  const head = `<option value="" ${!selectedValue ? "selected" : ""}>${placeholder}</option>`;
+
+  if (Array.isArray(source)) return head + source.map(opt).join("");
+
+  return head + Object.entries(source).map(([group, items]) =>
+    `<optgroup label="${group}">${items.map(opt).join("")}</optgroup>`
+  ).join("");
+}
+
 // ========================= KPI FALLBACK SET =========================
 // The full Marketing Career Cluster PI list lives in kpis.json. This small
 // hand-written set is only used if that file can't be loaded at all.
@@ -978,6 +1082,15 @@ window.openCourse = function(id) {
         <h1>${course.title}</h1>
         <div class="lv-desc">${course.description}</div>
       </div>
+      ${courseIsComplete(course) ? `
+        <div class="cert-cta">
+          <div>
+            <div class="cert-cta-title">${icon("award")} Course complete</div>
+            <div class="cert-cta-desc">You've finished every unit in ${course.title}. Grab your certificate.</div>
+          </div>
+          <button class="btn-primary" onclick="downloadCertificate('${course.id}')">Download Certificate →</button>
+        </div>
+      ` : ""}
       ${examQuestionCount >= 10 ? `
         <div class="exam-cta">
           <div>
@@ -1885,6 +1998,27 @@ function renderProfile() {
   document.getElementById("editChapter").value = userData.chapter || "";
   document.getElementById("editAssociation").value = userData.association || "";
 
+  const rpSel = document.getElementById("editRoleplayEvent");
+  const wrSel = document.getElementById("editWrittenEvent");
+  const clSel = document.getElementById("editClusterExam");
+  if (rpSel) rpSel.innerHTML = eventOptionsHtml(DECA_ROLEPLAY_EVENTS, userData.roleplayEvent || "", "Not competing in one");
+  if (wrSel) wrSel.innerHTML = eventOptionsHtml(DECA_WRITTEN_EVENTS, userData.writtenEvent || "", "Not competing in one");
+  if (clSel) clSel.innerHTML = eventOptionsHtml(DECA_CLUSTER_EXAMS, userData.clusterExam || "", "Not sure yet");
+
+  const eventsEl = document.getElementById("profileEvents");
+  if (eventsEl) {
+    const picked = [
+      userData.roleplayEvent && { label: "Roleplay", value: userData.roleplayEvent, iconName: "users" },
+      userData.writtenEvent && { label: "Written", value: userData.writtenEvent, iconName: "clipboard" },
+      userData.clusterExam && { label: "Cluster exam", value: userData.clusterExam, iconName: "book" }
+    ].filter(Boolean);
+
+    eventsEl.innerHTML = picked.length
+      ? picked.map(p => `<span class="profile-event-chip" title="${p.label}">${icon(p.iconName)}${p.value}</span>`).join("")
+      : `<span class="profile-event-empty">Set your events below so we can tailor your prep.</span>`;
+  }
+
+  renderProfileCertificates();
   renderProfileBookmarks();
 
   const badgeContainer = document.getElementById("profileBadges");
@@ -1929,13 +2063,21 @@ window.saveProfile = async function() {
   const name = document.getElementById("editDisplayName").value.trim();
   const chapter = document.getElementById("editChapter").value.trim();
   const association = document.getElementById("editAssociation").value.trim();
+  const roleplayEvent = document.getElementById("editRoleplayEvent")?.value || "";
+  const writtenEvent = document.getElementById("editWrittenEvent")?.value || "";
+  const clusterExam = document.getElementById("editClusterExam")?.value || "";
   if (!name) return alert("Display name can't be empty!");
 
   try {
-    await updateDoc(doc(db, "users", currentUser.uid), { displayName: name, chapter, association });
+    await updateDoc(doc(db, "users", currentUser.uid), {
+      displayName: name, chapter, association, roleplayEvent, writtenEvent, clusterExam
+    });
     userData.displayName = name;
     userData.chapter = chapter;
     userData.association = association;
+    userData.roleplayEvent = roleplayEvent;
+    userData.writtenEvent = writtenEvent;
+    userData.clusterExam = clusterExam;
 
     renderSidebar();
     renderDashboard();
@@ -2766,6 +2908,249 @@ function renderProfileBookmarks() {
     ${kpiRows ? `<div class="bookmark-group-label">Performance Indicators</div>${kpiRows}` : ""}
   `;
 }
+
+// ========================================================================
+// ========================= CERTIFICATES =================================
+// ========================================================================
+// A course counts as complete when every one of its parts — video, article,
+// and practice questions across every unit — is marked done. The certificate
+// is drawn on a canvas in the browser and downloaded as a PNG, so there's no
+// library to load, no server to call, and nothing to store.
+
+function courseIsComplete(course) {
+  if (!course || !course.lessons.length) return false;
+  const done = userData?.completedLessons || [];
+  return course.lessons.every(l => done.includes(l.id));
+}
+
+function completedCourses() {
+  return courses.filter(courseIsComplete);
+}
+
+// XP the student actually earned from this course's parts.
+function courseXpEarned(course) {
+  const done = userData?.completedLessons || [];
+  return course.lessons
+    .filter(l => done.includes(l.id))
+    .reduce((sum, l) => sum + (l.xp || 0), 0);
+}
+
+function renderProfileCertificates() {
+  const container = document.getElementById("profileCertificates");
+  if (!container) return;
+
+  const finished = completedCourses();
+  if (!finished.length) {
+    container.innerHTML = `<div class="admin-empty-state">Finish every unit in a course and its certificate shows up here.</div>`;
+    return;
+  }
+
+  container.innerHTML = finished.map(c => `
+    <div class="cert-row">
+      ${icon("award")}
+      <div class="cert-row-info">
+        <div class="cert-row-title">${c.title}</div>
+        <div class="cert-row-sub">${buildUnits(c).length} units · ${courseXpEarned(c)} XP earned</div>
+      </div>
+      <button class="admin-btn-sm" onclick="downloadCertificate('${c.id}')">${icon("download")} Download</button>
+    </div>
+  `).join("");
+}
+
+// ---- drawing -------------------------------------------------------------
+const CERT_W = 2000;
+const CERT_H = 1414;
+
+function certWrap(ctx, text, font, maxWidth) {
+  ctx.font = font;
+  const words = String(text || "").split(" ");
+  const lines = [];
+  let line = "";
+
+  words.forEach(word => {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  });
+  if (line) lines.push(line);
+  return lines;
+}
+
+function certText(ctx, text, font, color, y, opts = {}) {
+  ctx.font = font;
+  ctx.fillStyle = color;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  if (opts.spacing != null && "letterSpacing" in ctx) ctx.letterSpacing = `${opts.spacing}px`;
+  ctx.fillText(text, CERT_W / 2, y);
+  if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+}
+
+// The same barn used elsewhere on the site, as a pale watermark.
+function certBarn(ctx, cx, cy, size, alpha) {
+  const path = new Path2D("M3 21V11l4-3.5L12 4l5 3.5 4 3.5v10Z M10 21v-6.5h4V21 M10 14.5l4 6.5 M14 14.5l-4 6.5");
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(cx - size / 2, cy - size / 2);
+  ctx.scale(size / 24, size / 24);
+  ctx.strokeStyle = "#0f5f8c";
+  ctx.lineWidth = 1.1;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.stroke(path);
+  ctx.restore();
+}
+
+async function drawCertificate(canvas, data) {
+  const ctx = canvas.getContext("2d");
+  canvas.width = CERT_W;
+  canvas.height = CERT_H;
+
+  // Canvas won't use a webfont it hasn't been told to load, even when the page
+  // is already using it — so ask for every weight/size we're about to draw.
+  if (document.fonts && document.fonts.load) {
+    try {
+      await Promise.all([
+        document.fonts.load("900 92px Montserrat"),
+        document.fonts.load("800 72px Montserrat"),
+        document.fonts.load("700 48px Montserrat"),
+        document.fonts.load("600 30px Montserrat"),
+        document.fonts.load("700 34px Montserrat")
+      ]);
+      await document.fonts.ready;
+    } catch (e) {
+      console.warn("Font preload for the certificate failed; falling back.", e);
+    }
+  }
+
+  // paper
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, CERT_W, CERT_H);
+
+  // gradient frame
+  const frame = ctx.createLinearGradient(0, 0, CERT_W, CERT_H);
+  frame.addColorStop(0, "#0a1a2b");
+  frame.addColorStop(0.5, "#167db5");
+  frame.addColorStop(1, "#38bdf8");
+  ctx.fillStyle = frame;
+  ctx.fillRect(0, 0, CERT_W, CERT_H);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(26, 26, CERT_W - 52, CERT_H - 52);
+
+  // hairline inner rule
+  ctx.strokeStyle = "rgba(22,125,181,.35)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(58, 58, CERT_W - 116, CERT_H - 116);
+
+  certBarn(ctx, CERT_W / 2, 880, 620, 0.05);
+
+  let y = 190;
+
+  certText(ctx, "FARM4GLASS", "800 34px Montserrat, sans-serif", "#167db5", y, { spacing: 14 });
+  y += 118;
+
+  certText(ctx, "Certificate of Completion", "900 78px Montserrat, sans-serif", "#0a1a2b", y);
+  y += 60;
+
+  ctx.strokeStyle = "#167db5";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(CERT_W / 2 - 90, y);
+  ctx.lineTo(CERT_W / 2 + 90, y);
+  ctx.stroke();
+  y += 108;
+
+  certText(ctx, "This certifies that", "600 30px Montserrat, sans-serif", "#4a6c8c", y);
+  y += 100;
+
+  certWrap(ctx, data.name, "900 92px Montserrat, sans-serif", CERT_W - 420).slice(0, 2).forEach(line => {
+    certText(ctx, line, "900 92px Montserrat, sans-serif", "#0a1a2b", y);
+    y += 100;
+  });
+  y += 34;
+
+  certText(ctx, "has completed every unit of", "600 30px Montserrat, sans-serif", "#4a6c8c", y);
+  y += 88;
+
+  certWrap(ctx, data.courseTitle, "700 56px Montserrat, sans-serif", CERT_W - 420).slice(0, 2).forEach(line => {
+    certText(ctx, line, "700 56px Montserrat, sans-serif", "#167db5", y);
+    y += 72;
+  });
+
+  // stats strip
+  const statsY = CERT_H - 300;
+  const cols = [
+    { label: "UNITS COMPLETED", value: String(data.unitCount) },
+    { label: "XP EARNED", value: data.xp.toLocaleString() },
+    { label: "COMPLETED", value: data.date }
+  ];
+  const colW = (CERT_W - 520) / cols.length;
+
+  cols.forEach((col, i) => {
+    const cx = 260 + colW * i + colW / 2;
+    ctx.textAlign = "center";
+    ctx.font = "700 44px Montserrat, sans-serif";
+    ctx.fillStyle = "#0a1a2b";
+    ctx.fillText(col.value, cx, statsY);
+    ctx.font = "700 22px Montserrat, sans-serif";
+    ctx.fillStyle = "#4a6c8c";
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "5px";
+    ctx.fillText(col.label, cx, statsY + 44);
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+
+    if (i < cols.length - 1) {
+      ctx.strokeStyle = "rgba(22,125,181,.25)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(260 + colW * (i + 1), statsY - 40);
+      ctx.lineTo(260 + colW * (i + 1), statsY + 54);
+      ctx.stroke();
+    }
+  });
+
+  certText(ctx, "Farm4Glass · farm4glass.com", "600 26px Montserrat, sans-serif", "#4a6c8c", CERT_H - 148);
+  certText(ctx, "Farm4Glass is not endorsed by or affiliated with DECA Inc.", "600 20px Montserrat, sans-serif", "#8aa4bc", CERT_H - 104);
+}
+
+window.downloadCertificate = async function(courseId) {
+  const course = courses.find(c => c.id === courseId);
+  if (!course) return;
+  if (!courseIsComplete(course)) {
+    return alert("Finish every unit in this course first — then the certificate unlocks.");
+  }
+
+  try {
+    const canvas = document.createElement("canvas");
+    await drawCertificate(canvas, {
+      name: userData?.displayName || "DECA Student",
+      courseTitle: course.title,
+      unitCount: buildUnits(course).length,
+      xp: courseXpEarned(course),
+      date: new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
+    });
+
+    canvas.toBlob(blob => {
+      if (!blob) return alert("Couldn't build the certificate image — check the console.");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Farm4Glass — ${course.title} Certificate.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }, "image/png");
+
+    f4gNotice("Certificate downloaded", `${course.title} — nice work finishing it.`);
+  } catch (e) {
+    console.error("Certificate failed:", e);
+    alert("Couldn't build the certificate — check the browser console for the error.");
+  }
+};
 
 // ========================================================================
 // ========================= ADMIN: MEMBERS ===============================
@@ -3842,6 +4227,17 @@ function renderPreparedEventTab() {
   if (!rubrics.length) {
     container.innerHTML = `<div class="admin-empty-state">No events have been set up yet. An admin can add them under Admin &gt; Rubrics.</div>`;
     return;
+  }
+
+  // If they've set a written event on their profile, preselect the matching
+  // rubric the first time they open this tab.
+  if (!peSelectedEventId && userData?.writtenEvent) {
+    const code = (userData.writtenEvent.match(/\(([^)]+)\)\s*$/) || [])[1];
+    const guess = rubrics.find(r =>
+      (code && r.eventCode && r.eventCode.toLowerCase() === code.toLowerCase()) ||
+      userData.writtenEvent.toLowerCase().startsWith((r.eventName || "").toLowerCase())
+    );
+    if (guess) peSelectedEventId = guess.id;
   }
 
   const selected = rubrics.find(r => r.id === peSelectedEventId) || null;

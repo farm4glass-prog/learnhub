@@ -574,6 +574,7 @@
           <div class="profile-name" id="profileName">—</div>
           <div class="profile-email" id="profileEmail">—</div>
           <div class="profile-level" id="profileLevel">Level 1 · 0 XP</div>
+          <div class="profile-events" id="profileEvents"></div>
         </div>
       </div>
 
@@ -615,12 +616,29 @@
           <input type="text" id="editAssociation" list="associationList" placeholder="e.g., California DECA">
           <datalist id="associationList"></datalist>
         </div>
+        <div class="form-group">
+          <label>Roleplay Event</label>
+          <select id="editRoleplayEvent"></select>
+        </div>
+        <div class="form-group">
+          <label>Written Event</label>
+          <select id="editWrittenEvent"></select>
+        </div>
+        <div class="form-group">
+          <label>Cluster Exam</label>
+          <select id="editClusterExam"></select>
+        </div>
         <button class="btn-primary" onclick="saveProfile()">Save Changes</button>
       </div>
 
       <div class="widget">
         <div class="widget-header"><span>Farm Badges</span></div>
         <div class="badges-grid-large" id="profileBadges"></div>
+      </div>
+
+      <div class="widget">
+        <div class="widget-header"><span>Certificates</span></div>
+        <div id="profileCertificates"></div>
       </div>
 
       <div class="widget">

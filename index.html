@@ -652,13 +652,13 @@
       </div>
     </div>
 
-    <!-- ===== STUDY PLANNER ===== -->
+<!-- ===== STUDY PLANNER ===== -->
     <div id="planner" class="tab-content hidden">
       <h1>Study Planner</h1>
-      <p class="page-sub">Tell us your conference date, exam, current score, and available time — we'll build a week-by-week study schedule.</p>
+      <p class="page-sub">Tell us your event and conference date. We'll break the performance indicators you'll actually be scored on into sessions — each one pairs the PIs with its unit video, its practice questions, and a roleplay to run out loud.</p>
 
       <div class="widget planner-form-widget">
-        <h3>Plan your prep</h3>
+        <h3>Build your plan</h3>
         <div class="form-group">
           <label>Exam / Event</label>
           <select id="plannerCourse"></select>
@@ -668,14 +668,26 @@
           <input type="date" id="plannerDate">
         </div>
         <div class="form-group">
-          <label>Current Practice Score (%)</label>
-          <input type="number" id="plannerScore" min="0" max="100" placeholder="e.g. 65">
+          <label>Study Days Per Week</label>
+          <select id="plannerDays">
+            <option value="2">2 days</option>
+            <option value="3" selected>3 days</option>
+            <option value="4">4 days</option>
+            <option value="5">5 days</option>
+            <option value="6">6 days</option>
+            <option value="7">7 days</option>
+          </select>
         </div>
         <div class="form-group">
-          <label>Available Study Time (hours per week)</label>
-          <input type="number" id="plannerHours" min="1" max="40" placeholder="e.g. 5">
+          <label>Performance Indicators Per Session</label>
+          <select id="plannerKpiCount">
+            <option value="3">3 PIs — light</option>
+            <option value="4" selected>4 PIs — standard</option>
+            <option value="6">6 PIs — heavy</option>
+            <option value="8">8 PIs — cram</option>
+          </select>
         </div>
-        <button class="btn-primary" onclick="generateStudyPlan()">Generate My Study Plan</button>
+        <button class="btn-primary" onclick="generateStudyPlan()">Generate My Plan</button>
       </div>
 
       <div id="plannerResults"></div>

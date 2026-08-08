@@ -2722,11 +2722,187 @@ window.adminSeedCourses = async function() {
 // ========================================================================
 // ========================= STUDY PLANNER ================================
 // ========================================================================
+// The plan is built around performance indicators, not lesson count. Each
+// session is: the PIs for that instructional area, the unit video and
+// practice questions that teach them, and a roleplay that uses those exact
+// PIs — because that's how a judge scores you.
+//
+// Everything here is deterministic. Roleplay scenarios come from a template
+// bank below, never from a model, so a student is never handed an invented
+// event format or a made-up PI.
 
-function parseDurationMinutes(str) {
-  const match = /(\d+)/.exec(str || "");
-  return match ? Number(match[1]) : 10;
+/* ---------- cluster matching ---------- */
+// Which PI cluster a course draws from. A course not listed here falls back
+// to the cluster exam on the student's profile, then to every loaded PI.
+const PLANNER_CLUSTER_BY_COURSE = {
+  "marketing": "Marketing",
+  "finance": "Finance",
+  "hospitality": "Hospitality",
+  "business-admin-core": "Business Administration Core",
+  "business-management": "Business Management",
+  "entrepreneurship-cluster": "Entrepreneurship",
+  "pfl-cluster": "Personal Financial Literacy",
+  "individual-series": "Marketing",
+  "team-decision": "Marketing"
+};
+
+function plannerNorm(s) {
+  return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
 }
+
+// "Unit 2: Channel Management" -> "channel management"
+function plannerUnitArea(title) {
+  return plannerNorm(String(title || "").replace(/^unit\s*\d+\s*:?\s*/i, ""));
+}
+
+function plannerClusterFor(course) {
+  return PLANNER_CLUSTER_BY_COURSE[course.id] || userData?.clusterExam || "";
+}
+
+function plannerKpiPool(course) {
+  const name = plannerNorm(plannerClusterFor(course));
+  if (!name) return kpis;
+  const matched = kpis.filter(k =>
+    plannerNorm(`${k.cluster || ""} ${(k.appearsIn || []).join(" ")}`).includes(name)
+  );
+  // A thin match usually means the cluster string is worded differently in the
+  // data than in our map — better to plan from everything than from nothing.
+  return matched.length >= 8 ? matched : kpis;
+}
+
+/* ---------- priority ---------- */
+// Lower DECA level first (a Prerequisite PI is more likely to show up and is
+// worth locking in early), then PIs that actually have study notes written,
+// then PIs whose instructional area has a video in this course.
+const KPI_LEVEL_ORDER = { PQ: 0, CS: 1, SP: 2, SU: 3, MN: 4 };
+
+function plannerKpiRank(k, unitAreas) {
+  const lvl = KPI_LEVEL_ORDER[String(k.level || "").toUpperCase()];
+  const levelScore = lvl == null ? 2 : lvl;
+  const notesScore = (k.explanation || k.sampleAnswer) ? 0 : 1;
+  const areaScore = unitAreas.has(plannerNorm(k.area)) ? 0 : 1;
+  return areaScore * 10 + levelScore * 2 + notesScore;
+}
+
+/* ---------- roleplay templates ---------- */
+// Written to read like a real DECA prompt: a role, a business with a specific
+// problem, and a judge to present to. The PIs a session covers are printed
+// underneath, exactly as they'd appear on the event sheet.
+const RP_TEMPLATE_SETS = [
+  {
+    match: /promotion|advertis|public relations/i,
+    items: [
+      { role: "marketing coordinator", org: "a family-owned bakery opening a second location across town", judge: "owner", task: "The owner wants the new location busy from day one but has a small budget and no email list." },
+      { role: "promotions assistant", org: "a minor league baseball team", judge: "director of promotions", task: "Weeknight attendance is half of what weekend games draw, and the team wants a promotional plan that fills seats Tuesday through Thursday." }
+    ]
+  },
+  {
+    match: /channel|distribut|supply chain|logistic/i,
+    items: [
+      { role: "operations associate", org: "a skincare brand that has only ever sold on its own website", judge: "vice president of sales", task: "A national retailer has offered shelf space, and leadership is split on whether taking it is worth the loss of control." },
+      { role: "distribution analyst", org: "a regional snack manufacturer", judge: "distribution manager", task: "Two of the company's wholesalers are covering overlapping territory and both are asking for exclusivity." }
+    ]
+  },
+  {
+    match: /\bselling\b|\bsales\b|professional selling/i,
+    items: [
+      { role: "sales associate", org: "a locally owned running shoe store", judge: "store manager", task: "A customer keeps coming in, trying on shoes, and leaving to buy online for a few dollars less." },
+      { role: "account representative", org: "a commercial cleaning company", judge: "sales manager", task: "A long-time client is comparing quotes from a cheaper competitor and has asked you to justify your pricing." }
+    ]
+  },
+  {
+    match: /pricing|price/i,
+    items: [
+      { role: "pricing analyst", org: "a chain of three coffee shops near a college campus", judge: "district manager", task: "Supplier costs rose 18% this year and no price has changed since the shops opened." },
+      { role: "assistant manager", org: "an independent bookstore", judge: "owner", task: "The owner wants to run a discount event but is worried about training customers to wait for sales." }
+    ]
+  },
+  {
+    match: /product\/service|product management|branding/i,
+    items: [
+      { role: "product assistant", org: "a smoothie franchise", judge: "regional director", task: "Two menu items account for 4% of sales and are slowing down every order, and the director wants a recommendation on the menu mix." },
+      { role: "brand associate", org: "a 40-year-old hardware store", judge: "owner", task: "A big-box competitor opened two miles away and the store needs to decide what it stands for." }
+    ]
+  },
+  {
+    match: /marketing-information|market research|marketing research|information management/i,
+    items: [
+      { role: "marketing research assistant", org: "a fitness studio chain", judge: "marketing director", task: "Memberships are being cancelled at three months and nobody knows why — you've been asked how to find out." },
+      { role: "data associate", org: "a meal-kit delivery startup", judge: "chief marketing officer", task: "The company collects enormous amounts of customer data and has never used any of it to make a decision." }
+    ]
+  },
+  {
+    match: /customer relation/i,
+    items: [
+      { role: "guest services lead", org: "a mid-size hotel", judge: "general manager", task: "Online reviews are strong on cleanliness and weak on how guests are treated at check-in." },
+      { role: "customer experience associate", org: "an online electronics retailer", judge: "operations manager", task: "Returns are handled well, but customers who return an item almost never buy again." }
+    ]
+  },
+  {
+    match: /financial analysis|accounting|financial|credit|investment/i,
+    items: [
+      { role: "finance intern", org: "a food truck operator planning a second truck", judge: "owner", task: "The owner is profitable on paper but keeps running short on cash before the end of the month." },
+      { role: "financial associate", org: "a nonprofit youth sports league", judge: "board treasurer", task: "The board wants to know whether the league can afford to lower registration fees next season." }
+    ]
+  },
+  {
+    match: /business law|legal|ethic|risk management/i,
+    items: [
+      { role: "operations assistant", org: "a catering company", judge: "owner", task: "A supplier delivered spoiled product two hours before an event, and the contract language is unclear." },
+      { role: "management trainee", org: "a retail clothing chain", judge: "store director", task: "An employee has been posting about internal company decisions online and there's no policy covering it." }
+    ]
+  },
+  {
+    match: /human resource|staffing|talent|professional development|emotional intelligence/i,
+    items: [
+      { role: "assistant manager", org: "a quick-serve restaurant", judge: "district manager", task: "Turnover is 90% a year and every new hire is trained by whoever happens to be on shift." },
+      { role: "human resources assistant", org: "a landscaping company", judge: "operations director", task: "Two crew leads are in open conflict and it's affecting scheduling." }
+    ]
+  },
+  {
+    match: /operation|quality management|safety|project management/i,
+    items: [
+      { role: "operations associate", org: "a bike repair shop", judge: "owner", task: "Turnaround time has doubled during the busy season and customers are going elsewhere." },
+      { role: "shift supervisor", org: "a grocery store", judge: "store manager", task: "Checkout lines back up every day between 4 and 6 p.m. with the same staffing as the rest of the day." }
+    ]
+  },
+  {
+    match: /econom|entrepreneur|strategic management|market planning/i,
+    items: [
+      { role: "business consultant", org: "a small tutoring company", judge: "founder", task: "The founder wants to expand into a neighboring city and hasn't looked at whether the demand is there." },
+      { role: "strategy intern", org: "a subscription board game company", judge: "chief executive officer", task: "Growth has flattened and leadership is deciding between a new product line and a new market." }
+    ]
+  }
+];
+
+const RP_TEMPLATES_GENERIC = [
+  { role: "management trainee", org: "a mid-size retail business", judge: "store manager", task: "The manager has asked for your recommendation on a decision the business has been putting off." },
+  { role: "business associate", org: "a growing local service company", judge: "owner", task: "The owner needs a clear explanation before committing to a change that affects the whole team." },
+  { role: "assistant manager", org: "a regional franchise location", judge: "district manager", task: "The district manager wants to understand your reasoning before approving the plan." }
+];
+
+function plannerScenarioBank(area) {
+  const set = RP_TEMPLATE_SETS.find(s => s.match.test(area || ""));
+  return set ? set.items.concat(RP_TEMPLATES_GENERIC) : RP_TEMPLATES_GENERIC;
+}
+
+// Event format. Deliberately soft on specifics — DECA revises these, and a
+// confidently wrong prep time is worse than telling a student to check.
+function plannerRoleplayFormat() {
+  const e = String(userData?.roleplayEvent || "");
+  if (/TDM|Team Decision/i.test(e)) {
+    return { label: "Team Decision Making", prep: "30 minutes of prep", present: "a presentation with a partner", pis: "7 performance indicators" };
+  }
+  if (/PSE|FCE|HTPS|Professional Selling|Consulting/i.test(e)) {
+    return { label: "Professional Selling / Consulting", prep: "no on-site prep — you build this in advance", present: "a prepared presentation", pis: "the event's published indicator list" };
+  }
+  if (/^Principles|\(P[BEFHM]/i.test(e)) {
+    return { label: "Principles event", prep: "10 minutes of prep", present: "up to 10 minutes with the judge", pis: "4 performance indicators" };
+  }
+  return { label: "Individual Series", prep: "10 minutes of prep", present: "up to 10 minutes with the judge", pis: "5 performance indicators" };
+}
+
+/* ---------- plan generation ---------- */
 
 function renderPlannerForm() {
   const select = document.getElementById("plannerCourse");
@@ -2737,11 +2913,11 @@ function renderPlannerForm() {
   }
 
   const saved = userData?.studyPlan;
-  if (saved) {
+  if (saved && saved.sessions) {
     if (saved.courseId) select.value = saved.courseId;
     if (saved.conferenceDate) document.getElementById("plannerDate").value = saved.conferenceDate;
-    if (saved.currentScore != null) document.getElementById("plannerScore").value = saved.currentScore;
-    if (saved.hoursPerWeek != null) document.getElementById("plannerHours").value = saved.hoursPerWeek;
+    if (saved.daysPerWeek) document.getElementById("plannerDays").value = saved.daysPerWeek;
+    if (saved.kpisPerSession) document.getElementById("plannerKpiCount").value = saved.kpisPerSession;
     renderPlanResults(saved);
   }
 }
@@ -2749,13 +2925,11 @@ function renderPlannerForm() {
 window.generateStudyPlan = async function() {
   const courseId = document.getElementById("plannerCourse").value;
   const conferenceDate = document.getElementById("plannerDate").value;
-  const currentScore = Number(document.getElementById("plannerScore").value);
-  const hoursPerWeek = Number(document.getElementById("plannerHours").value);
+  const daysPerWeek = Number(document.getElementById("plannerDays").value) || 3;
+  const kpisPerSession = Number(document.getElementById("plannerKpiCount").value) || 4;
 
-  if (!courseId || !conferenceDate || !hoursPerWeek) {
-    alert("Please fill in the exam, date, and available hours per week.");
-    return;
-  }
+  if (!courseId || !conferenceDate) return alert("Pick your event and your conference date first.");
+  if (!kpisLoaded) return alert("The performance indicator database is still loading — give it a second and try again.");
 
   const course = courses.find(c => c.id === courseId);
   if (!course) return;
@@ -2764,84 +2938,284 @@ window.generateStudyPlan = async function() {
   today.setHours(0, 0, 0, 0);
   const target = new Date(conferenceDate + "T00:00:00");
   const daysUntil = Math.max(1, Math.round((target - today) / 86400000));
-  const weeksUntil = Math.max(1, Math.ceil(daysUntil / 7));
+  if (daysUntil < 1) return alert("That date has already passed — pick your next conference.");
 
-  const completed = userData?.completedLessons || [];
-  const remaining = course.lessons.filter(l => !completed.includes(l.id));
+  const units = buildUnits(course);
+  const unitAreas = new Set(units.map(u => plannerUnitArea(u.title)));
 
-  const orderedRemaining = currentScore && currentScore < 70
-    ? [...remaining].sort((a, b) => (a.type === "quiz" ? -1 : 1) - (b.type === "quiz" ? -1 : 1))
-    : remaining;
+  const pool = plannerKpiPool(course);
+  const ranked = [...pool].sort((a, b) =>
+    plannerKpiRank(a, unitAreas) - plannerKpiRank(b, unitAreas) ||
+    String(a.code || "").localeCompare(String(b.code || "")) ||
+    String(a.title || "").localeCompare(String(b.title || ""))
+  );
 
-  const totalMinutesNeeded = orderedRemaining.reduce((sum, l) => sum + parseDurationMinutes(l.duration), 0);
-  const totalHoursNeeded = totalMinutesNeeded / 60;
-  const availableHours = weeksUntil * hoursPerWeek;
+  // Fit the plan to the time that actually exists.
+  const studyDays = Math.max(1, daysUntil - 1);            // leave the day before free
+  const totalSlots = Math.max(1, Math.round((studyDays / 7) * daysPerWeek));
+  const capacity = totalSlots * kpisPerSession;
+  const selected = ranked.slice(0, capacity);
 
-  const perWeek = Math.max(1, Math.ceil(orderedRemaining.length / weeksUntil));
-  const weeks = [];
-  for (let w = 0; w < weeksUntil && w * perWeek < orderedRemaining.length; w++) {
-    const chunk = orderedRemaining.slice(w * perWeek, (w + 1) * perWeek);
-    if (!chunk.length) break;
-    const weekStart = new Date(today.getTime() + w * 7 * 86400000);
-    const weekEnd = new Date(Math.min(weekStart.getTime() + 6 * 86400000, target.getTime()));
-    weeks.push({
-      weekNum: w + 1,
-      start: weekStart.toISOString().slice(0, 10),
-      end: weekEnd.toISOString().slice(0, 10),
-      items: chunk.map(l => ({ title: l.title, type: l.type, duration: l.duration }))
-    });
-  }
+  // Group the selected PIs by instructional area, in unit order first.
+  const byArea = new Map();
+  selected.forEach(k => {
+    const area = k.area || k.element || "General Review";
+    if (!byArea.has(area)) byArea.set(area, []);
+    byArea.get(area).push(k);
+  });
+
+  const areaToUnit = new Map();
+  const claimed = new Set();
+  // exact matches first, so "Marketing" can't steal "Marketing-Information Management"
+  units.forEach(u => {
+    const ua = plannerUnitArea(u.title);
+    for (const area of byArea.keys()) {
+      if (claimed.has(area)) continue;
+      if (plannerNorm(area) === ua) { areaToUnit.set(area, u); claimed.add(area); break; }
+    }
+  });
+  units.forEach(u => {
+    const ua = plannerUnitArea(u.title);
+    for (const area of byArea.keys()) {
+      if (claimed.has(area)) continue;
+      const na = plannerNorm(area);
+      if (na.includes(ua) || ua.includes(na)) { areaToUnit.set(area, u); claimed.add(area); break; }
+    }
+  });
+
+  const orderedAreas = [
+    ...units.map(u => [...byArea.keys()].find(a => areaToUnit.get(a) === u)).filter(Boolean),
+    ...[...byArea.keys()].filter(a => !areaToUnit.has(a))
+  ];
+
+  let sessions = [];
+  orderedAreas.forEach(area => {
+    const list = byArea.get(area) || [];
+    const unit = areaToUnit.get(area) || null;
+    const parts = Math.ceil(list.length / kpisPerSession);
+    for (let i = 0; i < list.length; i += kpisPerSession) {
+      sessions.push({
+        area,
+        part: Math.floor(i / kpisPerSession) + 1,
+        parts,
+        unitKey: unit ? unit.key : null,
+        unitTitle: unit ? unit.title : "",
+        kpiIds: list.slice(i, i + kpisPerSession).map(k => k.id),
+        rpOffset: 0,
+        done: false
+      });
+    }
+  });
+
+  sessions = sessions.slice(0, totalSlots);
+  sessions.forEach((s, i) => {
+    s.id = `${course.id}-s${i + 1}`;
+    s.num = i + 1;
+    const offset = Math.min(studyDays, Math.round(i * (studyDays / Math.max(1, sessions.length))));
+    s.date = new Date(today.getTime() + offset * 86400000).toISOString().slice(0, 10);
+    s.week = Math.floor(offset / 7) + 1;
+  });
+
+  const covered = sessions.reduce((n, s) => n + s.kpiIds.length, 0);
 
   const plan = {
-    courseId, courseTitle: course.title, conferenceDate, currentScore, hoursPerWeek,
-    daysUntil, weeksUntil, remainingCount: orderedRemaining.length,
-    totalHoursNeeded: Math.round(totalHoursNeeded * 10) / 10,
-    availableHours, weeks,
+    courseId, courseTitle: course.title, conferenceDate, daysPerWeek, kpisPerSession,
+    daysUntil, sessions,
+    kpiCovered: covered,
+    kpiTotal: pool.length,
+    clusterLabel: plannerClusterFor(course) || "all clusters",
     generatedAt: new Date().toISOString()
   };
 
   renderPlanResults(plan);
+  await plannerSavePlan(plan);
+};
 
-  if (currentUser) {
-    try {
-      await updateDoc(doc(db, "users", currentUser.uid), { studyPlan: plan });
-      if (userData) userData.studyPlan = plan;
-    } catch (e) {
-      console.error("Failed to save study plan:", e);
-    }
+async function plannerSavePlan(plan) {
+  if (userData) userData.studyPlan = plan;
+  if (!currentUser) return;
+  try {
+    await updateDoc(doc(db, "users", currentUser.uid), { studyPlan: plan });
+  } catch (e) {
+    console.error("Failed to save study plan:", e);
+  }
+}
+
+/* ---------- interactions ---------- */
+
+window.plannerSetConfidence = async function(kpiId, level) {
+  if (!userData) return;
+  const map = { ...(userData.kpiConfidence || {}) };
+  if (map[kpiId] === level) delete map[kpiId]; else map[kpiId] = level;
+  userData.kpiConfidence = map;
+  renderPlanResults(userData.studyPlan);
+  if (!currentUser) return;
+  try {
+    await updateDoc(doc(db, "users", currentUser.uid), { kpiConfidence: map });
+  } catch (e) {
+    console.error("Failed to save PI confidence:", e);
   }
 };
+
+window.plannerToggleSession = async function(sessionId) {
+  const plan = userData?.studyPlan;
+  const session = plan?.sessions?.find(s => s.id === sessionId);
+  if (!session) return;
+  session.done = !session.done;
+  renderPlanResults(plan);
+  await plannerSavePlan(plan);
+};
+
+window.plannerCycleScenario = async function(sessionId) {
+  const plan = userData?.studyPlan;
+  const session = plan?.sessions?.find(s => s.id === sessionId);
+  if (!session) return;
+  session.rpOffset = (session.rpOffset || 0) + 1;
+  renderPlanResults(plan);
+  await plannerSavePlan(plan);
+};
+
+// Jumps to the KPI Database with this PI selected. The list is capped and
+// filtered by cluster, so widen the filter and seed the search first —
+// otherwise the tab opens on a different indicator.
+window.plannerOpenKPI = function(kpiId) {
+  const k = kpis.find(x => x.id === kpiId);
+  if (!k) return;
+  kpiActiveCategory = "All KPIs";
+  selectedKPIId = kpiId;
+  showTab("kpi");
+  const box = document.getElementById("kpiSearch");
+  if (box) box.value = k.code || k.title;
+  renderKPIList();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+/* ---------- rendering ---------- */
+
+function plannerDateLabel(iso) {
+  return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+}
+
+function plannerKpiChipHtml(kpiId) {
+  const k = kpis.find(x => x.id === kpiId);
+  if (!k) return "";
+  const state = (userData?.kpiConfidence || {})[kpiId] || "";
+  return `
+    <div class="pl-kpi ${state}">
+      <button class="pl-kpi-title" onclick="plannerOpenKPI('${kpiId}')" title="Open in the KPI Database">
+        ${k.code ? `<span class="pl-kpi-code">${k.code}</span>` : ""}${k.title}
+      </button>
+      <div class="pl-conf">
+        <button class="pl-conf-btn ${state === "solid" ? "on solid" : ""}" onclick="plannerSetConfidence('${kpiId}','solid')">Solid</button>
+        <button class="pl-conf-btn ${state === "shaky" ? "on shaky" : ""}" onclick="plannerSetConfidence('${kpiId}','shaky')">Shaky</button>
+      </div>
+    </div>
+  `;
+}
+
+function plannerRoleplayHtml(session) {
+  const bank = plannerScenarioBank(session.area);
+  const t = bank[(session.num + (session.rpOffset || 0)) % bank.length];
+  const fmt = plannerRoleplayFormat();
+
+  const pis = session.kpiIds.map(id => kpis.find(k => k.id === id)).filter(Boolean);
+  const expectations = pis
+    .filter(k => k.judgeExpectations)
+    .slice(0, 3)
+    .map(k => `<li>${k.judgeExpectations}</li>`)
+    .join("");
+
+  return `
+    <div class="pl-rp">
+      <div class="pl-rp-meta">${fmt.label} · ${fmt.prep} · ${fmt.present} · ${fmt.pis}. Confirm the current format in your event's guidelines.</div>
+      <p class="pl-rp-scenario">
+        You are a <strong>${t.role}</strong> at ${t.org}. ${t.task}
+        The judge is the <strong>${t.judge}</strong> and will hear your recommendation.
+      </p>
+      <div class="pl-rp-label">Performance indicators you'll be scored on</div>
+      <ul class="pl-rp-pis">${pis.map(k => `<li>${k.title}</li>`).join("")}</ul>
+      <div class="pl-rp-label">Before you present</div>
+      <ul class="pl-rp-check">
+        ${expectations || `
+          <li>Name each indicator out loud, define it, then apply it to this specific business.</li>
+          <li>Give a concrete example — judges mark down answers that stay abstract.</li>`}
+        <li>Close with one clear recommendation, then thank the judge.</li>
+      </ul>
+      <button class="admin-btn-sm ghost" onclick="plannerCycleScenario('${session.id}')">Different scenario</button>
+    </div>
+  `;
+}
+
+function plannerSessionHtml(plan, session) {
+  const unit = session.unitKey ? findUnit(plan.courseId, session.unitKey) : null;
+  const heading = session.parts > 1 ? `${session.area} (part ${session.part} of ${session.parts})` : session.area;
+
+  const watchHtml = unit ? `
+    <div class="pl-links">
+      ${unit.video ? `<button class="pl-link" onclick="openUnit('${plan.courseId}','${unit.key}','video')">${icon("play")} ${stripUnitSuffix(unit.title)}${session.part > 1 ? " — rewatch" : ""}</button>` : ""}
+      ${unit.quiz ? `<button class="pl-link" onclick="openUnit('${plan.courseId}','${unit.key}','practice')">${icon("quiz")} Practice questions</button>` : ""}
+      ${unit.article ? `<button class="pl-link" onclick="openUnit('${plan.courseId}','${unit.key}','article')">${icon("file")} Article</button>` : ""}
+    </div>` : `<div class="pl-empty">No video for this area yet — use the PI notes above and the roleplay below.</div>`;
+
+  return `
+    <div class="pl-session ${session.done ? "done" : ""}">
+      <div class="pl-head">
+        <div class="pl-num">${session.done ? icon("check") : session.num}</div>
+        <div class="pl-head-info">
+          <div class="pl-title">${heading}</div>
+          <div class="pl-date">${plannerDateLabel(session.date)} · ${session.kpiIds.length} ${session.kpiIds.length === 1 ? "PI" : "PIs"}</div>
+        </div>
+        <button class="admin-btn-sm ${session.done ? "ghost" : ""}" onclick="plannerToggleSession('${session.id}')">
+          ${session.done ? "Undo" : "Mark done"}
+        </button>
+      </div>
+
+      <div class="pl-block-label">${icon("book")} Learn</div>
+      <div class="pl-kpis">${session.kpiIds.map(plannerKpiChipHtml).join("") || `<div class="pl-empty">No PIs on this session.</div>`}</div>
+
+      <div class="pl-block-label">${icon("play")} Watch &amp; practice</div>
+      ${watchHtml}
+
+      <div class="pl-block-label">${icon("users")} Roleplay prep</div>
+      ${plannerRoleplayHtml(session)}
+    </div>
+  `;
+}
 
 function renderPlanResults(plan) {
   const container = document.getElementById("plannerResults");
   if (!container) return;
-
-  if (!plan.weeks.length) {
-    container.innerHTML = `<div class="admin-empty-state">You've already completed every lesson in ${plan.courseTitle}! Head to the Leaderboard to see how you stack up.</div>`;
+  if (!plan || !plan.sessions || !plan.sessions.length) {
+    container.innerHTML = "";
     return;
   }
 
-  const onTrack = plan.availableHours >= plan.totalHoursNeeded;
-  const statusHtml = onTrack
-    ? `<div class="planner-ontrack">${icon("zap")} You have enough time budgeted — stick to the plan below and you'll finish ${plan.courseTitle} before your conference.</div>`
-    : `<div class="planner-warning">${icon("alert")} At ${plan.hoursPerWeek} hrs/week you're short about ${Math.max(0, Math.round((plan.totalHoursNeeded - plan.availableHours) * 10) / 10)} hours before your conference. Consider raising your weekly hours or starting review sooner.</div>`;
+  const doneCount = plan.sessions.filter(s => s.done).length;
+  const pct = Math.round((doneCount / plan.sessions.length) * 100);
+  const perWeek = Math.max(1, Math.round(plan.sessions.length / Math.max(1, plan.daysUntil / 7)));
 
-  const scoreNote = plan.currentScore && plan.currentScore < 70
-    ? `<div class="planner-warning">${icon("alert")} Your practice score (${plan.currentScore}%) suggests prioritizing quizzes for extra review — this plan front-loads quiz review where possible.</div>`
-    : "";
+  const shaky = Object.entries(userData?.kpiConfidence || {})
+    .filter(([, v]) => v === "shaky")
+    .map(([id]) => kpis.find(k => k.id === id))
+    .filter(Boolean);
 
-  const weeksHtml = plan.weeks.map(w => `
-    <div class="planner-week-card">
-      <div class="planner-week-head">
-        <h4>Week ${w.weekNum}</h4>
-        <span class="planner-week-dates">${w.start} → ${w.end}</span>
+  const shakyHtml = shaky.length ? `
+    <div class="widget pl-shaky">
+      <div class="widget-header"><span>Needs another look</span><span class="widget-badge">${shaky.length}</span></div>
+      <div class="pl-shaky-list">
+        ${shaky.slice(0, 12).map(k => `<button class="pl-shaky-item" onclick="plannerOpenKPI('${k.id}')">${k.title}</button>`).join("")}
       </div>
-      <div class="planner-week-items">
-        ${w.items.map(item => `
-          <div class="planner-week-item">${icon(item.type === "quiz" ? "quiz" : item.type === "article" ? "file" : "play")} ${item.title} <span style="color:var(--muted);margin-left:auto;">${item.duration}</span></div>
-        `).join("")}
-      </div>
-    </div>
+      ${shaky.length > 12 ? `<div class="pl-empty">+ ${shaky.length - 12} more marked shaky.</div>` : ""}
+    </div>` : "";
+
+  const coverageNote = plan.kpiCovered < plan.kpiTotal
+    ? `<div class="planner-warning">${icon("alert")} This plan covers the ${plan.kpiCovered} highest-priority indicators out of ${plan.kpiTotal} in ${plan.clusterLabel}. Add a study day or raise PIs per session to cover more before ${plannerDateLabel(plan.conferenceDate)}.</div>`
+    : `<div class="planner-ontrack">${icon("zap")} Every indicator in ${plan.clusterLabel} fits before your conference at this pace.</div>`;
+
+  const weeks = [...new Set(plan.sessions.map(s => s.week))];
+  const weeksHtml = weeks.map(w => `
+    <div class="pl-week-label">Week ${w}</div>
+    ${plan.sessions.filter(s => s.week === w).map(s => plannerSessionHtml(plan, s)).join("")}
   `).join("");
 
   container.innerHTML = `
@@ -2849,13 +3223,15 @@ function renderPlanResults(plan) {
       <h3>Your Plan for ${plan.courseTitle}</h3>
       <div class="planner-summary-grid">
         <div class="planner-summary-stat"><div class="val">${plan.daysUntil}</div><div class="lbl">Days Until Conference</div></div>
-        <div class="planner-summary-stat"><div class="val">${plan.remainingCount}</div><div class="lbl">Lessons Remaining</div></div>
-        <div class="planner-summary-stat"><div class="val">${plan.totalHoursNeeded}h</div><div class="lbl">Est. Time Needed</div></div>
-        <div class="planner-summary-stat"><div class="val">${plan.availableHours}h</div><div class="lbl">Time Budgeted</div></div>
+        <div class="planner-summary-stat"><div class="val">${plan.sessions.length}</div><div class="lbl">Sessions</div></div>
+        <div class="planner-summary-stat"><div class="val">${plan.kpiCovered}</div><div class="lbl">PIs Covered</div></div>
+        <div class="planner-summary-stat"><div class="val">${perWeek}/wk</div><div class="lbl">Sessions Per Week</div></div>
       </div>
-      ${statusHtml}
-      ${scoreNote}
+      <div class="pl-progress-row"><span>${doneCount} of ${plan.sessions.length} sessions done</span><span>${pct}%</span></div>
+      <div class="xp-bar-outer" style="margin-bottom:0;"><div class="xp-bar-inner" style="width:${pct}%"></div></div>
+      ${coverageNote}
     </div>
+    ${shakyHtml}
     <div class="planner-weeks">${weeksHtml}</div>
   `;
 }

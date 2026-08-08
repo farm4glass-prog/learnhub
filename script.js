@@ -3155,7 +3155,7 @@ function renderPlannerForm() {
           ${[2,3,4,5,6,7].map(n => `<option value="${n}" ${String(saved?.daysPerWeek || 3) === String(n) ? "selected" : ""}>${n} days</option>`).join("")}
         </select>
       </div>
-      ${plannerMode === "prepared" ? "" : `
+      ${plannerMode === "roleplay" ? "" : `
         <div class="form-group">
           <label>Performance Indicators Per Session</label>
           <select id="plannerKpiCount">
@@ -3196,12 +3196,12 @@ window.generateStudyPlan = async function() {
   if (!conferenceDate) return alert("Pick your conference date first.");
   const timeline = plannerTimeline(conferenceDate, daysPerWeek);
   if (timeline.daysUntil < 1) return alert("That date has already passed — pick your next conference.");
-  if (!kpisLoaded && plannerMode !== "prepared") {
+  if (!kpisLoaded && plannerMode !== "roleplay") {
     return alert("The performance indicator database is still loading — give it a second and try again.");
   }
 
   let plan;
-  if (plannerMode === "exam") plan = buildExamPlan(timeline, conferenceDate, daysPerWeek, kpisPerSession);
+  if (plannerMode === "exam") plan = buildExamPlan(timeline, conferenceDate, daysPerWeek);
   else if (plannerMode === "roleplay") plan = buildRoleplayPlan(timeline, conferenceDate, daysPerWeek, kpisPerSession);
   else plan = buildPreparedPlan(timeline, conferenceDate, daysPerWeek);
 
@@ -3211,7 +3211,7 @@ window.generateStudyPlan = async function() {
   await plannerSavePlan(plan);
 };
 
-function buildExamPlan(timeline, conferenceDate, daysPerWeek, kpisPerSession) {
+function buildExamPlan(timeline, conferenceDate, daysPerWeek) {
   const label = userData?.clusterExam || "";
   const courseId = PLANNER_CLUSTER_COURSE[plannerNorm(label)];
   const course = plannerCourseById(courseId);
@@ -3220,7 +3220,6 @@ function buildExamPlan(timeline, conferenceDate, daysPerWeek, kpisPerSession) {
   const units = buildUnits(course).filter(u => u.lessons.length);
   if (!units.length) return `${course.title} doesn't have any units yet — check back soon.`;
 
-  const take = plannerAllocator(plannerRankedKpis(label));
   const unitsPer = Math.max(1, Math.ceil(units.length / timeline.slots));
 
   const sessions = [];
@@ -3230,11 +3229,33 @@ function buildExamPlan(timeline, conferenceDate, daysPerWeek, kpisPerSession) {
       kind: "unit",
       courseId: course.id,
       unitKeys: chunk.map(u => u.key),
-      title: chunk.length === 1 ? stripUnitSuffix(chunk[0].title) : `${stripUnitSuffix(chunk[0].title)} + ${chunk.length - 1} more`,
-      kpiIds: take(chunk.map(u => plannerUnitArea(u.title)), kpisPerSession)
+      title: chunk.length === 1
+        ? stripUnitSuffix(chunk[0].title)
+        : `${stripUnitSuffix(chunk[0].title)} + ${chunk.length - 1} more`,
+      kpiIds: []
     });
   }
 
+  // Spare time goes into full timed exams rather than padded content.
+  const spare = Math.max(0, timeline.slots - sessions.length - 1);
+  for (let i = 0; i < Math.min(spare, 4); i++) {
+    sessions.push({
+      kind: "review", courseId: course.id,
+      title: `Full practice exam #${i + 1}`, unitKeys: [], kpiIds: []
+    });
+  }
+
+  sessions.push({ kind: "final", courseId: course.id, title: "Final review", unitKeys: [], kpiIds: [] });
+
+  return {
+    mode: "exam", conferenceDate, daysPerWeek,
+    eventLabel: label, courseId: course.id, courseTitle: course.title,
+    daysUntil: timeline.daysUntil,
+    unitsCovered: units.length,
+    sessions: plannerStampDates(sessions, timeline),
+    generatedAt: new Date().toISOString()
+  };
+}
   // Spare time goes into full practice exams rather than padded content.
   const spare = Math.max(0, timeline.slots - sessions.length - 1);
   for (let i = 0; i < Math.min(spare, 4); i++) {
@@ -3527,8 +3548,6 @@ function plannerSessionBody(plan, session) {
     return `
       <div class="pl-block-label">${icon("play")} Watch &amp; practice</div>
       ${plannerUnitLinksHtml(plan, session, false)}
-      <div class="pl-block-label">${icon("book")} Performance indicators from this unit</div>
-      <div class="pl-kpis">${session.kpiIds.map(plannerKpiChipHtml).join("")}</div>
     `;
   }
 
@@ -3559,8 +3578,10 @@ function plannerSessionBody(plan, session) {
       <div class="pl-links">
         <button class="pl-link" onclick="openExamSetup('${session.courseId}')">${icon("timer")} Start practice exam</button>
       </div>
-      <div class="pl-block-label">${icon("book")} Then review these</div>
-      <div class="pl-kpis">${session.kpiIds.map(plannerKpiChipHtml).join("")}</div>
+      <ul class="pl-rp-check">
+        <li>Time yourself properly — pacing is half of what the exam tests.</li>
+        <li>Afterward, reopen the unit behind every question you missed.</li>
+      </ul>
     `;
   }
 
@@ -3600,8 +3621,8 @@ function plannerSessionBody(plan, session) {
         <li>Reread every PI you marked shaky — those are the ones that cost points.</li>
         <li>Pack your materials and confirm your event's report time.</li>`
       : `
-        <li>Skim every unit title and say what it covers — if you can't, reopen that unit.</li>
-        <li>Reread every PI you marked shaky.</li>
+        <li>Skim every unit title and say out loud what it covers — if you can't, reopen that unit.</li>
+        <li>Redo the practice questions you got wrong, not the ones you got right.</li>
         <li>Sleep. A tired brain loses more points than one more hour of review gains.</li>`}
     </ul>
   `;
@@ -3633,7 +3654,7 @@ function renderPlanResults(plan) {
   const doneCount = plan.sessions.filter(s => s.done).length;
   const pct = Math.round((doneCount / plan.sessions.length) * 100);
 
-  const shaky = Object.entries(userData?.kpiConfidence || {})
+  const shaky = plan.mode !== "roleplay" ? [] : Object.entries(userData?.kpiConfidence || {})
     .filter(([, v]) => v === "shaky")
     .map(([id]) => kpis.find(k => k.id === id))
     .filter(Boolean);
@@ -3654,7 +3675,7 @@ function renderPlanResults(plan) {
   if (plan.mode === "prepared" && plan.sectionSource === "template") {
     notes.push(`<div class="planner-warning">${icon("alert")} No rubric has been entered for ${plan.eventLabel} yet, so these sections come from a general template. Check them against your event's current guidelines — and once an admin adds the rubric under Admin &gt; Rubrics, rebuilding this plan will use the real one.</div>`);
   }
-  if (plan.mode !== "prepared" && plan.kpiTotal && plan.kpiCovered < plan.kpiTotal) {
+  if (plan.mode === "roleplay" && plan.kpiTotal && plan.kpiCovered < plan.kpiTotal) {
     notes.push(`<div class="planner-warning">${icon("alert")} This covers the ${plan.kpiCovered} highest-priority indicators out of ${plan.kpiTotal} in ${plan.clusterLabel}. Add a study day or raise PIs per session to cover more.</div>`);
   }
 
@@ -3663,6 +3684,11 @@ function renderPlanResults(plan) {
     <div class="planner-summary-stat"><div class="val">${plan.sessions.length}</div><div class="lbl">Work Sessions</div></div>
     <div class="planner-summary-stat"><div class="val">${plan.sessions.filter(s => s.kind === "written").length}</div><div class="lbl">Writing Blocks</div></div>
     <div class="planner-summary-stat"><div class="val">${plan.daysPerWeek}/wk</div><div class="lbl">Days Per Week</div></div>
+  ` : plan.mode === "exam" ? `
+    <div class="planner-summary-stat"><div class="val">${plan.daysUntil}</div><div class="lbl">Days Until Conference</div></div>
+    <div class="planner-summary-stat"><div class="val">${plan.sessions.length}</div><div class="lbl">Sessions</div></div>
+    <div class="planner-summary-stat"><div class="val">${plan.unitsCovered}</div><div class="lbl">Units Covered</div></div>
+    <div class="planner-summary-stat"><div class="val">${plan.sessions.filter(s => s.kind === "review").length}</div><div class="lbl">Practice Exams</div></div>
   ` : `
     <div class="planner-summary-stat"><div class="val">${plan.daysUntil}</div><div class="lbl">Days Until Conference</div></div>
     <div class="planner-summary-stat"><div class="val">${plan.sessions.length}</div><div class="lbl">Sessions</div></div>

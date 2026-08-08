@@ -2722,28 +2722,93 @@ window.adminSeedCourses = async function() {
 // ========================================================================
 // ========================= STUDY PLANNER ================================
 // ========================================================================
-// The plan is built around performance indicators, not lesson count. Each
-// session is: the PIs for that instructional area, the unit video and
-// practice questions that teach them, and a roleplay that uses those exact
-// PIs — because that's how a judge scores you.
+// Three paths, all driven off the events the student saved on their Profile:
 //
-// Everything here is deterministic. Roleplay scenarios come from a template
-// bank below, never from a model, so a student is never handed an invented
-// event format or a made-up PI.
+//   exam      -> their cluster exam. Which video to watch, which practice
+//                questions to run, sized to the days they actually have.
+//   roleplay  -> their roleplay event, mapped to its course. Each session
+//                walks watch -> study these PIs -> run a practice roleplay.
+//   prepared  -> their written event, mapped to its course. Each session is
+//                one section of the entry to actually write.
+//
+// Nothing here calls a model. Roleplay scenarios come from a template bank,
+// and prepared-event sections come from the rubric an admin entered under
+// Admin > Rubrics whenever one exists — so a student is never handed an
+// invented event format.
 
-/* ---------- cluster matching ---------- */
-// Which PI cluster a course draws from. A course not listed here falls back
-// to the cluster exam on the student's profile, then to every loaded PI.
-const PLANNER_CLUSTER_BY_COURSE = {
-  "marketing": "Marketing",
-  "finance": "Finance",
-  "hospitality": "Hospitality",
-  "business-admin-core": "Business Administration Core",
-  "business-management": "Business Management",
-  "entrepreneurship-cluster": "Entrepreneurship",
-  "pfl-cluster": "Personal Financial Literacy",
-  "individual-series": "Marketing",
-  "team-decision": "Marketing"
+let plannerMode = null;
+
+/* ---------- profile event -> course + PI cluster ---------- */
+
+const PLANNER_CLUSTER_COURSE = {
+  "business administration core": "business-admin-core",
+  "business management and administration": "business-management",
+  "entrepreneurship": "entrepreneurship-cluster",
+  "finance": "finance",
+  "hospitality and tourism": "hospitality",
+  "marketing": "marketing",
+  "personal financial literacy": "pfl-cluster"
+};
+
+// Roleplay event code -> the course it belongs to, and the cluster its PIs
+// come from. DECA revises this list most years; edit here and nothing else
+// needs to change.
+const PLANNER_RP_EVENTS = {
+  PBM:  { course: "principles",        cluster: "Business Management" },
+  PEN:  { course: "principles",        cluster: "Entrepreneurship" },
+  PFN:  { course: "principles",        cluster: "Finance" },
+  PHT:  { course: "principles",        cluster: "Hospitality" },
+  PMK:  { course: "principles",        cluster: "Marketing" },
+  ACT:  { course: "individual-series", cluster: "Finance" },
+  AAM:  { course: "individual-series", cluster: "Marketing" },
+  ASM:  { course: "individual-series", cluster: "Marketing" },
+  BFS:  { course: "individual-series", cluster: "Finance" },
+  BSM:  { course: "individual-series", cluster: "Marketing" },
+  ENT:  { course: "individual-series", cluster: "Entrepreneurship" },
+  FMS:  { course: "individual-series", cluster: "Marketing" },
+  HLM:  { course: "individual-series", cluster: "Hospitality" },
+  HRM:  { course: "individual-series", cluster: "Business Management" },
+  MCS:  { course: "individual-series", cluster: "Marketing" },
+  QSRM: { course: "individual-series", cluster: "Hospitality" },
+  RFSM: { course: "individual-series", cluster: "Hospitality" },
+  RMS:  { course: "individual-series", cluster: "Marketing" },
+  SEM:  { course: "individual-series", cluster: "Marketing" },
+  BLTDM:{ course: "team-decision",     cluster: "Business Management" },
+  BTDM: { course: "team-decision",     cluster: "Marketing" },
+  ETDM: { course: "team-decision",     cluster: "Entrepreneurship" },
+  FTDM: { course: "team-decision",     cluster: "Finance" },
+  HTDM: { course: "team-decision",     cluster: "Hospitality" },
+  MTDM: { course: "team-decision",     cluster: "Marketing" },
+  STDM: { course: "team-decision",     cluster: "Marketing" },
+  TTDM: { course: "team-decision",     cluster: "Hospitality" },
+  PFL:  { course: "pfl-event",         cluster: "Personal Financial Literacy" },
+  FCE:  { course: "professional-selling", cluster: "Finance" },
+  HTPS: { course: "professional-selling", cluster: "Hospitality" },
+  PSE:  { course: "professional-selling", cluster: "Marketing" }
+};
+
+// Written event code -> course + which section template to walk through.
+const PLANNER_WRITTEN_EVENTS = {
+  BOR:  { course: "business-research",         family: "research",         cluster: "Marketing" },
+  BMOR: { course: "business-research",         family: "research",         cluster: "Marketing" },
+  FOR:  { course: "business-research",         family: "research",         cluster: "Finance" },
+  HTOR: { course: "business-research",         family: "research",         cluster: "Hospitality" },
+  SEOR: { course: "business-research",         family: "research",         cluster: "Marketing" },
+  EBG:  { course: "entrepreneurship-events",   family: "entrepreneurship", cluster: "Entrepreneurship" },
+  EFB:  { course: "entrepreneurship-events",   family: "entrepreneurship", cluster: "Entrepreneurship" },
+  EIB:  { course: "entrepreneurship-events",   family: "entrepreneurship", cluster: "Entrepreneurship" },
+  EIP:  { course: "entrepreneurship-events",   family: "entrepreneurship", cluster: "Entrepreneurship" },
+  IBP:  { course: "entrepreneurship-events",   family: "entrepreneurship", cluster: "Entrepreneurship" },
+  ESB:  { course: "entrepreneurship-events",   family: "entrepreneurship", cluster: "Entrepreneurship" },
+  IMCE: { course: "integrated-marketing",      family: "imc",              cluster: "Marketing" },
+  IMCP: { course: "integrated-marketing",      family: "imc",              cluster: "Marketing" },
+  IMCS: { course: "integrated-marketing",      family: "imc",              cluster: "Marketing" },
+  PMBS: { course: "project-management",        family: "project",          cluster: "Business Management" },
+  PMCD: { course: "project-management",        family: "project",          cluster: "Business Management" },
+  PMCA: { course: "project-management",        family: "project",          cluster: "Marketing" },
+  PMCG: { course: "project-management",        family: "project",          cluster: "Marketing" },
+  PMFL: { course: "project-management",        family: "project",          cluster: "Personal Financial Literacy" },
+  PMSP: { course: "project-management",        family: "project",          cluster: "Marketing" }
 };
 
 function plannerNorm(s) {
@@ -2755,101 +2820,173 @@ function plannerUnitArea(title) {
   return plannerNorm(String(title || "").replace(/^unit\s*\d+\s*:?\s*/i, ""));
 }
 
-function plannerClusterFor(course) {
-  return PLANNER_CLUSTER_BY_COURSE[course.id] || userData?.clusterExam || "";
+// Profile values are stored as "Retail Merchandising Series (RMS)".
+function plannerEventCode(label) {
+  return (String(label || "").match(/\(([^)]+)\)\s*$/) || [])[1] || "";
+}
+function plannerEventName(label) {
+  return String(label || "").replace(/\s*\([^)]+\)\s*$/, "").trim();
 }
 
-function plannerKpiPool(course) {
-  const name = plannerNorm(plannerClusterFor(course));
+function plannerCourseById(id) {
+  return courses.find(c => c.id === id) || null;
+}
+
+/* ---------- PI selection ---------- */
+
+function plannerKpiPool(clusterName) {
+  const name = plannerNorm(clusterName);
   if (!name) return kpis;
   const matched = kpis.filter(k =>
     plannerNorm(`${k.cluster || ""} ${(k.appearsIn || []).join(" ")}`).includes(name)
   );
-  // A thin match usually means the cluster string is worded differently in the
-  // data than in our map — better to plan from everything than from nothing.
+  // A thin match usually means the cluster is worded differently in the data
+  // than in our map — better to plan from everything than from nothing.
   return matched.length >= 8 ? matched : kpis;
 }
 
-/* ---------- priority ---------- */
-// Lower DECA level first (a Prerequisite PI is more likely to show up and is
-// worth locking in early), then PIs that actually have study notes written,
-// then PIs whose instructional area has a video in this course.
+// Lower DECA level first (a Prerequisite PI is likelier to appear and is worth
+// locking in early), then PIs that actually have study notes written.
 const KPI_LEVEL_ORDER = { PQ: 0, CS: 1, SP: 2, SU: 3, MN: 4 };
 
-function plannerKpiRank(k, unitAreas) {
-  const lvl = KPI_LEVEL_ORDER[String(k.level || "").toUpperCase()];
-  const levelScore = lvl == null ? 2 : lvl;
-  const notesScore = (k.explanation || k.sampleAnswer) ? 0 : 1;
-  const areaScore = unitAreas.has(plannerNorm(k.area)) ? 0 : 1;
-  return areaScore * 10 + levelScore * 2 + notesScore;
+function plannerRankedKpis(clusterName) {
+  const pool = plannerKpiPool(clusterName);
+  return [...pool].sort((a, b) => {
+    const la = KPI_LEVEL_ORDER[String(a.level || "").toUpperCase()] ?? 2;
+    const lb = KPI_LEVEL_ORDER[String(b.level || "").toUpperCase()] ?? 2;
+    const na = (a.explanation || a.sampleAnswer) ? 0 : 1;
+    const nb = (b.explanation || b.sampleAnswer) ? 0 : 1;
+    return (la * 2 + na) - (lb * 2 + nb) ||
+      String(a.code || "").localeCompare(String(b.code || "")) ||
+      String(a.title || "").localeCompare(String(b.title || ""));
+  });
 }
 
-/* ---------- roleplay templates ---------- */
-// Written to read like a real DECA prompt: a role, a business with a specific
-// problem, and a judge to present to. The PIs a session covers are printed
-// underneath, exactly as they'd appear on the event sheet.
+// Hands out PIs area-first, then falls back to the next unused ranked PI, so
+// a session is never short just because its area has no indicators left.
+function plannerAllocator(ranked) {
+  const used = new Set();
+  const buckets = new Map();
+  ranked.forEach(k => {
+    const key = plannerNorm(k.area || k.element);
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(k);
+  });
+
+  return function take(areaNames, n) {
+    const out = [];
+    const wanted = (areaNames || []).map(plannerNorm).filter(Boolean);
+
+    wanted.forEach(w => {
+      for (const [key, list] of buckets) {
+        if (out.length >= n) break;
+        if (key !== w && !key.includes(w) && !w.includes(key)) continue;
+        for (const k of list) {
+          if (out.length >= n) break;
+          if (!used.has(k.id)) { used.add(k.id); out.push(k.id); }
+        }
+      }
+    });
+
+    for (const k of ranked) {
+      if (out.length >= n) break;
+      if (!used.has(k.id)) { used.add(k.id); out.push(k.id); }
+    }
+    return out;
+  };
+}
+
+/* ---------- timeline ---------- */
+
+function plannerTimeline(conferenceDate, daysPerWeek) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(conferenceDate + "T00:00:00");
+  const daysUntil = Math.max(1, Math.round((target - today) / 86400000));
+  const studyDays = Math.max(1, daysUntil - 1); // leave the day before free
+  const slots = Math.max(1, Math.round((studyDays / 7) * daysPerWeek));
+  return { today, daysUntil, studyDays, slots };
+}
+
+function plannerStampDates(sessions, timeline) {
+  sessions.forEach((s, i) => {
+    s.num = i + 1;
+    const offset = Math.min(
+      timeline.studyDays,
+      Math.round(i * (timeline.studyDays / Math.max(1, sessions.length)))
+    );
+    s.date = new Date(timeline.today.getTime() + offset * 86400000).toISOString().slice(0, 10);
+    s.week = Math.floor(offset / 7) + 1;
+    s.done = false;
+    s.rpOffset = 0;
+  });
+  return sessions;
+}
+
+/* ---------- roleplay scenario bank ---------- */
+
 const RP_TEMPLATE_SETS = [
   {
     match: /promotion|advertis|public relations/i,
     items: [
       { role: "marketing coordinator", org: "a family-owned bakery opening a second location across town", judge: "owner", task: "The owner wants the new location busy from day one but has a small budget and no email list." },
-      { role: "promotions assistant", org: "a minor league baseball team", judge: "director of promotions", task: "Weeknight attendance is half of what weekend games draw, and the team wants a promotional plan that fills seats Tuesday through Thursday." }
+      { role: "promotions assistant", org: "a minor league baseball team", judge: "director of promotions", task: "Weeknight attendance is half what weekend games draw, and the team wants seats filled Tuesday through Thursday." }
     ]
   },
   {
     match: /channel|distribut|supply chain|logistic/i,
     items: [
-      { role: "operations associate", org: "a skincare brand that has only ever sold on its own website", judge: "vice president of sales", task: "A national retailer has offered shelf space, and leadership is split on whether taking it is worth the loss of control." },
-      { role: "distribution analyst", org: "a regional snack manufacturer", judge: "distribution manager", task: "Two of the company's wholesalers are covering overlapping territory and both are asking for exclusivity." }
+      { role: "operations associate", org: "a skincare brand that has only ever sold on its own website", judge: "vice president of sales", task: "A national retailer has offered shelf space, and leadership is split on whether it's worth the loss of control." },
+      { role: "distribution analyst", org: "a regional snack manufacturer", judge: "distribution manager", task: "Two wholesalers are covering overlapping territory and both are asking for exclusivity." }
     ]
   },
   {
     match: /\bselling\b|\bsales\b|professional selling/i,
     items: [
-      { role: "sales associate", org: "a locally owned running shoe store", judge: "store manager", task: "A customer keeps coming in, trying on shoes, and leaving to buy online for a few dollars less." },
-      { role: "account representative", org: "a commercial cleaning company", judge: "sales manager", task: "A long-time client is comparing quotes from a cheaper competitor and has asked you to justify your pricing." }
+      { role: "sales associate", org: "a locally owned running shoe store", judge: "store manager", task: "A customer keeps coming in, trying on shoes, then buying online for a few dollars less." },
+      { role: "account representative", org: "a commercial cleaning company", judge: "sales manager", task: "A long-time client is comparing quotes from a cheaper competitor and wants your pricing justified." }
     ]
   },
   {
     match: /pricing|price/i,
     items: [
       { role: "pricing analyst", org: "a chain of three coffee shops near a college campus", judge: "district manager", task: "Supplier costs rose 18% this year and no price has changed since the shops opened." },
-      { role: "assistant manager", org: "an independent bookstore", judge: "owner", task: "The owner wants to run a discount event but is worried about training customers to wait for sales." }
+      { role: "assistant manager", org: "an independent bookstore", judge: "owner", task: "The owner wants a discount event but worries about training customers to wait for sales." }
     ]
   },
   {
     match: /product\/service|product management|branding/i,
     items: [
-      { role: "product assistant", org: "a smoothie franchise", judge: "regional director", task: "Two menu items account for 4% of sales and are slowing down every order, and the director wants a recommendation on the menu mix." },
+      { role: "product assistant", org: "a smoothie franchise", judge: "regional director", task: "Two menu items are 4% of sales and slow down every order — the director wants a recommendation on the menu mix." },
       { role: "brand associate", org: "a 40-year-old hardware store", judge: "owner", task: "A big-box competitor opened two miles away and the store needs to decide what it stands for." }
     ]
   },
   {
     match: /marketing-information|market research|marketing research|information management/i,
     items: [
-      { role: "marketing research assistant", org: "a fitness studio chain", judge: "marketing director", task: "Memberships are being cancelled at three months and nobody knows why — you've been asked how to find out." },
+      { role: "marketing research assistant", org: "a fitness studio chain", judge: "marketing director", task: "Memberships are cancelled at three months and nobody knows why — you've been asked how to find out." },
       { role: "data associate", org: "a meal-kit delivery startup", judge: "chief marketing officer", task: "The company collects enormous amounts of customer data and has never used any of it to make a decision." }
     ]
   },
   {
     match: /customer relation/i,
     items: [
-      { role: "guest services lead", org: "a mid-size hotel", judge: "general manager", task: "Online reviews are strong on cleanliness and weak on how guests are treated at check-in." },
+      { role: "guest services lead", org: "a mid-size hotel", judge: "general manager", task: "Reviews are strong on cleanliness and weak on how guests are treated at check-in." },
       { role: "customer experience associate", org: "an online electronics retailer", judge: "operations manager", task: "Returns are handled well, but customers who return an item almost never buy again." }
     ]
   },
   {
-    match: /financial analysis|accounting|financial|credit|investment/i,
+    match: /financial analysis|accounting|financial|credit|investment|insurance/i,
     items: [
-      { role: "finance intern", org: "a food truck operator planning a second truck", judge: "owner", task: "The owner is profitable on paper but keeps running short on cash before the end of the month." },
-      { role: "financial associate", org: "a nonprofit youth sports league", judge: "board treasurer", task: "The board wants to know whether the league can afford to lower registration fees next season." }
+      { role: "finance intern", org: "a food truck operator planning a second truck", judge: "owner", task: "The owner is profitable on paper but keeps running short on cash before month end." },
+      { role: "financial associate", org: "a nonprofit youth sports league", judge: "board treasurer", task: "The board wants to know whether the league can afford lower registration fees next season." }
     ]
   },
   {
     match: /business law|legal|ethic|risk management/i,
     items: [
-      { role: "operations assistant", org: "a catering company", judge: "owner", task: "A supplier delivered spoiled product two hours before an event, and the contract language is unclear." },
-      { role: "management trainee", org: "a retail clothing chain", judge: "store director", task: "An employee has been posting about internal company decisions online and there's no policy covering it." }
+      { role: "operations assistant", org: "a catering company", judge: "owner", task: "A supplier delivered spoiled product two hours before an event and the contract language is unclear." },
+      { role: "management trainee", org: "a retail clothing chain", judge: "store director", task: "An employee has been posting about internal decisions online and there's no policy covering it." }
     ]
   },
   {
@@ -2863,20 +3000,20 @@ const RP_TEMPLATE_SETS = [
     match: /operation|quality management|safety|project management/i,
     items: [
       { role: "operations associate", org: "a bike repair shop", judge: "owner", task: "Turnaround time has doubled during the busy season and customers are going elsewhere." },
-      { role: "shift supervisor", org: "a grocery store", judge: "store manager", task: "Checkout lines back up every day between 4 and 6 p.m. with the same staffing as the rest of the day." }
+      { role: "shift supervisor", org: "a grocery store", judge: "store manager", task: "Checkout lines back up every day between 4 and 6 p.m. on the same staffing as the rest of the day." }
     ]
   },
   {
     match: /econom|entrepreneur|strategic management|market planning/i,
     items: [
-      { role: "business consultant", org: "a small tutoring company", judge: "founder", task: "The founder wants to expand into a neighboring city and hasn't looked at whether the demand is there." },
+      { role: "business consultant", org: "a small tutoring company", judge: "founder", task: "The founder wants to expand into a neighboring city without checking whether the demand is there." },
       { role: "strategy intern", org: "a subscription board game company", judge: "chief executive officer", task: "Growth has flattened and leadership is deciding between a new product line and a new market." }
     ]
   }
 ];
 
 const RP_TEMPLATES_GENERIC = [
-  { role: "management trainee", org: "a mid-size retail business", judge: "store manager", task: "The manager has asked for your recommendation on a decision the business has been putting off." },
+  { role: "management trainee", org: "a mid-size retail business", judge: "store manager", task: "The manager wants your recommendation on a decision the business has been putting off." },
   { role: "business associate", org: "a growing local service company", judge: "owner", task: "The owner needs a clear explanation before committing to a change that affects the whole team." },
   { role: "assistant manager", org: "a regional franchise location", judge: "district manager", task: "The district manager wants to understand your reasoning before approving the plan." }
 ];
@@ -2886,169 +3023,389 @@ function plannerScenarioBank(area) {
   return set ? set.items.concat(RP_TEMPLATES_GENERIC) : RP_TEMPLATES_GENERIC;
 }
 
-// Event format. Deliberately soft on specifics — DECA revises these, and a
-// confidently wrong prep time is worse than telling a student to check.
-function plannerRoleplayFormat() {
-  const e = String(userData?.roleplayEvent || "");
+// Deliberately soft on specifics — DECA revises these, and a confidently wrong
+// prep time is worse than telling a student to check.
+function plannerRoleplayFormat(eventLabel) {
+  const e = String(eventLabel || "");
   if (/TDM|Team Decision/i.test(e)) {
-    return { label: "Team Decision Making", prep: "30 minutes of prep", present: "a presentation with a partner", pis: "7 performance indicators" };
+    return { label: "Team Decision Making", detail: "30 minutes of prep, a presentation with your partner, 7 performance indicators" };
   }
-  if (/PSE|FCE|HTPS|Professional Selling|Consulting/i.test(e)) {
-    return { label: "Professional Selling / Consulting", prep: "no on-site prep — you build this in advance", present: "a prepared presentation", pis: "the event's published indicator list" };
+  if (/PSE|FCE|HTPS|Selling|Consulting/i.test(e)) {
+    return { label: "Professional Selling / Consulting", detail: "no on-site prep — you build and rehearse this in advance" };
   }
   if (/^Principles|\(P[BEFHM]/i.test(e)) {
-    return { label: "Principles event", prep: "10 minutes of prep", present: "up to 10 minutes with the judge", pis: "4 performance indicators" };
+    return { label: "Principles event", detail: "10 minutes of prep, up to 10 minutes with the judge, 4 performance indicators" };
   }
-  return { label: "Individual Series", prep: "10 minutes of prep", present: "up to 10 minutes with the judge", pis: "5 performance indicators" };
+  return { label: "Individual Series", detail: "10 minutes of prep, up to 10 minutes with the judge, 5 performance indicators" };
 }
 
-/* ---------- plan generation ---------- */
+/* ---------- prepared event section templates ---------- */
+// Only used when no rubric has been entered under Admin > Rubrics for this
+// event. Anything entered there wins, because it came from the real guidelines.
 
-function renderPlannerForm() {
-  const select = document.getElementById("plannerCourse");
-  if (!select) return;
+const WRITTEN_SECTION_TEMPLATES = {
+  research: [
+    { section: "Executive Summary", goal: "A one-page overview of the whole entry — the problem, what you found, and what you're recommending.", checklist: ["Write this LAST, after everything else is done", "One page, no new information", "A judge who reads only this should understand your recommendation"] },
+    { section: "Introduction", goal: "Describe the business or organization and state exactly what you set out to research and why.", checklist: ["Describe the business, its industry, and its customers", "State the research problem in one clear sentence", "Explain why this problem matters to the business"] },
+    { section: "Research Methods", goal: "Explain how you gathered your data so a judge could repeat it.", checklist: ["Name your primary and secondary methods", "Give sample size and who you surveyed", "Attach the actual survey or interview questions to the appendix"] },
+    { section: "Findings and Conclusions", goal: "Report what the data actually showed, then say what it means.", checklist: ["Use charts or tables — don't make a judge read raw numbers", "Separate what you found from what you concluded", "Tie each conclusion back to a specific finding"] },
+    { section: "Proposed Strategic Plan", goal: "The recommendation itself: objectives, activities, timeline, budget, and how success gets measured.", checklist: ["Objectives must be specific and measurable", "Include a timeline and a real budget", "Say how the business will know if it worked"] },
+    { section: "Bibliography", goal: "Cite every source you used, in the format your guidelines require.", checklist: ["Every statistic in the entry traces to a source here", "Use one consistent citation format"] },
+    { section: "Appendix", goal: "Supporting exhibits — surveys, raw data, anything referenced in the body.", checklist: ["Every appendix item is referenced somewhere in the body", "Confirm whether appendix pages count toward your page limit"] }
+  ],
+  entrepreneurship: [
+    { section: "Executive Summary", goal: "The whole plan in one page — the concept, the market, the money, and the ask.", checklist: ["Write this LAST", "State clearly what you're asking a reader to fund or approve", "No new information that isn't in the body"] },
+    { section: "Introduction / Description of the Business", goal: "What the business is, what it sells, and what makes it different.", checklist: ["Describe the product or service concretely", "State the legal structure and ownership", "Name the specific problem the business solves"] },
+    { section: "Analysis of the Business Situation", goal: "Industry, competition, target market, and a SWOT the judge can actually believe.", checklist: ["Define the target market with real demographics", "Name specific competitors, not 'other businesses'", "SWOT items should be evidence-backed"] },
+    { section: "Planned Operation", goal: "How the business will actually run day to day, plus the marketing plan.", checklist: ["Cover organization, staffing, and location", "Include the full marketing mix", "Explain your channel of distribution"] },
+    { section: "Financial Plan", goal: "Startup costs, projected income statement, and where the money comes from.", checklist: ["Show your assumptions, not just the totals", "Project at least the required number of years", "Include a break-even analysis"] },
+    { section: "Conclusion", goal: "Close on the growth path and why this business is worth backing.", checklist: ["Restate the ask", "Be specific about what happens after year one"] },
+    { section: "Bibliography", goal: "Cite every source behind your market and financial claims.", checklist: ["Every market statistic traces to a source", "One consistent citation format"] },
+    { section: "Appendix", goal: "Supporting exhibits — financial detail, samples, research.", checklist: ["Everything here is referenced in the body", "Confirm whether these pages count toward your limit"] }
+  ],
+  imc: [
+    { section: "Executive Summary", goal: "The campaign in one page — what you promoted, to whom, and what happened.", checklist: ["Write this LAST", "Include your headline result", "No new information"] },
+    { section: "Description of the Product/Service/Event and Target Market", goal: "What you promoted and exactly who you were trying to reach.", checklist: ["Describe the client and the offering", "Define the target market with real data, not guesses", "Explain why this market was chosen"] },
+    { section: "Campaign Objectives", goal: "What the campaign was supposed to achieve, stated so it can be measured.", checklist: ["Every objective has a number and a deadline", "Objectives connect to the target market you just defined"] },
+    { section: "Campaign Schedule and Budget", goal: "When each activity ran and what it cost.", checklist: ["Show a real calendar or timeline", "Itemize the budget, including donated value", "Costs should tie to the activities listed next"] },
+    { section: "Promotional Activities", goal: "What you actually did, with samples of the work.", checklist: ["Include samples of every major piece", "Explain the reasoning behind each channel choice", "Show the mix — not just social media"] },
+    { section: "Evaluation and Recommendations", goal: "Measure against your objectives and say what you'd do differently.", checklist: ["Compare results directly to each stated objective", "Be honest about what underperformed", "Give the client concrete next steps"] },
+    { section: "Bibliography", goal: "Cite your research sources.", checklist: ["Market data traces to a source", "One consistent format"] },
+    { section: "Appendix", goal: "Campaign samples and supporting exhibits.", checklist: ["Everything is referenced in the body", "Confirm page-limit rules for appendices"] }
+  ],
+  project: [
+    { section: "Executive Summary", goal: "The project in one page — why you ran it, what you did, and the result.", checklist: ["Write this LAST", "Lead with the impact", "No new information"] },
+    { section: "Description of the Project", goal: "The rationale and the objectives — why this project, and what success looked like.", checklist: ["Explain the need with evidence, not assumption", "State measurable objectives up front", "Describe who the project served"] },
+    { section: "Organization and Implementation", goal: "How the project was planned and carried out: roles, timeline, and budget.", checklist: ["Name who did what", "Include a real timeline and budget", "Describe the obstacles and how you handled them"] },
+    { section: "Evaluation and Recommendations", goal: "Measure against your objectives and say what should happen next.", checklist: ["Compare results to each objective directly", "Include evidence of impact", "Give recommendations for continuing the project"] },
+    { section: "Bibliography", goal: "Cite every source used.", checklist: ["Statistics trace to sources", "One consistent format"] },
+    { section: "Appendix", goal: "Supporting exhibits and documentation.", checklist: ["Everything is referenced in the body", "Confirm page-limit rules for appendices"] }
+  ]
+};
 
-  if (select.children.length === 0 && courses.length) {
-    select.innerHTML = courses.map(c => `<option value="${c.id}">${c.title}</option>`).join("");
-  }
-
-  const saved = userData?.studyPlan;
-  if (saved && saved.sessions) {
-    if (saved.courseId) select.value = saved.courseId;
-    if (saved.conferenceDate) document.getElementById("plannerDate").value = saved.conferenceDate;
-    if (saved.daysPerWeek) document.getElementById("plannerDays").value = saved.daysPerWeek;
-    if (saved.kpisPerSession) document.getElementById("plannerKpiCount").value = saved.kpisPerSession;
-    renderPlanResults(saved);
-  }
-}
-
-window.generateStudyPlan = async function() {
-  const courseId = document.getElementById("plannerCourse").value;
-  const conferenceDate = document.getElementById("plannerDate").value;
-  const daysPerWeek = Number(document.getElementById("plannerDays").value) || 3;
-  const kpisPerSession = Number(document.getElementById("plannerKpiCount").value) || 4;
-
-  if (!courseId || !conferenceDate) return alert("Pick your event and your conference date first.");
-  if (!kpisLoaded) return alert("The performance indicator database is still loading — give it a second and try again.");
-
-  const course = courses.find(c => c.id === courseId);
-  if (!course) return;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(conferenceDate + "T00:00:00");
-  const daysUntil = Math.max(1, Math.round((target - today) / 86400000));
-  if (daysUntil < 1) return alert("That date has already passed — pick your next conference.");
-
-  const units = buildUnits(course);
-  const unitAreas = new Set(units.map(u => plannerUnitArea(u.title)));
-
-  const pool = plannerKpiPool(course);
-  const ranked = [...pool].sort((a, b) =>
-    plannerKpiRank(a, unitAreas) - plannerKpiRank(b, unitAreas) ||
-    String(a.code || "").localeCompare(String(b.code || "")) ||
-    String(a.title || "").localeCompare(String(b.title || ""))
+// Rubric first, template second. A rubric an admin typed in came from the real
+// guidelines; the template is only a starting scaffold.
+function plannerWrittenSections(eventCode, family) {
+  const rubric = rubrics.find(r =>
+    (r.eventCode && eventCode && r.eventCode.toLowerCase() === eventCode.toLowerCase())
   );
 
-  // Fit the plan to the time that actually exists.
-  const studyDays = Math.max(1, daysUntil - 1);            // leave the day before free
-  const totalSlots = Math.max(1, Math.round((studyDays / 7) * daysPerWeek));
-  const capacity = totalSlots * kpisPerSession;
-  const selected = ranked.slice(0, capacity);
+  if (rubric && (rubric.rubricSections || []).length) {
+    return {
+      source: "rubric",
+      eventName: rubric.eventName,
+      sections: rubric.rubricSections.map(s => ({
+        section: s.section,
+        goal: s.criteria || "Write this section to the standard in your event's guidelines.",
+        checklist: []
+      }))
+    };
+  }
 
-  // Group the selected PIs by instructional area, in unit order first.
-  const byArea = new Map();
-  selected.forEach(k => {
-    const area = k.area || k.element || "General Review";
-    if (!byArea.has(area)) byArea.set(area, []);
-    byArea.get(area).push(k);
-  });
+  if (rubric && (rubric.requiredText || []).length) {
+    return {
+      source: "rubric",
+      eventName: rubric.eventName,
+      sections: rubric.requiredText.map(t => ({
+        section: t.phrase,
+        goal: "This is required text for your event — it has to appear in the entry exactly as your guidelines word it.",
+        checklist: t.points != null ? [`Missing this costs ${t.points} penalty points`] : []
+      }))
+    };
+  }
 
-  const areaToUnit = new Map();
-  const claimed = new Set();
-  // exact matches first, so "Marketing" can't steal "Marketing-Information Management"
-  units.forEach(u => {
-    const ua = plannerUnitArea(u.title);
-    for (const area of byArea.keys()) {
-      if (claimed.has(area)) continue;
-      if (plannerNorm(area) === ua) { areaToUnit.set(area, u); claimed.add(area); break; }
-    }
-  });
-  units.forEach(u => {
-    const ua = plannerUnitArea(u.title);
-    for (const area of byArea.keys()) {
-      if (claimed.has(area)) continue;
-      const na = plannerNorm(area);
-      if (na.includes(ua) || ua.includes(na)) { areaToUnit.set(area, u); claimed.add(area); break; }
-    }
-  });
-
-  const orderedAreas = [
-    ...units.map(u => [...byArea.keys()].find(a => areaToUnit.get(a) === u)).filter(Boolean),
-    ...[...byArea.keys()].filter(a => !areaToUnit.has(a))
-  ];
-
-  let sessions = [];
-  orderedAreas.forEach(area => {
-    const list = byArea.get(area) || [];
-    const unit = areaToUnit.get(area) || null;
-    const parts = Math.ceil(list.length / kpisPerSession);
-    for (let i = 0; i < list.length; i += kpisPerSession) {
-      sessions.push({
-        area,
-        part: Math.floor(i / kpisPerSession) + 1,
-        parts,
-        unitKey: unit ? unit.key : null,
-        unitTitle: unit ? unit.title : "",
-        kpiIds: list.slice(i, i + kpisPerSession).map(k => k.id),
-        rpOffset: 0,
-        done: false
-      });
-    }
-  });
-
-  sessions = sessions.slice(0, totalSlots);
-  sessions.forEach((s, i) => {
-    s.id = `${course.id}-s${i + 1}`;
-    s.num = i + 1;
-    const offset = Math.min(studyDays, Math.round(i * (studyDays / Math.max(1, sessions.length))));
-    s.date = new Date(today.getTime() + offset * 86400000).toISOString().slice(0, 10);
-    s.week = Math.floor(offset / 7) + 1;
-  });
-
-  const covered = sessions.reduce((n, s) => n + s.kpiIds.length, 0);
-
-  const plan = {
-    courseId, courseTitle: course.title, conferenceDate, daysPerWeek, kpisPerSession,
-    daysUntil, sessions,
-    kpiCovered: covered,
-    kpiTotal: pool.length,
-    clusterLabel: plannerClusterFor(course) || "all clusters",
-    generatedAt: new Date().toISOString()
+  return {
+    source: "template",
+    eventName: "",
+    sections: WRITTEN_SECTION_TEMPLATES[family] || WRITTEN_SECTION_TEMPLATES.project
   };
+}
+
+/* ---------- setup screen ---------- */
+
+function renderPlannerForm() {
+  const setup = document.getElementById("plannerSetup");
+  if (!setup) return;
+
+  const cluster = userData?.clusterExam || "";
+  const roleplay = userData?.roleplayEvent || "";
+  const written = userData?.writtenEvent || "";
+
+  const card = (mode, label, value, blurb) => `
+    <button class="pl-mode ${plannerMode === mode ? "active" : ""} ${value ? "" : "empty"}"
+            onclick="${value ? `plannerPickMode('${mode}')` : `showTab('profile')`}">
+      <span class="pl-mode-label">${label}</span>
+      <span class="pl-mode-value">${value || "Not set — tap to add it on your Profile"}</span>
+      <span class="pl-mode-blurb">${blurb}</span>
+    </button>
+  `;
+
+  const saved = (userData?.studyPlans || {})[plannerMode];
+
+  const formHtml = plannerMode ? `
+    <div class="widget planner-form-widget">
+      <h3>${plannerMode === "exam" ? "Exam prep plan" : plannerMode === "roleplay" ? "Roleplay prep plan" : "Written entry plan"}</h3>
+      <div class="form-group">
+        <label>Conference / Test Date</label>
+        <input type="date" id="plannerDate" value="${saved?.conferenceDate || ""}">
+      </div>
+      <div class="form-group">
+        <label>Study Days Per Week</label>
+        <select id="plannerDays">
+          ${[2,3,4,5,6,7].map(n => `<option value="${n}" ${String(saved?.daysPerWeek || 3) === String(n) ? "selected" : ""}>${n} days</option>`).join("")}
+        </select>
+      </div>
+      ${plannerMode === "prepared" ? "" : `
+        <div class="form-group">
+          <label>Performance Indicators Per Session</label>
+          <select id="plannerKpiCount">
+            ${[3,4,6,8].map(n => `<option value="${n}" ${String(saved?.kpisPerSession || 4) === String(n) ? "selected" : ""}>${n} PIs${n === 3 ? " — light" : n === 4 ? " — standard" : n === 6 ? " — heavy" : " — cram"}</option>`).join("")}
+          </select>
+        </div>`}
+      <button class="btn-primary" onclick="generateStudyPlan()">${saved ? "Rebuild My Plan" : "Build My Plan"}</button>
+    </div>
+  ` : "";
+
+  setup.innerHTML = `
+    <div class="pl-mode-label-row">What do you want to study for?</div>
+    <div class="pl-modes">
+      ${card("roleplay", "My Roleplay", roleplay, "Watch, study the PIs, then run a practice roleplay")}
+      ${card("exam", "My Cluster Exam", cluster, "Which videos to watch and which questions to practice")}
+      ${card("prepared", "My Prepared Event", written, "Write your entry one section at a time")}
+    </div>
+    ${formHtml}
+  `;
+
+  if (saved) renderPlanResults(saved);
+  else document.getElementById("plannerResults").innerHTML = "";
+}
+
+window.plannerPickMode = function(mode) {
+  plannerMode = mode;
+  renderPlannerForm();
+};
+
+/* ---------- generation ---------- */
+
+window.generateStudyPlan = async function() {
+  if (!plannerMode) return;
+  const conferenceDate = document.getElementById("plannerDate").value;
+  const daysPerWeek = Number(document.getElementById("plannerDays")?.value) || 3;
+  const kpisPerSession = Number(document.getElementById("plannerKpiCount")?.value) || 4;
+
+  if (!conferenceDate) return alert("Pick your conference date first.");
+  const timeline = plannerTimeline(conferenceDate, daysPerWeek);
+  if (timeline.daysUntil < 1) return alert("That date has already passed — pick your next conference.");
+  if (!kpisLoaded && plannerMode !== "prepared") {
+    return alert("The performance indicator database is still loading — give it a second and try again.");
+  }
+
+  let plan;
+  if (plannerMode === "exam") plan = buildExamPlan(timeline, conferenceDate, daysPerWeek, kpisPerSession);
+  else if (plannerMode === "roleplay") plan = buildRoleplayPlan(timeline, conferenceDate, daysPerWeek, kpisPerSession);
+  else plan = buildPreparedPlan(timeline, conferenceDate, daysPerWeek);
+
+  if (typeof plan === "string") return alert(plan);
 
   renderPlanResults(plan);
   await plannerSavePlan(plan);
 };
 
+function buildExamPlan(timeline, conferenceDate, daysPerWeek, kpisPerSession) {
+  const label = userData?.clusterExam || "";
+  const courseId = PLANNER_CLUSTER_COURSE[plannerNorm(label)];
+  const course = plannerCourseById(courseId);
+  if (!course) return `We don't have a course for ${label} yet — check back once it's added.`;
+
+  const units = buildUnits(course).filter(u => u.lessons.length);
+  if (!units.length) return `${course.title} doesn't have any units yet — check back soon.`;
+
+  const take = plannerAllocator(plannerRankedKpis(label));
+  const unitsPer = Math.max(1, Math.ceil(units.length / timeline.slots));
+
+  const sessions = [];
+  for (let i = 0; i < units.length; i += unitsPer) {
+    const chunk = units.slice(i, i + unitsPer);
+    sessions.push({
+      kind: "unit",
+      courseId: course.id,
+      unitKeys: chunk.map(u => u.key),
+      title: chunk.length === 1 ? stripUnitSuffix(chunk[0].title) : `${stripUnitSuffix(chunk[0].title)} + ${chunk.length - 1} more`,
+      kpiIds: take(chunk.map(u => plannerUnitArea(u.title)), kpisPerSession)
+    });
+  }
+
+  // Spare time goes into full practice exams rather than padded content.
+  const spare = Math.max(0, timeline.slots - sessions.length - 1);
+  for (let i = 0; i < Math.min(spare, 4); i++) {
+    sessions.push({
+      kind: "review",
+      courseId: course.id,
+      title: `Full practice exam #${i + 1}`,
+      unitKeys: [],
+      kpiIds: take([], kpisPerSession)
+    });
+  }
+
+  sessions.push({
+    kind: "final",
+    courseId: course.id,
+    title: "Final review",
+    unitKeys: [],
+    kpiIds: []
+  });
+
+  return {
+    mode: "exam", conferenceDate, daysPerWeek, kpisPerSession,
+    eventLabel: label, courseId: course.id, courseTitle: course.title,
+    clusterLabel: label, daysUntil: timeline.daysUntil,
+    kpiCovered: sessions.reduce((n, s) => n + s.kpiIds.length, 0),
+    kpiTotal: plannerKpiPool(label).length,
+    sessions: plannerStampDates(sessions, timeline),
+    generatedAt: new Date().toISOString()
+  };
+}
+
+function buildRoleplayPlan(timeline, conferenceDate, daysPerWeek, kpisPerSession) {
+  const label = userData?.roleplayEvent || "";
+  const code = plannerEventCode(label);
+  const map = PLANNER_RP_EVENTS[code];
+  if (!map) return `We don't have ${label || "that event"} mapped yet — pick your roleplay event on your Profile.`;
+
+  let course = plannerCourseById(map.course);
+  let units = course ? buildUnits(course).filter(u => u.lessons.length) : [];
+  let borrowedFrom = "";
+
+  // Most roleplay courses have no lessons yet. Rather than showing an empty
+  // plan, borrow the matching cluster course's units and say so.
+  if (!units.length) {
+    const fallbackId = PLANNER_CLUSTER_COURSE[plannerNorm(map.cluster)];
+    const fallback = plannerCourseById(fallbackId);
+    const fallbackUnits = fallback ? buildUnits(fallback).filter(u => u.lessons.length) : [];
+    if (fallbackUnits.length) {
+      borrowedFrom = fallback.title;
+      course = fallback;
+      units = fallbackUnits;
+    }
+  }
+
+  const take = plannerAllocator(plannerRankedKpis(map.cluster));
+  const sessions = [];
+
+  if (units.length) {
+    const unitsPer = Math.max(1, Math.ceil(units.length / Math.max(1, timeline.slots - 1)));
+    for (let i = 0; i < units.length; i += unitsPer) {
+      const chunk = units.slice(i, i + unitsPer);
+      sessions.push({
+        kind: "roleplay",
+        courseId: course.id,
+        unitKeys: chunk.map(u => u.key),
+        area: stripUnitSuffix(chunk[0].title).replace(/^Unit\s*\d+\s*:?\s*/i, ""),
+        title: chunk.length === 1 ? stripUnitSuffix(chunk[0].title) : `${stripUnitSuffix(chunk[0].title)} + ${chunk.length - 1} more`,
+        kpiIds: take(chunk.map(u => plannerUnitArea(u.title)), kpisPerSession)
+      });
+    }
+  } else {
+    // No units anywhere — still give them PI blocks and roleplays.
+    const count = Math.max(1, timeline.slots - 1);
+    for (let i = 0; i < count; i++) {
+      const ids = take([], kpisPerSession);
+      if (!ids.length) break;
+      const first = kpis.find(k => k.id === ids[0]);
+      sessions.push({
+        kind: "roleplay", courseId: course ? course.id : "", unitKeys: [],
+        area: first?.area || "", title: first?.area || `Practice set ${i + 1}`,
+        kpiIds: ids
+      });
+    }
+  }
+
+  sessions.push({ kind: "final", courseId: course ? course.id : "", title: "Timed dress rehearsal", unitKeys: [], kpiIds: [] });
+
+  return {
+    mode: "roleplay", conferenceDate, daysPerWeek, kpisPerSession,
+    eventLabel: label, eventCode: code,
+    courseId: course ? course.id : "", courseTitle: course ? course.title : "",
+    borrowedFrom, clusterLabel: map.cluster, daysUntil: timeline.daysUntil,
+    kpiCovered: sessions.reduce((n, s) => n + s.kpiIds.length, 0),
+    kpiTotal: plannerKpiPool(map.cluster).length,
+    sessions: plannerStampDates(sessions, timeline),
+    generatedAt: new Date().toISOString()
+  };
+}
+
+function buildPreparedPlan(timeline, conferenceDate, daysPerWeek) {
+  const label = userData?.writtenEvent || "";
+  const code = plannerEventCode(label);
+  const map = PLANNER_WRITTEN_EVENTS[code];
+  if (!map) return `We don't have ${label || "that event"} mapped yet — pick your written event on your Profile.`;
+
+  const course = plannerCourseById(map.course);
+  const units = course ? buildUnits(course).filter(u => u.lessons.length) : [];
+  const built = plannerWrittenSections(code, map.family);
+
+  // Writing sections aren't interchangeable with study days — group them when
+  // time is short, and spend leftover slots on revision instead of filler.
+  const writingSlots = Math.max(1, timeline.slots - 2);
+  const perSession = Math.max(1, Math.ceil(built.sections.length / writingSlots));
+
+  const sessions = [];
+  for (let i = 0; i < built.sections.length; i += perSession) {
+    const chunk = built.sections.slice(i, i + perSession);
+    sessions.push({
+      kind: "written",
+      courseId: course ? course.id : "",
+      unitKeys: units.length && sessions.length === 0 ? [units[0].key] : [],
+      title: chunk.map(s => s.section).join(" + "),
+      sections: chunk,
+      kpiIds: []
+    });
+  }
+
+  sessions.push({
+    kind: "revise", courseId: course ? course.id : "", unitKeys: [], kpiIds: [],
+    title: "Full read-through and revision",
+    sections: []
+  });
+  sessions.push({
+    kind: "check", courseId: course ? course.id : "", unitKeys: [], kpiIds: [],
+    title: "Run it through the entry checker",
+    sections: []
+  });
+
+  return {
+    mode: "prepared", conferenceDate, daysPerWeek,
+    eventLabel: label, eventCode: code,
+    courseId: course ? course.id : "", courseTitle: course ? course.title : "",
+    sectionSource: built.source, daysUntil: timeline.daysUntil,
+    sessions: plannerStampDates(sessions, timeline),
+    generatedAt: new Date().toISOString()
+  };
+}
+
+/* ---------- persistence + interactions ---------- */
+
 async function plannerSavePlan(plan) {
-  if (userData) userData.studyPlan = plan;
+  if (!userData) return;
+  userData.studyPlans = { ...(userData.studyPlans || {}), [plan.mode]: plan };
   if (!currentUser) return;
   try {
-    await updateDoc(doc(db, "users", currentUser.uid), { studyPlan: plan });
+    await updateDoc(doc(db, "users", currentUser.uid), { studyPlans: userData.studyPlans });
   } catch (e) {
     console.error("Failed to save study plan:", e);
   }
 }
 
-/* ---------- interactions ---------- */
+function plannerCurrentPlan() {
+  return (userData?.studyPlans || {})[plannerMode] || null;
+}
 
 window.plannerSetConfidence = async function(kpiId, level) {
   if (!userData) return;
   const map = { ...(userData.kpiConfidence || {}) };
   if (map[kpiId] === level) delete map[kpiId]; else map[kpiId] = level;
   userData.kpiConfidence = map;
-  renderPlanResults(userData.studyPlan);
+  renderPlanResults(plannerCurrentPlan());
   if (!currentUser) return;
   try {
     await updateDoc(doc(db, "users", currentUser.uid), { kpiConfidence: map });
@@ -3057,27 +3414,26 @@ window.plannerSetConfidence = async function(kpiId, level) {
   }
 };
 
-window.plannerToggleSession = async function(sessionId) {
-  const plan = userData?.studyPlan;
-  const session = plan?.sessions?.find(s => s.id === sessionId);
+window.plannerToggleSession = async function(num) {
+  const plan = plannerCurrentPlan();
+  const session = plan?.sessions?.find(s => s.num === Number(num));
   if (!session) return;
   session.done = !session.done;
   renderPlanResults(plan);
   await plannerSavePlan(plan);
 };
 
-window.plannerCycleScenario = async function(sessionId) {
-  const plan = userData?.studyPlan;
-  const session = plan?.sessions?.find(s => s.id === sessionId);
+window.plannerCycleScenario = async function(num) {
+  const plan = plannerCurrentPlan();
+  const session = plan?.sessions?.find(s => s.num === Number(num));
   if (!session) return;
   session.rpOffset = (session.rpOffset || 0) + 1;
   renderPlanResults(plan);
   await plannerSavePlan(plan);
 };
 
-// Jumps to the KPI Database with this PI selected. The list is capped and
-// filtered by cluster, so widen the filter and seed the search first —
-// otherwise the tab opens on a different indicator.
+// The KPI list is capped and cluster-filtered, so widen the filter and seed the
+// search first — otherwise the tab opens on a different indicator.
 window.plannerOpenKPI = function(kpiId) {
   const k = kpis.find(x => x.id === kpiId);
   if (!k) return;
@@ -3113,21 +3469,31 @@ function plannerKpiChipHtml(kpiId) {
   `;
 }
 
-function plannerRoleplayHtml(session) {
+function plannerUnitLinksHtml(plan, session, rewatch) {
+  const links = (session.unitKeys || []).map(key => {
+    const unit = findUnit(session.courseId, key);
+    if (!unit) return "";
+    return `
+      ${unit.video ? `<button class="pl-link" onclick="openUnit('${session.courseId}','${unit.key}','video')">${icon("play")} ${stripUnitSuffix(unit.title)}${rewatch ? " — rewatch" : ""}</button>` : ""}
+      ${unit.quiz ? `<button class="pl-link" onclick="openUnit('${session.courseId}','${unit.key}','practice')">${icon("quiz")} Practice questions</button>` : ""}
+      ${unit.article ? `<button class="pl-link" onclick="openUnit('${session.courseId}','${unit.key}','article')">${icon("file")} Article</button>` : ""}
+    `;
+  }).join("");
+  return links.trim() ? `<div class="pl-links">${links}</div>` : `<div class="pl-empty">No video for this yet — work from the PI notes above.</div>`;
+}
+
+function plannerRoleplayHtml(plan, session) {
   const bank = plannerScenarioBank(session.area);
   const t = bank[(session.num + (session.rpOffset || 0)) % bank.length];
-  const fmt = plannerRoleplayFormat();
+  const fmt = plannerRoleplayFormat(plan.eventLabel);
 
-  const pis = session.kpiIds.map(id => kpis.find(k => k.id === id)).filter(Boolean);
-  const expectations = pis
-    .filter(k => k.judgeExpectations)
-    .slice(0, 3)
-    .map(k => `<li>${k.judgeExpectations}</li>`)
-    .join("");
+  const pis = (session.kpiIds || []).map(id => kpis.find(k => k.id === id)).filter(Boolean);
+  const expectations = pis.filter(k => k.judgeExpectations).slice(0, 3)
+    .map(k => `<li>${k.judgeExpectations}</li>`).join("");
 
   return `
     <div class="pl-rp">
-      <div class="pl-rp-meta">${fmt.label} · ${fmt.prep} · ${fmt.present} · ${fmt.pis}. Confirm the current format in your event's guidelines.</div>
+      <div class="pl-rp-meta">${fmt.label} — ${fmt.detail}. Confirm the current format in your event's guidelines.</div>
       <p class="pl-rp-scenario">
         You are a <strong>${t.role}</strong> at ${t.org}. ${t.task}
         The judge is the <strong>${t.judge}</strong> and will hear your recommendation.
@@ -3141,43 +3507,120 @@ function plannerRoleplayHtml(session) {
           <li>Give a concrete example — judges mark down answers that stay abstract.</li>`}
         <li>Close with one clear recommendation, then thank the judge.</li>
       </ul>
-      <button class="admin-btn-sm ghost" onclick="plannerCycleScenario('${session.id}')">Different scenario</button>
+      <button class="admin-btn-sm ghost" onclick="plannerCycleScenario(${session.num})">Different scenario</button>
     </div>
   `;
 }
 
-function plannerSessionHtml(plan, session) {
-  const unit = session.unitKey ? findUnit(plan.courseId, session.unitKey) : null;
-  const heading = session.parts > 1 ? `${session.area} (part ${session.part} of ${session.parts})` : session.area;
+function plannerWrittenHtml(session) {
+  return (session.sections || []).map(s => `
+    <div class="pl-written">
+      <div class="pl-written-name">${s.section}</div>
+      <p class="pl-written-goal">${s.goal}</p>
+      ${(s.checklist || []).length ? `<ul class="pl-rp-check">${s.checklist.map(c => `<li>${c}</li>`).join("")}</ul>` : ""}
+    </div>
+  `).join("");
+}
 
-  const watchHtml = unit ? `
-    <div class="pl-links">
-      ${unit.video ? `<button class="pl-link" onclick="openUnit('${plan.courseId}','${unit.key}','video')">${icon("play")} ${stripUnitSuffix(unit.title)}${session.part > 1 ? " — rewatch" : ""}</button>` : ""}
-      ${unit.quiz ? `<button class="pl-link" onclick="openUnit('${plan.courseId}','${unit.key}','practice')">${icon("quiz")} Practice questions</button>` : ""}
-      ${unit.article ? `<button class="pl-link" onclick="openUnit('${plan.courseId}','${unit.key}','article')">${icon("file")} Article</button>` : ""}
-    </div>` : `<div class="pl-empty">No video for this area yet — use the PI notes above and the roleplay below.</div>`;
+function plannerSessionBody(plan, session) {
+  if (session.kind === "unit") {
+    return `
+      <div class="pl-block-label">${icon("play")} Watch &amp; practice</div>
+      ${plannerUnitLinksHtml(plan, session, false)}
+      <div class="pl-block-label">${icon("book")} Performance indicators from this unit</div>
+      <div class="pl-kpis">${session.kpiIds.map(plannerKpiChipHtml).join("")}</div>
+    `;
+  }
 
+  if (session.kind === "roleplay") {
+    return `
+      <div class="pl-step">Step 1 — Watch</div>
+      ${plannerUnitLinksHtml(plan, session, false)}
+      <div class="pl-step">Step 2 — Study these performance indicators</div>
+      <div class="pl-kpis">${session.kpiIds.map(plannerKpiChipHtml).join("")}</div>
+      <div class="pl-step">Step 3 — Run the practice roleplay out loud</div>
+      ${plannerRoleplayHtml(plan, session)}
+    `;
+  }
+
+  if (session.kind === "written") {
+    return `
+      <div class="pl-block-label">${icon("clipboard")} Write this section</div>
+      ${plannerWrittenHtml(session)}
+      ${(session.unitKeys || []).length ? `
+        <div class="pl-block-label">${icon("play")} Course material</div>
+        ${plannerUnitLinksHtml(plan, session, false)}` : ""}
+    `;
+  }
+
+  if (session.kind === "review") {
+    return `
+      <div class="pl-block-label">${icon("timer")} Sit a full timed exam</div>
+      <div class="pl-links">
+        <button class="pl-link" onclick="openExamSetup('${session.courseId}')">${icon("timer")} Start practice exam</button>
+      </div>
+      <div class="pl-block-label">${icon("book")} Then review these</div>
+      <div class="pl-kpis">${session.kpiIds.map(plannerKpiChipHtml).join("")}</div>
+    `;
+  }
+
+  if (session.kind === "revise") {
+    return `
+      <div class="pl-block-label">${icon("file")} Read it start to finish</div>
+      <ul class="pl-rp-check">
+        <li>Read the whole entry out loud — that's how you catch sentences that don't work.</li>
+        <li>Write the Executive Summary now if you haven't, since everything else is finished.</li>
+        <li>Check every heading against the exact wording in your guidelines.</li>
+        <li>Give it to your advisor with enough time for them to actually read it.</li>
+      </ul>
+    `;
+  }
+
+  if (session.kind === "check") {
+    return `
+      <div class="pl-block-label">${icon("clipboard")} Mechanical check</div>
+      <div class="pl-links">
+        <button class="pl-link" onclick="showTab('prepared')">${icon("clipboard")} Open the entry checker</button>
+      </div>
+      <ul class="pl-rp-check">
+        <li>Export as a PDF from Docs or Word so the page breaks match what a judge sees.</li>
+        <li>Fix anything the checker flags, then run it once more.</li>
+        <li>The checker catches formatting, not writing quality — your advisor still needs to read it.</li>
+      </ul>
+    `;
+  }
+
+  // final
+  const isRp = plan.mode === "roleplay";
   return `
-    <div class="pl-session ${session.done ? "done" : ""}">
+    <div class="pl-block-label">${icon("target")} The day before</div>
+    <ul class="pl-rp-check">
+      ${isRp ? `
+        <li>Run one full roleplay under real timing, out loud, with someone playing the judge.</li>
+        <li>Reread every PI you marked shaky — those are the ones that cost points.</li>
+        <li>Pack your materials and confirm your event's report time.</li>`
+      : `
+        <li>Skim every unit title and say what it covers — if you can't, reopen that unit.</li>
+        <li>Reread every PI you marked shaky.</li>
+        <li>Sleep. A tired brain loses more points than one more hour of review gains.</li>`}
+    </ul>
+  `;
+}
+
+function plannerSessionHtml(plan, session) {
+  return `
+    <div class="pl-session ${session.done ? "done" : ""} ${session.kind === "final" ? "final" : ""}">
       <div class="pl-head">
         <div class="pl-num">${session.done ? icon("check") : session.num}</div>
         <div class="pl-head-info">
-          <div class="pl-title">${heading}</div>
-          <div class="pl-date">${plannerDateLabel(session.date)} · ${session.kpiIds.length} ${session.kpiIds.length === 1 ? "PI" : "PIs"}</div>
+          <div class="pl-title">${session.title}</div>
+          <div class="pl-date">${plannerDateLabel(session.date)}${session.kpiIds?.length ? ` · ${session.kpiIds.length} ${session.kpiIds.length === 1 ? "PI" : "PIs"}` : ""}</div>
         </div>
-        <button class="admin-btn-sm ${session.done ? "ghost" : ""}" onclick="plannerToggleSession('${session.id}')">
+        <button class="admin-btn-sm ${session.done ? "ghost" : ""}" onclick="plannerToggleSession(${session.num})">
           ${session.done ? "Undo" : "Mark done"}
         </button>
       </div>
-
-      <div class="pl-block-label">${icon("book")} Learn</div>
-      <div class="pl-kpis">${session.kpiIds.map(plannerKpiChipHtml).join("") || `<div class="pl-empty">No PIs on this session.</div>`}</div>
-
-      <div class="pl-block-label">${icon("play")} Watch &amp; practice</div>
-      ${watchHtml}
-
-      <div class="pl-block-label">${icon("users")} Roleplay prep</div>
-      ${plannerRoleplayHtml(session)}
+      ${plannerSessionBody(plan, session)}
     </div>
   `;
 }
@@ -3185,14 +3628,10 @@ function plannerSessionHtml(plan, session) {
 function renderPlanResults(plan) {
   const container = document.getElementById("plannerResults");
   if (!container) return;
-  if (!plan || !plan.sessions || !plan.sessions.length) {
-    container.innerHTML = "";
-    return;
-  }
+  if (!plan || !plan.sessions || !plan.sessions.length) { container.innerHTML = ""; return; }
 
   const doneCount = plan.sessions.filter(s => s.done).length;
   const pct = Math.round((doneCount / plan.sessions.length) * 100);
-  const perWeek = Math.max(1, Math.round(plan.sessions.length / Math.max(1, plan.daysUntil / 7)));
 
   const shaky = Object.entries(userData?.kpiConfidence || {})
     .filter(([, v]) => v === "shaky")
@@ -3208,9 +3647,28 @@ function renderPlanResults(plan) {
       ${shaky.length > 12 ? `<div class="pl-empty">+ ${shaky.length - 12} more marked shaky.</div>` : ""}
     </div>` : "";
 
-  const coverageNote = plan.kpiCovered < plan.kpiTotal
-    ? `<div class="planner-warning">${icon("alert")} This plan covers the ${plan.kpiCovered} highest-priority indicators out of ${plan.kpiTotal} in ${plan.clusterLabel}. Add a study day or raise PIs per session to cover more before ${plannerDateLabel(plan.conferenceDate)}.</div>`
-    : `<div class="planner-ontrack">${icon("zap")} Every indicator in ${plan.clusterLabel} fits before your conference at this pace.</div>`;
+  const notes = [];
+  if (plan.borrowedFrom) {
+    notes.push(`<div class="planner-warning">${icon("alert")} ${plan.courseTitle ? "" : ""}Your event's own course doesn't have units yet, so this plan uses <strong>${plan.borrowedFrom}</strong> — the same material your event's exam draws from. It'll switch over automatically once the event course has content.</div>`);
+  }
+  if (plan.mode === "prepared" && plan.sectionSource === "template") {
+    notes.push(`<div class="planner-warning">${icon("alert")} No rubric has been entered for ${plan.eventLabel} yet, so these sections come from a general template. Check them against your event's current guidelines — and once an admin adds the rubric under Admin &gt; Rubrics, rebuilding this plan will use the real one.</div>`);
+  }
+  if (plan.mode !== "prepared" && plan.kpiTotal && plan.kpiCovered < plan.kpiTotal) {
+    notes.push(`<div class="planner-warning">${icon("alert")} This covers the ${plan.kpiCovered} highest-priority indicators out of ${plan.kpiTotal} in ${plan.clusterLabel}. Add a study day or raise PIs per session to cover more.</div>`);
+  }
+
+  const statsHtml = plan.mode === "prepared" ? `
+    <div class="planner-summary-stat"><div class="val">${plan.daysUntil}</div><div class="lbl">Days Until Conference</div></div>
+    <div class="planner-summary-stat"><div class="val">${plan.sessions.length}</div><div class="lbl">Work Sessions</div></div>
+    <div class="planner-summary-stat"><div class="val">${plan.sessions.filter(s => s.kind === "written").length}</div><div class="lbl">Writing Blocks</div></div>
+    <div class="planner-summary-stat"><div class="val">${plan.daysPerWeek}/wk</div><div class="lbl">Days Per Week</div></div>
+  ` : `
+    <div class="planner-summary-stat"><div class="val">${plan.daysUntil}</div><div class="lbl">Days Until Conference</div></div>
+    <div class="planner-summary-stat"><div class="val">${plan.sessions.length}</div><div class="lbl">Sessions</div></div>
+    <div class="planner-summary-stat"><div class="val">${plan.kpiCovered}</div><div class="lbl">PIs Covered</div></div>
+    <div class="planner-summary-stat"><div class="val">${plan.daysPerWeek}/wk</div><div class="lbl">Days Per Week</div></div>
+  `;
 
   const weeks = [...new Set(plan.sessions.map(s => s.week))];
   const weeksHtml = weeks.map(w => `
@@ -3220,16 +3678,12 @@ function renderPlanResults(plan) {
 
   container.innerHTML = `
     <div class="planner-summary">
-      <h3>Your Plan for ${plan.courseTitle}</h3>
-      <div class="planner-summary-grid">
-        <div class="planner-summary-stat"><div class="val">${plan.daysUntil}</div><div class="lbl">Days Until Conference</div></div>
-        <div class="planner-summary-stat"><div class="val">${plan.sessions.length}</div><div class="lbl">Sessions</div></div>
-        <div class="planner-summary-stat"><div class="val">${plan.kpiCovered}</div><div class="lbl">PIs Covered</div></div>
-        <div class="planner-summary-stat"><div class="val">${perWeek}/wk</div><div class="lbl">Sessions Per Week</div></div>
-      </div>
+      <h3>${plan.eventLabel}</h3>
+      <div class="pl-summary-sub">${plan.courseTitle ? `Built from ${plan.courseTitle}` : "Built from your performance indicators"}</div>
+      <div class="planner-summary-grid">${statsHtml}</div>
       <div class="pl-progress-row"><span>${doneCount} of ${plan.sessions.length} sessions done</span><span>${pct}%</span></div>
       <div class="xp-bar-outer" style="margin-bottom:0;"><div class="xp-bar-inner" style="width:${pct}%"></div></div>
-      ${coverageNote}
+      ${notes.join("")}
     </div>
     ${shakyHtml}
     <div class="planner-weeks">${weeksHtml}</div>

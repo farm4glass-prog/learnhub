@@ -2726,6 +2726,7 @@ window.adminSeedCourses = async function() {
 //
 //   exam      -> their cluster exam. Which video to watch, which practice
 //                questions to run, sized to the days they actually have.
+//                No PIs — those belong to the roleplay path.
 //   roleplay  -> their roleplay event, mapped to its course. Each session
 //                walks watch -> study these PIs -> run a practice roleplay.
 //   prepared  -> their written event, mapped to its course. Each session is
@@ -2824,15 +2825,12 @@ function plannerUnitArea(title) {
 function plannerEventCode(label) {
   return (String(label || "").match(/\(([^)]+)\)\s*$/) || [])[1] || "";
 }
-function plannerEventName(label) {
-  return String(label || "").replace(/\s*\([^)]+\)\s*$/, "").trim();
-}
 
 function plannerCourseById(id) {
   return courses.find(c => c.id === id) || null;
 }
 
-/* ---------- PI selection ---------- */
+/* ---------- PI selection (roleplay only) ---------- */
 
 function plannerKpiPool(clusterName) {
   const name = plannerNorm(clusterName);
@@ -3142,6 +3140,16 @@ function renderPlannerForm() {
 
   const saved = (userData?.studyPlans || {})[plannerMode];
 
+  // The PI-per-session control only appears for roleplay — the exam and
+  // written paths don't use performance indicators at all.
+  const kpiFieldHtml = plannerMode === "roleplay" ? `
+    <div class="form-group">
+      <label>Performance Indicators Per Session</label>
+      <select id="plannerKpiCount">
+        ${[3,4,6,8].map(n => `<option value="${n}" ${String(saved?.kpisPerSession || 4) === String(n) ? "selected" : ""}>${n} PIs${n === 3 ? " — light" : n === 4 ? " — standard" : n === 6 ? " — heavy" : " — cram"}</option>`).join("")}
+      </select>
+    </div>` : "";
+
   const formHtml = plannerMode ? `
     <div class="widget planner-form-widget">
       <h3>${plannerMode === "exam" ? "Exam prep plan" : plannerMode === "roleplay" ? "Roleplay prep plan" : "Written entry plan"}</h3>
@@ -3155,13 +3163,7 @@ function renderPlannerForm() {
           ${[2,3,4,5,6,7].map(n => `<option value="${n}" ${String(saved?.daysPerWeek || 3) === String(n) ? "selected" : ""}>${n} days</option>`).join("")}
         </select>
       </div>
-      ${plannerMode === "roleplay" ? "" : `
-        <div class="form-group">
-          <label>Performance Indicators Per Session</label>
-          <select id="plannerKpiCount">
-            ${[3,4,6,8].map(n => `<option value="${n}" ${String(saved?.kpisPerSession || 4) === String(n) ? "selected" : ""}>${n} PIs${n === 3 ? " — light" : n === 4 ? " — standard" : n === 6 ? " — heavy" : " — cram"}</option>`).join("")}
-          </select>
-        </div>`}
+      ${kpiFieldHtml}
       <button class="btn-primary" onclick="generateStudyPlan()">${saved ? "Rebuild My Plan" : "Build My Plan"}</button>
     </div>
   ` : "";
@@ -3196,7 +3198,7 @@ window.generateStudyPlan = async function() {
   if (!conferenceDate) return alert("Pick your conference date first.");
   const timeline = plannerTimeline(conferenceDate, daysPerWeek);
   if (timeline.daysUntil < 1) return alert("That date has already passed — pick your next conference.");
-  if (!kpisLoaded && plannerMode !== "roleplay") {
+  if (!kpisLoaded && plannerMode === "roleplay") {
     return alert("The performance indicator database is still loading — give it a second and try again.");
   }
 
@@ -3252,36 +3254,6 @@ function buildExamPlan(timeline, conferenceDate, daysPerWeek) {
     eventLabel: label, courseId: course.id, courseTitle: course.title,
     daysUntil: timeline.daysUntil,
     unitsCovered: units.length,
-    sessions: plannerStampDates(sessions, timeline),
-    generatedAt: new Date().toISOString()
-  };
-}
-  // Spare time goes into full practice exams rather than padded content.
-  const spare = Math.max(0, timeline.slots - sessions.length - 1);
-  for (let i = 0; i < Math.min(spare, 4); i++) {
-    sessions.push({
-      kind: "review",
-      courseId: course.id,
-      title: `Full practice exam #${i + 1}`,
-      unitKeys: [],
-      kpiIds: take([], kpisPerSession)
-    });
-  }
-
-  sessions.push({
-    kind: "final",
-    courseId: course.id,
-    title: "Final review",
-    unitKeys: [],
-    kpiIds: []
-  });
-
-  return {
-    mode: "exam", conferenceDate, daysPerWeek, kpisPerSession,
-    eventLabel: label, courseId: course.id, courseTitle: course.title,
-    clusterLabel: label, daysUntil: timeline.daysUntil,
-    kpiCovered: sessions.reduce((n, s) => n + s.kpiIds.length, 0),
-    kpiTotal: plannerKpiPool(label).length,
     sessions: plannerStampDates(sessions, timeline),
     generatedAt: new Date().toISOString()
   };
@@ -3500,7 +3472,7 @@ function plannerUnitLinksHtml(plan, session, rewatch) {
       ${unit.article ? `<button class="pl-link" onclick="openUnit('${session.courseId}','${unit.key}','article')">${icon("file")} Article</button>` : ""}
     `;
   }).join("");
-  return links.trim() ? `<div class="pl-links">${links}</div>` : `<div class="pl-empty">No video for this yet — work from the PI notes above.</div>`;
+  return links.trim() ? `<div class="pl-links">${links}</div>` : `<div class="pl-empty">No material for this unit yet — check back soon.</div>`;
 }
 
 function plannerRoleplayHtml(plan, session) {
@@ -3670,7 +3642,7 @@ function renderPlanResults(plan) {
 
   const notes = [];
   if (plan.borrowedFrom) {
-    notes.push(`<div class="planner-warning">${icon("alert")} ${plan.courseTitle ? "" : ""}Your event's own course doesn't have units yet, so this plan uses <strong>${plan.borrowedFrom}</strong> — the same material your event's exam draws from. It'll switch over automatically once the event course has content.</div>`);
+    notes.push(`<div class="planner-warning">${icon("alert")} Your event's own course doesn't have units yet, so this plan uses <strong>${plan.borrowedFrom}</strong> — the same material your event's exam draws from. It'll switch over automatically once the event course has content.</div>`);
   }
   if (plan.mode === "prepared" && plan.sectionSource === "template") {
     notes.push(`<div class="planner-warning">${icon("alert")} No rubric has been entered for ${plan.eventLabel} yet, so these sections come from a general template. Check them against your event's current guidelines — and once an admin adds the rubric under Admin &gt; Rubrics, rebuilding this plan will use the real one.</div>`);

@@ -2688,3 +2688,188 @@ body.f4g-locked { overflow: hidden; }
   .pl-link { justify-content: flex-start; }
   .pl-rp { padding: 16px 14px; }
 }
+
+
+/* =========================================================================
+   FARM4GLASS — STUDY PLANNER (mode picker + step sessions)
+   Paste at the VERY END of style.css. Additive only — every selector here
+   is new, so nothing above it changes. Reuses .widget, .form-group,
+   .planner-summary, .planner-warning and .xp-bar-* so the planner still
+   matches the rest of the portal.
+   ========================================================================= */
+
+/* ---------- "What do you want to study for?" picker ---------- */
+
+.pl-mode-label-row {
+  font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--blue-dark); margin-bottom: 12px;
+}
+.pl-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 26px; }
+.pl-mode {
+  display: flex; flex-direction: column; gap: 5px; text-align: left;
+  background: rgba(255,255,255,.86); backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(255,255,255,.92); border-radius: 22px;
+  box-shadow: 0 14px 38px rgba(15,95,140,.12);
+  padding: 20px 22px; cursor: pointer; font-family: inherit;
+  transition: transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s, border-color .2s;
+}
+.pl-mode:hover { transform: translateY(-4px); box-shadow: 0 26px 56px rgba(15,95,140,.2); }
+.pl-mode.active {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(22,125,181,.16), 0 20px 46px rgba(15,95,140,.2);
+}
+/* an event the student hasn't set on their Profile yet */
+.pl-mode.empty { opacity: .72; }
+.pl-mode-label { font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--blue); }
+.pl-mode-value { font-size: 15.5px; font-weight: 800; color: #0a1a2b; line-height: 1.35; letter-spacing: -.01em; }
+.pl-mode.empty .pl-mode-value { font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.pl-mode-blurb { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin-top: 2px; }
+
+/* ---------- plan summary ---------- */
+
+.pl-summary-sub { font-size: 13px; color: var(--muted); font-weight: 600; margin-top: 4px; }
+.pl-progress-row {
+  display: flex; justify-content: space-between; font-size: 13px;
+  font-weight: 700; color: var(--muted); margin: 18px 0 8px;
+}
+
+.pl-shaky { margin-bottom: 20px; }
+.pl-shaky-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.pl-shaky-item {
+  background: #fef3c7; border: 1.5px solid #f59e0b; color: #92400e;
+  border-radius: 999px; padding: 7px 14px; font-size: 12.5px; font-weight: 700;
+  font-family: inherit; cursor: pointer; text-align: left; transition: all .15s;
+}
+.pl-shaky-item:hover { background: #fde68a; }
+
+/* ---------- sessions ---------- */
+
+.pl-week-label {
+  font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--blue-dark); margin: 24px 0 10px;
+}
+.pl-week-label:first-child { margin-top: 4px; }
+
+.pl-session {
+  background: rgba(255,255,255,.86); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.92); border-radius: 22px;
+  box-shadow: 0 14px 38px rgba(15,95,140,.12);
+  padding: 22px 24px; margin-bottom: 14px;
+}
+.pl-session.done { border-color: rgba(134,239,172,.9); background: rgba(240,253,244,.9); }
+.pl-session.final { border-color: rgba(22,125,181,.35); }
+
+.pl-head { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+.pl-num {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800;
+  background: linear-gradient(135deg, #167db5, #0f5f8c); color: #fff;
+}
+.pl-session.done .pl-num { background: #dcfce7; color: #166534; }
+.pl-num svg { width: 16px; height: 16px; }
+.pl-head-info { flex: 1; min-width: 0; }
+.pl-title { font-size: 16px; font-weight: 800; letter-spacing: -.01em; }
+.pl-date { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+
+/* block headings inside a session — .pl-step is the numbered roleplay walk */
+.pl-block-label, .pl-step {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--blue-dark); margin: 20px 0 10px;
+}
+.pl-block-label .icon-svg { width: 14px; height: 14px; }
+.pl-step { color: var(--blue); }
+.pl-step::before {
+  content: ""; width: 18px; height: 2px; border-radius: 2px;
+  background: var(--blue); flex-shrink: 0;
+}
+
+/* ---------- performance indicator rows ---------- */
+
+.pl-kpis { display: flex; flex-direction: column; gap: 8px; }
+.pl-kpi {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  border: 1.5px solid rgba(15,95,140,.16); border-left: 4px solid rgba(15,95,140,.3);
+  border-radius: 14px; padding: 10px 14px; background: rgba(255,255,255,.7);
+}
+.pl-kpi.solid { border-left-color: var(--green); background: rgba(240,253,244,.75); }
+.pl-kpi.shaky { border-left-color: #f59e0b; background: rgba(254,243,199,.6); }
+.pl-kpi-title {
+  flex: 1; min-width: 180px; background: none; border: none; padding: 0;
+  font-family: inherit; font-size: 14px; font-weight: 600; color: var(--text);
+  text-align: left; cursor: pointer; line-height: 1.45;
+}
+.pl-kpi-title:hover { color: var(--blue); }
+.pl-kpi-code {
+  display: inline-block; font-size: 11px; font-weight: 800; color: var(--blue);
+  background: rgba(22,125,181,.1); border-radius: 6px; padding: 2px 6px; margin-right: 8px;
+}
+.pl-conf { display: flex; gap: 6px; flex-shrink: 0; }
+.pl-conf-btn {
+  background: transparent; border: 1.5px solid var(--border); border-radius: 999px;
+  padding: 5px 12px; font-size: 11.5px; font-weight: 700; font-family: inherit;
+  color: var(--muted); cursor: pointer; transition: all .15s;
+}
+.pl-conf-btn:hover { border-color: var(--blue); color: var(--blue); }
+.pl-conf-btn.on.solid { background: var(--green); border-color: var(--green); color: #fff; }
+.pl-conf-btn.on.shaky { background: #f59e0b; border-color: #f59e0b; color: #fff; }
+
+/* ---------- links out to a unit, exam, or the checker ---------- */
+
+.pl-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.pl-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.9); border: 1.5px solid rgba(15,95,140,.18);
+  border-radius: 999px; padding: 9px 16px; font-size: 13px; font-weight: 700;
+  font-family: inherit; color: var(--text); cursor: pointer; transition: all .15s;
+}
+.pl-link:hover { border-color: var(--blue); color: var(--blue-dark); background: #fff; }
+.pl-link .icon-svg { color: var(--blue); }
+
+.pl-empty { font-size: 13px; color: var(--muted); font-style: italic; }
+
+/* ---------- roleplay card ---------- */
+
+.pl-rp {
+  border: 1.5px dashed rgba(15,95,140,.22); border-radius: 16px;
+  padding: 18px 20px; background: rgba(240,249,255,.5);
+}
+.pl-rp-meta { font-size: 11.5px; color: var(--muted); font-weight: 600; margin-bottom: 12px; line-height: 1.5; }
+.pl-rp-scenario { font-size: 14.5px; line-height: 1.65; margin-bottom: 16px; }
+.pl-rp-label {
+  font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--blue-dark); margin-bottom: 7px;
+}
+.pl-rp-pis, .pl-rp-check { margin: 0 0 16px 18px; }
+.pl-rp-pis li, .pl-rp-check li { font-size: 13.5px; line-height: 1.6; margin-bottom: 5px; }
+.pl-rp-pis li { font-weight: 600; }
+.pl-rp-check li { color: var(--muted); }
+
+/* ---------- prepared event section card ---------- */
+
+.pl-written {
+  border: 1.5px solid rgba(15,95,140,.16); border-left: 4px solid var(--blue);
+  border-radius: 16px; padding: 16px 20px; margin-bottom: 10px;
+  background: rgba(255,255,255,.7);
+}
+.pl-written-name { font-size: 15px; font-weight: 800; letter-spacing: -.01em; margin-bottom: 6px; }
+.pl-written-goal { font-size: 13.5px; line-height: 1.6; color: var(--text); margin-bottom: 10px; }
+.pl-written .pl-rp-check { margin-bottom: 0; }
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 1000px) {
+  .pl-modes { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .pl-session { padding: 18px 16px; border-radius: 18px; }
+  .pl-mode { padding: 18px; border-radius: 18px; }
+  .pl-kpi { padding: 12px; }
+  .pl-conf { width: 100%; }
+  .pl-conf-btn { flex: 1; }
+  .pl-links { flex-direction: column; }
+  .pl-link { justify-content: flex-start; }
+  .pl-rp { padding: 16px 14px; }
+  .pl-written { padding: 14px 16px; }
+}

@@ -700,6 +700,7 @@ function startDataLoads() {
   loadCourses();
   loadKPIs();
   loadCalendarEvents();
+  loadRoleplays();
   loadBlogs();
   loadRubrics();
 }
@@ -2146,6 +2147,7 @@ window.showTab = function(tabName) {
   if (tabName === "profile") renderProfile();
   if (tabName === "courses") renderCourseGrid();
   if (tabName === "planner") renderPlannerForm();
+  if (tabName === "roleplays") renderRoleplaysTab();
   if (tabName === "analytics") renderAnalytics();
   if (tabName === "kpi") renderKPIList();
   if (tabName === "calendar") renderCalendarList();
@@ -2200,6 +2202,7 @@ function renderAdminPanel() {
       <button class="admin-subtab-btn ${adminActiveSubTab === "kpi" ? "active" : ""}" onclick="adminSwitchSubTab('kpi')">KPI Database</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "members" ? "active" : ""}" onclick="adminSwitchSubTab('members')">Members</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "calendar" ? "active" : ""}" onclick="adminSwitchSubTab('calendar')">Calendar</button>
+      <button class="admin-subtab-btn ${adminActiveSubTab === "roleplays" ? "active" : ""}" onclick="adminSwitchSubTab('roleplays')">Roleplays</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "blog" ? "active" : ""}" onclick="adminSwitchSubTab('blog')">Blog</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "rubrics" ? "active" : ""}" onclick="adminSwitchSubTab('rubrics')">Rubrics</button>
     </div>
@@ -2210,6 +2213,7 @@ function renderAdminPanel() {
   if (adminActiveSubTab === "kpi") renderAdminKPISection();
   else if (adminActiveSubTab === "members") renderAdminMembersSection();
   else if (adminActiveSubTab === "calendar") renderAdminCalendarSection();
+  else if (adminActiveSubTab === "roleplays") renderAdminRoleplaysSection();   // <-- add
   else if (adminActiveSubTab === "blog") renderAdminBlogSection();
   else if (adminActiveSubTab === "rubrics") renderAdminRubricsSection();
   else renderAdminCoursesSection();

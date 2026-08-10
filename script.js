@@ -4761,6 +4761,325 @@ window.reviewExam = function() {
 };
 
 /* =========================================================================
+   FARM4GLASS — PRACTICE ROLEPLAYS
+   -------------------------------------------------------------------------
+   Three levels, same shape as the Courses tab:
+     1. Category filters  (Principles / Individual Series / Team / PFL / PSE)
+     2. One bubble per event (Retail Merchandising Series, etc.)
+     3. Inside an event: every practice roleplay, previewed inline with a
+        button to open the Drive file in a new tab.
+
+   The event list is built from DECA_ROLEPLAY_EVENTS, which already exists
+   further up this file — add an event there and it appears here too.
+
+   Firestore collection "roleplays", one doc per practice roleplay:
+     { id, eventCode, title, url, description, addedAt }
+
+   PASTE THIS whole block into script.js, just above the
+   "PART 1 — CELEBRATION HELPERS" banner. Then make the four small edits
+   listed in roleplays-install.md.
+   ========================================================================= */
+
+let roleplays = [];
+let roleplaysLoaded = false;
+let rpCategory = "All Events";
+let rpSelectedEvent = null;   // event code, e.g. "RMS"
+let rpSelectedId = null;      // roleplay doc id being previewed
+let adminEditingRoleplayId = null;
+
+/* ---- event index, flattened out of DECA_ROLEPLAY_EVENTS ---- */
+
+function roleplayEventIndex() {
+  const out = [];
+  Object.entries(DECA_ROLEPLAY_EVENTS).forEach(([category, items]) => {
+    items.forEach(label => {
+      const code = plannerEventCode(label);
+      out.push({
+        code,
+        label,
+        name: label.replace(/\s*\([^)]+\)\s*$/, ""),
+        category
+      });
+    });
+  });
+  return out;
+}
+function roleplayEventByCode(code) {
+  return roleplayEventIndex().find(e => e.code === code) || null;
+}
+function roleplayCategories() {
+  return ["All Events", ...Object.keys(DECA_ROLEPLAY_EVENTS)];
+}
+function roleplaysForEvent(code) {
+  return roleplays
+    .filter(r => (r.eventCode || "").toUpperCase() === String(code || "").toUpperCase())
+    .sort((a, b) => (a.title || "").localeCompare(b.title || "", undefined, { numeric: true }));
+}
+
+/* ---- Google Drive links -------------------------------------------------
+   Admins paste the normal "share" link. Drive won't render that inside an
+   iframe — /preview will. Anything that isn't a Drive link is treated as a
+   plain PDF path and shown with <object>, same as unit articles.
+   The file must be shared as "Anyone with the link — Viewer", or students
+   see a sign-in wall instead of the PDF.                                  */
+
+function driveFileId(url) {
+  const raw = String(url || "");
+  const m = raw.match(/\/file\/d\/([A-Za-z0-9_-]{10,})/) || raw.match(/[?&]id=([A-Za-z0-9_-]{10,})/);
+  return m ? m[1] : null;
+}
+function drivePreviewUrl(url) {
+  const id = driveFileId(url);
+  return id ? `https://drive.google.com/file/d/${id}/preview` : "";
+}
+function driveOpenUrl(url) {
+  const id = driveFileId(url);
+  return id ? `https://drive.google.com/file/d/${id}/view` : safeUrl(url);
+}
+
+/* ---- load --------------------------------------------------------------- */
+
+async function loadRoleplays() {
+  try {
+    const snap = await getDocs(collection(db, "roleplays"));
+    roleplays = snap.docs.map(d => d.data());
+    roleplaysLoaded = true;
+    if (document.getElementById("roleplays")?.classList.contains("active")) renderRoleplaysTab();
+    if (adminActiveSubTab === "roleplays" && document.getElementById("admin")?.classList.contains("active")) renderAdminRoleplaysSection();
+  } catch (e) {
+    console.error("Failed to load practice roleplays:", e);
+    roleplaysLoaded = true;
+  }
+}
+
+/* ---- student-facing ----------------------------------------------------- */
+
+window.rpFilterCategory = function(cat) {
+  rpCategory = cat;
+  renderRoleplaysTab();
+};
+window.rpOpenEvent = function(code) {
+  rpSelectedEvent = code;
+  rpSelectedId = null;
+  renderRoleplaysTab();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+window.rpBackToEvents = function() {
+  rpSelectedEvent = null;
+  rpSelectedId = null;
+  renderRoleplaysTab();
+};
+window.rpSelect = function(id) {
+  rpSelectedId = id;
+  renderRoleplaysTab();
+};
+
+function renderRoleplaysTab() {
+  const container = document.getElementById("roleplaysContent");
+  if (!container) return;
+  if (!roleplaysLoaded) {
+    container.innerHTML = `<div class="admin-empty-state">Loading practice roleplays...</div>`;
+    return;
+  }
+  if (rpSelectedEvent) return renderRoleplayEventView(container);
+
+  const events = roleplayEventIndex().filter(e =>
+    rpCategory === "All Events" || e.category === rpCategory
+  );
+
+  const filtersHtml = roleplayCategories().map(cat => `
+    <button class="cat-btn ${cat === rpCategory ? "active" : ""}" onclick="rpFilterCategory('${esc(cat).replace(/'/g, "\\'")}')">${esc(cat)}</button>
+  `).join("");
+
+  const cardsHtml = events.map(e => {
+    const n = roleplaysForEvent(e.code).length;
+    return `
+      <div class="course-card-new rp-event-card ${n ? "" : "rp-empty"}" onclick="rpOpenEvent('${esc(e.code)}')">
+        <div class="cc-body">
+          <div class="cc-icon rp-event-icon">${icon("users")}</div>
+          <div class="cc-title">${esc(e.name)}</div>
+          <div class="cc-desc">${esc(e.category)}</div>
+          <div class="cc-footer">
+            <span class="cc-pct">${n} practice ${n === 1 ? "roleplay" : "roleplays"}</span>
+            <span class="cc-start">${n ? "Open" : "None yet"} ›</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  const total = roleplays.length;
+  container.innerHTML = `
+    ${total === 0 ? `<div class="admin-empty-state">No practice roleplays have been added yet — check back soon.</div>` : ""}
+    <div class="category-filters">${filtersHtml}</div>
+    <div class="course-grid">${cardsHtml || `<div class="admin-empty-state">No events in this category.</div>`}</div>
+  `;
+}
+
+function renderRoleplayEventView(container) {
+  const ev = roleplayEventByCode(rpSelectedEvent);
+  const list = roleplaysForEvent(rpSelectedEvent);
+  if (!rpSelectedId && list.length) rpSelectedId = list[0].id;
+  const selected = list.find(r => r.id === rpSelectedId) || list[0] || null;
+
+  const listHtml = list.map(r => `
+    <button class="rp-list-item ${r.id === rpSelectedId ? "active" : ""}" onclick="rpSelect('${esc(r.id)}')">
+      ${icon("file")}
+      <span class="rp-list-title">${esc(r.title)}</span>
+    </button>
+  `).join("") || `<div class="admin-empty-state">No practice roleplays for this event yet — check back soon.</div>`;
+
+  container.innerHTML = `
+    <div class="lv-back" onclick="rpBackToEvents()">← All events</div>
+    <div class="rp-event-head">
+      <h2>${esc(ev ? ev.name : rpSelectedEvent)}</h2>
+      <div class="page-sub">${esc(ev ? ev.category : "")} · ${list.length} practice ${list.length === 1 ? "roleplay" : "roleplays"}</div>
+    </div>
+    <div class="rp-layout">
+      <div class="rp-list">${listHtml}</div>
+      <div class="rp-viewer">${selected ? renderRoleplayViewer(selected) : ""}</div>
+    </div>
+  `;
+}
+
+function renderRoleplayViewer(r) {
+  const preview = drivePreviewUrl(r.url);
+  const open = driveOpenUrl(r.url);
+
+  const frameHtml = preview
+    ? `<iframe class="rp-frame" src="${esc(preview)}" allow="autoplay" title="${esc(r.title)}"></iframe>`
+    : open
+      ? `<object class="rp-frame" data="${esc(open)}" type="application/pdf">
+           <div class="admin-empty-state">Your browser can't show this inline — use the button above to open it.</div>
+         </object>`
+      : `<div class="admin-empty-state">This roleplay doesn't have a working link yet.</div>`;
+
+  return `
+    <div class="rp-viewer-head">
+      <div>
+        <div class="rp-viewer-title">${esc(r.title)}</div>
+        ${r.description ? `<div class="rp-viewer-desc">${esc(r.description)}</div>` : ""}
+      </div>
+      ${open ? `<a class="btn-primary rp-open-btn" href="${esc(open)}" target="_blank" rel="noopener">${icon("external")} Open in new tab</a>` : ""}
+    </div>
+    ${frameHtml}
+    <div class="pe-disclaimer">
+      Practice materials written by the Farm4Glass team — not official DECA roleplays, and not endorsed by DECA Inc.
+      Time yourself and present out loud; reading it silently is the fastest way to feel ready and not be.
+    </div>
+  `;
+}
+
+/* ---- admin -------------------------------------------------------------- */
+
+function renderAdminRoleplaysSection() {
+  const body = document.getElementById("adminSubtabBody");
+  if (!body) return;
+  const editing = adminEditingRoleplayId ? roleplays.find(r => r.id === adminEditingRoleplayId) : null;
+
+  const eventOptions = Object.entries(DECA_ROLEPLAY_EVENTS).map(([cat, items]) =>
+    `<optgroup label="${esc(cat)}">${items.map(label => {
+      const code = plannerEventCode(label);
+      return `<option value="${esc(code)}" ${editing && editing.eventCode === code ? "selected" : ""}>${esc(label)}</option>`;
+    }).join("")}</optgroup>`
+  ).join("");
+
+  const grouped = roleplayEventIndex()
+    .map(e => ({ e, items: roleplaysForEvent(e.code) }))
+    .filter(g => g.items.length);
+
+  const listHtml = grouped.map(g => `
+    <div class="admin-lesson-block">
+      <div class="admin-lesson-head"><h4>${esc(g.e.name)} <span style="font-weight:600;color:var(--muted);font-size:12px;">— ${g.items.length}</span></h4></div>
+      ${g.items.map(r => `
+        <div class="admin-field-row" style="align-items:center;">
+          <span style="flex:1;font-size:13px;">${esc(r.title)}${driveFileId(r.url) ? "" : " <em style='color:var(--muted);'>(not a Drive link)</em>"}</span>
+          <button class="admin-btn-sm ghost" onclick="adminEditRoleplay('${esc(r.id)}')">Edit</button>
+          <button class="admin-btn-sm danger" onclick="adminDeleteRoleplay('${esc(r.id)}')">${icon("trash")}</button>
+        </div>
+      `).join("")}
+    </div>
+  `).join("") || `<div class="admin-empty-state">No practice roleplays yet.</div>`;
+
+  body.innerHTML = `
+    <div class="admin-seed-banner">
+      <div>Paste the normal Google Drive share link — it gets converted to a preview link automatically. The file must be shared as <strong>Anyone with the link — Viewer</strong>, or students hit a sign-in wall instead of the PDF.</div>
+    </div>
+    <div class="admin-layout">
+      <div class="admin-course-list">${listHtml}</div>
+      <div class="admin-panel-body">
+        <h3 style="margin-bottom:16px;">${editing ? "Edit Practice Roleplay" : "Add a Practice Roleplay"}</h3>
+        <div class="admin-kpi-form">
+          <select id="rp-event">${eventOptions}</select>
+          <input type="text" id="rp-title" placeholder="Title (e.g. RMS Practice Roleplay #3 — Inventory Shrinkage)" value="${editing ? esc(editing.title) : ""}">
+          <input type="url" id="rp-url" placeholder="Google Drive share link" value="${editing ? esc(editing.url || "") : ""}">
+          <textarea id="rp-desc" rows="2" placeholder="Short description (optional — shown above the preview)">${editing ? esc(editing.description || "") : ""}</textarea>
+          <div style="display:flex;gap:10px;">
+            <button class="admin-btn-sm" onclick="adminSaveRoleplay()">${editing ? "Save Changes" : "Add Roleplay"}</button>
+            ${editing ? `<button class="admin-btn-sm ghost" onclick="adminCancelEditRoleplay()">Cancel</button>` : ""}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+window.adminEditRoleplay = function(id) {
+  adminEditingRoleplayId = id;
+  renderAdminRoleplaysSection();
+};
+window.adminCancelEditRoleplay = function() {
+  adminEditingRoleplayId = null;
+  renderAdminRoleplaysSection();
+};
+
+window.adminSaveRoleplay = async function() {
+  const eventCode = document.getElementById("rp-event").value;
+  const title = document.getElementById("rp-title").value.trim();
+  const url = document.getElementById("rp-url").value.trim();
+  const description = document.getElementById("rp-desc").value.trim();
+
+  if (!eventCode || !title || !url) return alert("Please pick an event and fill in the title and link.");
+  if (!safeUrl(url)) return alert("The link needs to start with https://");
+  if (!driveFileId(url) && !/\.pdf($|\?)/i.test(url)) {
+    if (!confirm("That doesn't look like a Google Drive link or a direct PDF. It may not preview inline. Save anyway?")) return;
+  }
+
+  const editing = adminEditingRoleplayId ? roleplays.find(r => r.id === adminEditingRoleplayId) : null;
+  const id = adminEditingRoleplayId || `rp-${Date.now()}`;
+  const rpDoc = {
+    id, eventCode, title, url, description,
+    addedAt: editing ? editing.addedAt : new Date().toISOString()
+  };
+
+  try {
+    await setDoc(doc(db, "roleplays", id), rpDoc);
+    const idx = roleplays.findIndex(r => r.id === id);
+    if (idx >= 0) roleplays[idx] = rpDoc; else roleplays.push(rpDoc);
+    adminEditingRoleplayId = null;
+    renderAdminRoleplaysSection();
+    if (document.getElementById("roleplays")) renderRoleplaysTab();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+};
+
+window.adminDeleteRoleplay = async function(id) {
+  if (!confirm("Delete this practice roleplay?")) return;
+  try {
+    await deleteDoc(doc(db, "roleplays", id));
+    roleplays = roleplays.filter(r => r.id !== id);
+    if (rpSelectedId === id) rpSelectedId = null;
+    renderAdminRoleplaysSection();
+    if (document.getElementById("roleplays")) renderRoleplaysTab();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't delete — check the console.");
+  }
+};
+
+/* =========================================================================
    PART 1 — CELEBRATION HELPERS (confetti, count-up, milestone notices)
    Geometric shapes only. No emoji anywhere.
    ========================================================================= */

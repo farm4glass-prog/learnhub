@@ -4051,7 +4051,12 @@ async function renderAdminMembersSection() {
 // ========================================================================
 // ========================= CALENDAR ======================================
 // ========================================================================
-
+// Events carry a start date and an optional end date, a free-text type, and
+// an optional link. Older docs only had { date, type } — eventStart/eventEnd
+// read through to those, so nothing already in Firestore needs migrating.
+//
+// REPLACES: everything from the old "CALENDAR" banner through the end of
+// window.adminDeleteEvent. Nothing outside that block changes.
 async function loadCalendarEvents() {
   try {
     const snap = await getDocs(collection(db, "calendarEvents"));
@@ -4065,10 +4070,81 @@ async function loadCalendarEvents() {
   }
 }
 
+// ---- shared helpers ------------------------------------------------------
+
+// Old events stored a single "date". Read through it so they keep working.
+function eventStart(e) {
+  return e.startDate || e.date || "";
+}
+function eventEnd(e) {
+  return e.endDate || eventStart(e);
+}
+function eventIsMultiDay(e) {
+  const s = eventStart(e), en = eventEnd(e);
+  return !!(s && en && en > s);
+}
+
+// Type is free text now. The two original values keep their own colours; a
+// custom type falls back to a neutral pill so the calendar doesn't turn into
+// a rainbow as admins invent categories.
+const CALENDAR_BUILT_IN_TYPES = ["Conference", "Deadline"];
+function eventTypeLabel(e) {
+  const raw = String(e.type || "").trim();
+  if (!raw) return "Event";
+  const lower = raw.toLowerCase();
+  if (lower === "conference") return "Conference";
+  if (lower === "deadline") return "Deadline";
+  return raw;
+}
+function eventTypeSlug(e) {
+  const lower = String(e.type || "").trim().toLowerCase();
+  if (lower === "conference") return "conference";
+  if (lower === "deadline") return "deadline";
+  return "custom";
+}
+// Every type an admin has actually used, so the next one autocompletes
+// instead of drifting into "Comp" / "Competition" / "competition".
+function knownEventTypes() {
+  const used = calendarEvents.map(eventTypeLabel).filter(Boolean);
+  return [...new Set([...CALENDAR_BUILT_IN_TYPES, ...used])].sort();
+}
+
+// Admin-entered text goes straight into innerHTML, so escape it. A stray
+// apostrophe in an event title would otherwise break the markup around it.
+function esc(s) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+// Only real http(s) links become buttons — no javascript: URLs in an href.
+function safeUrl(u) {
+  const raw = String(u || "").trim();
+  return /^https?:\/\//i.test(raw) ? raw : "";
+}
+
+function fmtDay(iso) {
+  return new Date(iso + "T00:00:00").getDate();
+}
+function fmtMonth(iso) {
+  return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { month: "short" });
+}
+function sameMonth(a, b) {
+  return a.slice(0, 7) === b.slice(0, 7);
+}
+// "Mar 12", "Mar 12–14", or "Mar 30 – Apr 2"
+function eventDateRangeLabel(e) {
+  const s = eventStart(e), en = eventEnd(e);
+  if (!s) return "";
+  if (!eventIsMultiDay(e)) return `${fmtMonth(s)} ${fmtDay(s)}`;
+  if (sameMonth(s, en)) return `${fmtMonth(s)} ${fmtDay(s)}–${fmtDay(en)}`;
+  return `${fmtMonth(s)} ${fmtDay(s)} – ${fmtMonth(en)} ${fmtDay(en)}`;
+}
+
+// ---- student-facing list -------------------------------------------------
+
 function renderCalendarList() {
   const container = document.getElementById("calendarContent");
   if (!container) return;
-
   if (!calendarEventsLoaded) {
     container.innerHTML = `<div class="admin-empty-state">Loading calendar...</div>`;
     return;
@@ -4076,27 +4152,50 @@ function renderCalendarList() {
 
   const myAssociation = userData?.association || "";
   const today = new Date().toISOString().slice(0, 10);
-
   const relevant = calendarEvents.filter(e => !e.association || e.association === myAssociation);
-  const upcoming = relevant.filter(e => e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
-  const past = relevant.filter(e => e.date < today).sort((a, b) => b.date.localeCompare(a.date));
 
-  const renderEvent = (e) => `
-    <div class="calendar-event-card ${e.type}">
-      <div class="calendar-event-date">
-        <div class="ced-month">${new Date(e.date + "T00:00:00").toLocaleDateString(undefined, { month: "short" })}</div>
-        <div class="ced-day">${new Date(e.date + "T00:00:00").getDate()}</div>
-      </div>
-      <div class="calendar-event-info">
-        <div class="calendar-event-title">${e.title}</div>
-        <div class="calendar-event-meta">
-          <span class="calendar-event-type ${e.type}">${e.type === "deadline" ? "Deadline" : "Conference"}</span>
-          ${e.association ? `<span>${e.association}</span>` : `<span>All associations</span>`}
+  // A conference that started yesterday and runs through Saturday is still
+  // upcoming, not past — sort on the END date so multi-day events don't
+  // disappear the morning after they begin.
+  const upcoming = relevant
+    .filter(e => eventEnd(e) >= today)
+    .sort((a, b) => eventStart(a).localeCompare(eventStart(b)));
+  const past = relevant
+    .filter(e => eventEnd(e) < today)
+    .sort((a, b) => eventEnd(b).localeCompare(eventEnd(a)));
+
+  const renderEvent = (e) => {
+    const s = eventStart(e);
+    const en = eventEnd(e);
+    const multi = eventIsMultiDay(e);
+    const slug = eventTypeSlug(e);
+    const link = safeUrl(e.link);
+    const happeningNow = s <= today && en >= today;
+
+    const dateBlock = multi
+      ? `<div class="ced-month">${esc(fmtMonth(s))}</div>
+         <div class="ced-day ced-day-range">${fmtDay(s)}–${sameMonth(s, en) ? fmtDay(en) : ""}</div>
+         ${sameMonth(s, en) ? "" : `<div class="ced-through">${esc(fmtMonth(en))} ${fmtDay(en)}</div>`}`
+      : `<div class="ced-month">${esc(fmtMonth(s))}</div>
+         <div class="ced-day">${fmtDay(s)}</div>`;
+
+    return `
+      <div class="calendar-event-card ${slug}">
+        <div class="calendar-event-date">${dateBlock}</div>
+        <div class="calendar-event-info">
+          <div class="calendar-event-title">${esc(e.title)}</div>
+          <div class="calendar-event-meta">
+            <span class="calendar-event-type ${slug}">${esc(eventTypeLabel(e))}</span>
+            ${multi ? `<span>${esc(eventDateRangeLabel(e))}</span>` : ""}
+            ${happeningNow ? `<span class="calendar-event-now">Happening now</span>` : ""}
+            ${e.association ? `<span>${esc(e.association)}</span>` : `<span>All associations</span>`}
+          </div>
+          ${e.description ? `<div class="calendar-event-desc">${esc(e.description)}</div>` : ""}
+          ${link ? `<a class="calendar-event-link" href="${esc(link)}" target="_blank" rel="noopener">${icon("external")} Learn more</a>` : ""}
         </div>
-        ${e.description ? `<div class="calendar-event-desc">${e.description}</div>` : ""}
       </div>
-    </div>
-  `;
+    `;
+  };
 
   container.innerHTML = `
     ${!userData?.association ? `<div class="planner-warning">${icon("alert")} Set your DECA association on your Profile to filter this calendar to events relevant to you.</div>` : ""}
@@ -4109,40 +4208,57 @@ function renderCalendarList() {
   `;
 }
 
+// ---- admin ---------------------------------------------------------------
+
 function renderAdminCalendarSection() {
   const body = document.getElementById("adminSubtabBody");
   if (!body) return;
-
   const editing = adminEditingEventId ? calendarEvents.find(e => e.id === adminEditingEventId) : null;
-  const sorted = [...calendarEvents].sort((a, b) => a.date.localeCompare(b.date));
+  const sorted = [...calendarEvents].sort((a, b) => eventStart(a).localeCompare(eventStart(b)));
 
   const listHtml = sorted.map(e => `
     <div class="admin-lesson-block">
       <div class="admin-lesson-head">
-        <h4>${e.title} <span style="font-weight:600;color:var(--muted);font-size:12px;">— ${e.date}</span></h4>
+        <h4>${esc(e.title)} <span style="font-weight:600;color:var(--muted);font-size:12px;">— ${esc(eventDateRangeLabel(e))}</span></h4>
         <div style="display:flex;gap:8px;">
-          <button class="admin-btn-sm ghost" onclick="adminEditEvent('${e.id}')">Edit</button>
-          <button class="admin-btn-sm danger" onclick="adminDeleteEvent('${e.id}')">${icon("trash")} Delete</button>
+          <button class="admin-btn-sm ghost" onclick="adminEditEvent('${esc(e.id)}')">Edit</button>
+          <button class="admin-btn-sm danger" onclick="adminDeleteEvent('${esc(e.id)}')">${icon("trash")} Delete</button>
         </div>
       </div>
-      <div style="font-size:12px;color:var(--muted);">${e.type === "deadline" ? "Deadline" : "Conference"} · ${e.association || "All associations"}</div>
+      <div style="font-size:12px;color:var(--muted);">
+        ${esc(eventTypeLabel(e))} · ${esc(e.association || "All associations")}${safeUrl(e.link) ? " · has link" : ""}
+      </div>
     </div>
   `).join("") || `<div class="admin-empty-state">No calendar events yet.</div>`;
 
+  const typeOptions = knownEventTypes().map(t => `<option value="${esc(t)}"></option>`).join("");
+
   body.innerHTML = `
+    <datalist id="eventTypeList">${typeOptions}</datalist>
     <div class="admin-layout">
       <div class="admin-course-list">${listHtml}</div>
       <div class="admin-panel-body">
         <h3 style="margin-bottom:16px;">${editing ? "Edit Event" : "Add a New Event"}</h3>
         <div class="admin-kpi-form">
-          <input type="text" id="event-title" placeholder="Event title (e.g. NorCal CDC Registration Deadline)" value="${editing ? editing.title.replace(/"/g, "&quot;") : ""}">
-          <input type="date" id="event-date" value="${editing ? editing.date : ""}">
-          <select id="event-type">
-            <option value="conference" ${editing?.type === "conference" ? "selected" : ""}>Conference</option>
-            <option value="deadline" ${editing?.type === "deadline" ? "selected" : ""}>Deadline</option>
-          </select>
-          <input type="text" id="event-association" list="associationList" placeholder="Association (leave blank for all)" value="${editing ? (editing.association || "") : ""}">
-          <textarea id="event-desc" rows="2" placeholder="Description (optional)">${editing ? (editing.description || "") : ""}</textarea>
+          <input type="text" id="event-title" placeholder="Event title (e.g. NorCal CDC Registration Deadline)" value="${editing ? esc(editing.title) : ""}">
+
+          <div class="admin-field-row">
+            <label class="admin-inline-label">Starts
+              <input type="date" id="event-start" value="${editing ? esc(eventStart(editing)) : ""}">
+            </label>
+            <label class="admin-inline-label">Ends <span class="admin-optional">optional</span>
+              <input type="date" id="event-end" value="${editing && editing.endDate ? esc(editing.endDate) : ""}">
+            </label>
+          </div>
+          <div class="admin-field-hint">Leave the end date blank for a single-day event.</div>
+
+          <input type="text" id="event-type" list="eventTypeList" placeholder="Type (Conference, Deadline, or type your own)" value="${editing ? esc(eventTypeLabel(editing)) : "Conference"}">
+          <div class="admin-field-hint">Pick from the list where you can — reusing a type keeps its colour and grouping consistent.</div>
+
+          <input type="text" id="event-association" list="associationList" placeholder="Association (leave blank for all)" value="${editing ? esc(editing.association || "") : ""}">
+          <input type="url" id="event-link" placeholder="Link for more info (optional — must start with https://)" value="${editing ? esc(editing.link || "") : ""}">
+          <textarea id="event-desc" rows="2" placeholder="Description (optional)">${editing ? esc(editing.description || "") : ""}</textarea>
+
           <div style="display:flex;gap:10px;">
             <button class="admin-btn-sm" onclick="adminSaveEvent()">${editing ? "Save Changes" : "Add Event"}</button>
             ${editing ? `<button class="admin-btn-sm ghost" onclick="adminCancelEditEvent()">Cancel</button>` : ""}
@@ -4165,15 +4281,30 @@ window.adminCancelEditEvent = function() {
 
 window.adminSaveEvent = async function() {
   const title = document.getElementById("event-title").value.trim();
-  const date = document.getElementById("event-date").value;
-  const type = document.getElementById("event-type").value;
+  const startDate = document.getElementById("event-start").value;
+  const endDateRaw = document.getElementById("event-end").value;
+  const type = document.getElementById("event-type").value.trim() || "Event";
   const association = document.getElementById("event-association").value.trim();
+  const linkRaw = document.getElementById("event-link").value.trim();
   const description = document.getElementById("event-desc").value.trim();
 
-  if (!title || !date) return alert("Please fill in at least a title and date.");
+  if (!title || !startDate) return alert("Please fill in at least a title and a start date.");
+  if (endDateRaw && endDateRaw < startDate) {
+    return alert("The end date is before the start date — swap them or clear the end date.");
+  }
+  if (linkRaw && !safeUrl(linkRaw)) {
+    return alert("The link needs to start with https:// (or http://) so it opens correctly.");
+  }
 
+  const endDate = endDateRaw || null;
   const id = adminEditingEventId || `event-${Date.now()}`;
-  const eventDoc = { id, title, date, type, association, description };
+  const eventDoc = {
+    id, title, startDate, endDate, type, association, description,
+    link: linkRaw,
+    // Kept in sync so anything still reading the old field — and any event
+    // saved before this change — stays consistent.
+    date: startDate
+  };
 
   try {
     await setDoc(doc(db, "calendarEvents", id), eventDoc);
@@ -4181,6 +4312,7 @@ window.adminSaveEvent = async function() {
     if (idx >= 0) calendarEvents[idx] = eventDoc; else calendarEvents.push(eventDoc);
     adminEditingEventId = null;
     renderAdminCalendarSection();
+    if (document.getElementById("calendar")) renderCalendarList();
   } catch (e) {
     console.error(e);
     alert("Couldn't save — check the console.");
@@ -4193,6 +4325,7 @@ window.adminDeleteEvent = async function(id) {
     await deleteDoc(doc(db, "calendarEvents", id));
     calendarEvents = calendarEvents.filter(e => e.id !== id);
     renderAdminCalendarSection();
+    if (document.getElementById("calendar")) renderCalendarList();
   } catch (e) {
     console.error(e);
     alert("Couldn't delete — check the console.");

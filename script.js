@@ -4766,45 +4766,33 @@ window.reviewExam = function() {
 
 /* =========================================================================
    FARM4GLASS — PRACTICE ROLEPLAYS
-   -------------------------------------------------------------------------
-   Three levels, same shape as the Courses tab:
-     1. Category filters  (Principles / Individual Series / Team / PFL / PSE)
-     2. One bubble per event (Retail Merchandising Series, etc.)
-     3. Inside an event: every practice roleplay, previewed inline with a
-        button to open the Drive file in a new tab.
-
-   The event list is built from DECA_ROLEPLAY_EVENTS, which already exists
-   further up this file — add an event there and it appears here too.
-
-   Firestore collection "roleplays", one doc per practice roleplay:
-     { id, eventCode, title, url, description, addedAt }
-
-   PASTE THIS whole block into script.js, just above the
-   "PART 1 — CELEBRATION HELPERS" banner. Then make the four small edits
-   listed in roleplays-install.md.
+   Browse: search + category → event bubble → instructional area → roleplay.
+   Instructional areas come from the KPI database (k.area), so the list
+   matches whatever your PI data says. Only areas with roleplays appear.
+   Firestore "roleplays": { id, eventCode, area, title, url, description, addedAt }
    ========================================================================= */
 
 let roleplays = [];
 let roleplaysLoaded = false;
 let rpCategory = "All Events";
-let rpSelectedEvent = null;   // event code, e.g. "RMS"
-let rpSelectedId = null;      // roleplay doc id being previewed
+let rpQuery = "";
+let rpSelectedEvent = null;
+let rpSelectedArea = null;
+let rpSelectedId = null;
 let adminEditingRoleplayId = null;
 
-/* ---- event index, flattened out of DECA_ROLEPLAY_EVENTS ---- */
+const RP_NO_AREA = "Not categorized";
 
+/* ---- event index, from DECA_ROLEPLAY_EVENTS ---- */
 function roleplayEventIndex() {
   const out = [];
   Object.entries(DECA_ROLEPLAY_EVENTS).forEach(([category, items]) => {
-    items.forEach(label => {
-      const code = plannerEventCode(label);
-      out.push({
-        code,
-        label,
-        name: label.replace(/\s*\([^)]+\)\s*$/, ""),
-        category
-      });
-    });
+    items.forEach(label => out.push({
+      code: plannerEventCode(label),
+      label,
+      name: label.replace(/\s*\([^)]+\)\s*$/, ""),
+      category
+    }));
   });
   return out;
 }
@@ -4819,14 +4807,33 @@ function roleplaysForEvent(code) {
     .filter(r => (r.eventCode || "").toUpperCase() === String(code || "").toUpperCase())
     .sort((a, b) => (a.title || "").localeCompare(b.title || "", undefined, { numeric: true }));
 }
+function rpAreaOf(r) {
+  return String(r.area || "").trim() || RP_NO_AREA;
+}
+// Only areas that actually have roleplays, so students never open an empty one.
+function rpAreasForEvent(code) {
+  const counts = new Map();
+  roleplaysForEvent(code).forEach(r => {
+    const a = rpAreaOf(r);
+    counts.set(a, (counts.get(a) || 0) + 1);
+  });
+  return [...counts.entries()]
+    .map(([area, n]) => ({ area, n }))
+    .sort((a, b) => a.area === RP_NO_AREA ? 1 : b.area === RP_NO_AREA ? -1 : a.area.localeCompare(b.area));
+}
+function roleplaysForArea(code, area) {
+  return roleplaysForEvent(code).filter(r => rpAreaOf(r) === area);
+}
+// Every instructional area the KPI data knows about — used by the admin form.
+function allInstructionalAreas() {
+  const fromKpis = kpis.map(k => String(k.area || "").trim()).filter(Boolean);
+  const fromRoleplays = roleplays.map(r => String(r.area || "").trim()).filter(Boolean);
+  return [...new Set([...fromKpis, ...fromRoleplays])].sort();
+}
 
-/* ---- Google Drive links -------------------------------------------------
-   Admins paste the normal "share" link. Drive won't render that inside an
-   iframe — /preview will. Anything that isn't a Drive link is treated as a
-   plain PDF path and shown with <object>, same as unit articles.
-   The file must be shared as "Anyone with the link — Viewer", or students
-   see a sign-in wall instead of the PDF.                                  */
-
+/* ---- Google Drive links ----
+   A normal /view share link renders as a blank frame; /preview works.
+   The file must be shared "Anyone with the link — Viewer". */
 function driveFileId(url) {
   const raw = String(url || "");
   const m = raw.match(/\/file\/d\/([A-Za-z0-9_-]{10,})/) || raw.match(/[?&]id=([A-Za-z0-9_-]{10,})/);
@@ -4841,8 +4848,6 @@ function driveOpenUrl(url) {
   return id ? `https://drive.google.com/file/d/${id}/view` : safeUrl(url);
 }
 
-/* ---- load --------------------------------------------------------------- */
-
 async function loadRoleplays() {
   try {
     const snap = await getDocs(collection(db, "roleplays"));
@@ -4856,28 +4861,49 @@ async function loadRoleplays() {
   }
 }
 
-/* ---- student-facing ----------------------------------------------------- */
-
-window.rpFilterCategory = function(cat) {
-  rpCategory = cat;
+/* ---- navigation ---- */
+window.rpFilterCategory = function(cat) { rpCategory = cat; renderRoleplaysTab(); };
+window.rpOpenEvent = function(code) {
+  rpSelectedEvent = code; rpSelectedArea = null; rpSelectedId = null; rpQuery = "";
+  renderRoleplaysTab(); window.scrollTo({ top: 0, behavior: "smooth" });
+};
+window.rpOpenArea = function(encoded) {
+  rpSelectedArea = decodeURIComponent(encoded); rpSelectedId = null;
+  renderRoleplaysTab(); window.scrollTo({ top: 0, behavior: "smooth" });
+};
+window.rpBackToEvents = function() {
+  rpSelectedEvent = null; rpSelectedArea = null; rpSelectedId = null; rpQuery = "";
   renderRoleplaysTab();
 };
-window.rpOpenEvent = function(code) {
-  rpSelectedEvent = code;
-  rpSelectedId = null;
+window.rpBackToAreas = function() {
+  rpSelectedArea = null; rpSelectedId = null; renderRoleplaysTab();
+};
+window.rpSelect = function(id) { rpSelectedId = id; renderRoleplaysTab(); };
+// Only the results block is rebuilt, so the search box keeps focus as you type.
+window.rpSearch = function(value) {
+  rpQuery = String(value || "").toLowerCase().trim();
+  const el = document.getElementById("rpResults");
+  if (el) el.innerHTML = rpResultsHtml();
+};
+// Jump straight to a roleplay from a search hit.
+window.rpJumpTo = function(id) {
+  const r = roleplays.find(x => x.id === id);
+  if (!r) return;
+  rpSelectedEvent = r.eventCode;
+  rpSelectedArea = rpAreaOf(r);
+  rpSelectedId = r.id;
+  rpQuery = "";
   renderRoleplaysTab();
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
-window.rpBackToEvents = function() {
-  rpSelectedEvent = null;
-  rpSelectedId = null;
-  renderRoleplaysTab();
-};
-window.rpSelect = function(id) {
-  rpSelectedId = id;
-  renderRoleplaysTab();
-};
 
+function rpMatches(r, q) {
+  const ev = roleplayEventByCode(r.eventCode);
+  return `${r.title || ""} ${r.description || ""} ${rpAreaOf(r)} ${r.eventCode || ""} ${ev ? ev.name : ""}`
+    .toLowerCase().includes(q);
+}
+
+/* ---- rendering ---- */
 function renderRoleplaysTab() {
   const container = document.getElementById("roleplaysContent");
   if (!container) return;
@@ -4885,18 +4911,41 @@ function renderRoleplaysTab() {
     container.innerHTML = `<div class="admin-empty-state">Loading practice roleplays...</div>`;
     return;
   }
-  if (rpSelectedEvent) return renderRoleplayEventView(container);
 
-  const events = roleplayEventIndex().filter(e =>
-    rpCategory === "All Events" || e.category === rpCategory
-  );
+  const searchHtml = `
+    <div class="course-search-row">
+      <div class="search-wrap">
+        <input type="text" id="rpSearchBox" placeholder="Search roleplays, events, or instructional areas..."
+               value="${esc(rpQuery)}" oninput="rpSearch(this.value)">
+      </div>
+    </div>`;
 
-  const filtersHtml = roleplayCategories().map(cat => `
-    <button class="cat-btn ${cat === rpCategory ? "active" : ""}" onclick="rpFilterCategory('${esc(cat).replace(/'/g, "\\'")}')">${esc(cat)}</button>
-  `).join("");
+  if (rpSelectedEvent && rpSelectedArea) return renderRoleplayListView(container, searchHtml);
+  if (rpSelectedEvent) return renderRoleplayAreaView(container, searchHtml);
 
-  const cardsHtml = events.map(e => {
+  container.innerHTML = `
+    ${searchHtml}
+    <div class="category-filters" id="rpFilters">
+      ${roleplayCategories().map(cat => `
+        <button class="cat-btn ${cat === rpCategory ? "active" : ""}"
+                onclick="rpFilterCategory('${encodeURIComponent(cat)}' && decodeURIComponent('${encodeURIComponent(cat)}'))">${esc(cat)}</button>
+      `).join("")}
+    </div>
+    <div id="rpResults">${rpResultsHtml()}</div>
+  `;
+}
+
+// Searching cuts across everything — you get roleplays, not bubbles to dig through.
+function rpResultsHtml() {
+  if (rpQuery) return rpSearchHitsHtml(roleplays.filter(r => rpMatches(r, rpQuery)));
+
+  if (rpSelectedEvent && rpSelectedArea) return "";
+  if (rpSelectedEvent) return "";
+
+  const events = roleplayEventIndex().filter(e => rpCategory === "All Events" || e.category === rpCategory);
+  const cards = events.map(e => {
     const n = roleplaysForEvent(e.code).length;
+    const areas = rpAreasForEvent(e.code).length;
     return `
       <div class="course-card-new rp-event-card ${n ? "" : "rp-empty"}" onclick="rpOpenEvent('${esc(e.code)}')">
         <div class="cc-body">
@@ -4904,40 +4953,79 @@ function renderRoleplaysTab() {
           <div class="cc-title">${esc(e.name)}</div>
           <div class="cc-desc">${esc(e.category)}</div>
           <div class="cc-footer">
-            <span class="cc-pct">${n} practice ${n === 1 ? "roleplay" : "roleplays"}</span>
+            <span class="cc-pct">${n} ${n === 1 ? "roleplay" : "roleplays"}${areas ? ` · ${areas} ${areas === 1 ? "area" : "areas"}` : ""}</span>
             <span class="cc-start">${n ? "Open" : "None yet"} ›</span>
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join("");
 
-  const total = roleplays.length;
-  container.innerHTML = `
-    ${total === 0 ? `<div class="admin-empty-state">No practice roleplays have been added yet — check back soon.</div>` : ""}
-    <div class="category-filters">${filtersHtml}</div>
-    <div class="course-grid">${cardsHtml || `<div class="admin-empty-state">No events in this category.</div>`}</div>
+  return `<div class="course-grid">${cards || `<div class="admin-empty-state">No events in this category.</div>`}</div>`;
+}
+
+function rpSearchHitsHtml(hits) {
+  if (!hits.length) return `<div class="admin-empty-state">Nothing matches "${esc(rpQuery)}".</div>`;
+  return `
+    <div class="rp-hits-label">${hits.length} ${hits.length === 1 ? "result" : "results"}</div>
+    ${hits.map(r => {
+      const ev = roleplayEventByCode(r.eventCode);
+      return `
+        <button class="rp-hit" onclick="rpJumpTo('${esc(r.id)}')">
+          ${icon("file")}
+          <span class="rp-hit-main">
+            <span class="rp-hit-title">${esc(r.title)}</span>
+            <span class="rp-hit-sub">${esc(ev ? ev.name : r.eventCode)} · ${esc(rpAreaOf(r))}</span>
+          </span>
+          <span class="rp-hit-arrow">›</span>
+        </button>`;
+    }).join("")}
   `;
 }
 
-function renderRoleplayEventView(container) {
+function renderRoleplayAreaView(container, searchHtml) {
   const ev = roleplayEventByCode(rpSelectedEvent);
-  const list = roleplaysForEvent(rpSelectedEvent);
-  if (!rpSelectedId && list.length) rpSelectedId = list[0].id;
-  const selected = list.find(r => r.id === rpSelectedId) || list[0] || null;
+  const areas = rpAreasForEvent(rpSelectedEvent);
 
-  const listHtml = list.map(r => `
-    <button class="rp-list-item ${r.id === rpSelectedId ? "active" : ""}" onclick="rpSelect('${esc(r.id)}')">
-      ${icon("file")}
-      <span class="rp-list-title">${esc(r.title)}</span>
-    </button>
-  `).join("") || `<div class="admin-empty-state">No practice roleplays for this event yet — check back soon.</div>`;
+  const cards = areas.map(a => `
+    <div class="course-card-new rp-area-card" onclick="rpOpenArea('${encodeURIComponent(a.area)}')">
+      <div class="cc-body">
+        <div class="cc-icon rp-area-icon">${icon("target")}</div>
+        <div class="cc-title">${esc(a.area)}</div>
+        <div class="cc-footer">
+          <span class="cc-pct">${a.n} ${a.n === 1 ? "roleplay" : "roleplays"}</span>
+          <span class="cc-start">Open ›</span>
+        </div>
+      </div>
+    </div>`).join("");
 
   container.innerHTML = `
     <div class="lv-back" onclick="rpBackToEvents()">← All events</div>
     <div class="rp-event-head">
       <h2>${esc(ev ? ev.name : rpSelectedEvent)}</h2>
-      <div class="page-sub">${esc(ev ? ev.category : "")} · ${list.length} practice ${list.length === 1 ? "roleplay" : "roleplays"}</div>
+      <div class="page-sub">${esc(ev ? ev.category : "")} · pick an instructional area</div>
+    </div>
+    ${searchHtml}
+    <div id="rpResults">${rpQuery ? rpSearchHitsHtml(roleplays.filter(r => rpMatches(r, rpQuery))) : ""}</div>
+    ${rpQuery ? "" : `<div class="course-grid">${cards || `<div class="admin-empty-state">No practice roleplays for this event yet — check back soon.</div>`}</div>`}
+  `;
+}
+
+function renderRoleplayListView(container, searchHtml) {
+  const ev = roleplayEventByCode(rpSelectedEvent);
+  const list = roleplaysForArea(rpSelectedEvent, rpSelectedArea);
+  if (!rpSelectedId || !list.some(r => r.id === rpSelectedId)) rpSelectedId = list[0]?.id || null;
+  const selected = list.find(r => r.id === rpSelectedId) || null;
+
+  const listHtml = list.map(r => `
+    <button class="rp-list-item ${r.id === rpSelectedId ? "active" : ""}" onclick="rpSelect('${esc(r.id)}')">
+      ${icon("file")}<span class="rp-list-title">${esc(r.title)}</span>
+    </button>`).join("") || `<div class="admin-empty-state">Nothing here yet.</div>`;
+
+  container.innerHTML = `
+    <div class="lv-back" onclick="rpBackToAreas()">← ${esc(ev ? ev.name : rpSelectedEvent)}</div>
+    <div class="rp-event-head">
+      <h2>${esc(rpSelectedArea)}</h2>
+      <div class="page-sub">${esc(ev ? ev.name : "")} · ${list.length} practice ${list.length === 1 ? "roleplay" : "roleplays"}</div>
     </div>
     <div class="rp-layout">
       <div class="rp-list">${listHtml}</div>
@@ -4949,12 +5037,11 @@ function renderRoleplayEventView(container) {
 function renderRoleplayViewer(r) {
   const preview = drivePreviewUrl(r.url);
   const open = driveOpenUrl(r.url);
-
   const frameHtml = preview
-    ? `<iframe class="rp-frame" src="${esc(preview)}" allow="autoplay" title="${esc(r.title)}"></iframe>`
+    ? `<iframe class="rp-frame" src="${esc(preview)}" title="${esc(r.title)}"></iframe>`
     : open
       ? `<object class="rp-frame" data="${esc(open)}" type="application/pdf">
-           <div class="admin-empty-state">Your browser can't show this inline — use the button above to open it.</div>
+           <div class="admin-empty-state">Your browser can't show this inline — use the button above.</div>
          </object>`
       : `<div class="admin-empty-state">This roleplay doesn't have a working link yet.</div>`;
 
@@ -4974,8 +5061,7 @@ function renderRoleplayViewer(r) {
   `;
 }
 
-/* ---- admin -------------------------------------------------------------- */
-
+/* ---- admin ---- */
 function renderAdminRoleplaysSection() {
   const body = document.getElementById("adminSubtabBody");
   if (!body) return;
@@ -4985,8 +5071,9 @@ function renderAdminRoleplaysSection() {
     `<optgroup label="${esc(cat)}">${items.map(label => {
       const code = plannerEventCode(label);
       return `<option value="${esc(code)}" ${editing && editing.eventCode === code ? "selected" : ""}>${esc(label)}</option>`;
-    }).join("")}</optgroup>`
-  ).join("");
+    }).join("")}</optgroup>`).join("");
+
+  const areaOptions = allInstructionalAreas().map(a => `<option value="${esc(a)}"></option>`).join("");
 
   const grouped = roleplayEventIndex()
     .map(e => ({ e, items: roleplaysForEvent(e.code) }))
@@ -4997,17 +5084,20 @@ function renderAdminRoleplaysSection() {
       <div class="admin-lesson-head"><h4>${esc(g.e.name)} <span style="font-weight:600;color:var(--muted);font-size:12px;">— ${g.items.length}</span></h4></div>
       ${g.items.map(r => `
         <div class="admin-field-row" style="align-items:center;">
-          <span style="flex:1;font-size:13px;">${esc(r.title)}${driveFileId(r.url) ? "" : " <em style='color:var(--muted);'>(not a Drive link)</em>"}</span>
+          <span style="flex:1;font-size:13px;">
+            ${esc(r.title)}
+            <span style="color:var(--muted);">— ${esc(rpAreaOf(r))}</span>
+            ${driveFileId(r.url) ? "" : " <em style='color:var(--muted);'>(not a Drive link)</em>"}
+          </span>
           <button class="admin-btn-sm ghost" onclick="adminEditRoleplay('${esc(r.id)}')">Edit</button>
           <button class="admin-btn-sm danger" onclick="adminDeleteRoleplay('${esc(r.id)}')">${icon("trash")}</button>
-        </div>
-      `).join("")}
-    </div>
-  `).join("") || `<div class="admin-empty-state">No practice roleplays yet.</div>`;
+        </div>`).join("")}
+    </div>`).join("") || `<div class="admin-empty-state">No practice roleplays yet.</div>`;
 
   body.innerHTML = `
+    <datalist id="rpAreaList">${areaOptions}</datalist>
     <div class="admin-seed-banner">
-      <div>Paste the normal Google Drive share link — it gets converted to a preview link automatically. The file must be shared as <strong>Anyone with the link — Viewer</strong>, or students hit a sign-in wall instead of the PDF.</div>
+      <div>Paste the normal Google Drive share link — it's converted to a preview link automatically. The file must be shared as <strong>Anyone with the link — Viewer</strong>, or students hit a sign-in wall instead of the PDF. The instructional area list autocompletes from your KPI database, so reuse an existing name where one fits.</div>
     </div>
     <div class="admin-layout">
       <div class="admin-course-list">${listHtml}</div>
@@ -5015,7 +5105,8 @@ function renderAdminRoleplaysSection() {
         <h3 style="margin-bottom:16px;">${editing ? "Edit Practice Roleplay" : "Add a Practice Roleplay"}</h3>
         <div class="admin-kpi-form">
           <select id="rp-event">${eventOptions}</select>
-          <input type="text" id="rp-title" placeholder="Title (e.g. RMS Practice Roleplay #3 — Inventory Shrinkage)" value="${editing ? esc(editing.title) : ""}">
+          <input type="text" id="rp-area" list="rpAreaList" placeholder="Instructional area (e.g. Channel Management)" value="${editing ? esc(editing.area || "") : ""}">
+          <input type="text" id="rp-title" placeholder="Title (e.g. RMS #3 — Inventory Shrinkage)" value="${editing ? esc(editing.title) : ""}">
           <input type="url" id="rp-url" placeholder="Google Drive share link" value="${editing ? esc(editing.url || "") : ""}">
           <textarea id="rp-desc" rows="2" placeholder="Short description (optional — shown above the preview)">${editing ? esc(editing.description || "") : ""}</textarea>
           <div style="display:flex;gap:10px;">
@@ -5028,33 +5119,26 @@ function renderAdminRoleplaysSection() {
   `;
 }
 
-window.adminEditRoleplay = function(id) {
-  adminEditingRoleplayId = id;
-  renderAdminRoleplaysSection();
-};
-window.adminCancelEditRoleplay = function() {
-  adminEditingRoleplayId = null;
-  renderAdminRoleplaysSection();
-};
+window.adminEditRoleplay = function(id) { adminEditingRoleplayId = id; renderAdminRoleplaysSection(); };
+window.adminCancelEditRoleplay = function() { adminEditingRoleplayId = null; renderAdminRoleplaysSection(); };
 
 window.adminSaveRoleplay = async function() {
   const eventCode = document.getElementById("rp-event").value;
+  const area = document.getElementById("rp-area").value.trim();
   const title = document.getElementById("rp-title").value.trim();
   const url = document.getElementById("rp-url").value.trim();
   const description = document.getElementById("rp-desc").value.trim();
 
   if (!eventCode || !title || !url) return alert("Please pick an event and fill in the title and link.");
   if (!safeUrl(url)) return alert("The link needs to start with https://");
+  if (!area && !confirm("No instructional area set — this will show under \"Not categorized\". Save anyway?")) return;
   if (!driveFileId(url) && !/\.pdf($|\?)/i.test(url)) {
-    if (!confirm("That doesn't look like a Google Drive link or a direct PDF. It may not preview inline. Save anyway?")) return;
+    if (!confirm("That doesn't look like a Google Drive link or a direct PDF, so it may not preview inline. Save anyway?")) return;
   }
 
   const editing = adminEditingRoleplayId ? roleplays.find(r => r.id === adminEditingRoleplayId) : null;
   const id = adminEditingRoleplayId || `rp-${Date.now()}`;
-  const rpDoc = {
-    id, eventCode, title, url, description,
-    addedAt: editing ? editing.addedAt : new Date().toISOString()
-  };
+  const rpDoc = { id, eventCode, area, title, url, description, addedAt: editing ? editing.addedAt : new Date().toISOString() };
 
   try {
     await setDoc(doc(db, "roleplays", id), rpDoc);

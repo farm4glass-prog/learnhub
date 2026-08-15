@@ -1,21 +1,22 @@
 /* =========================================================================
-   FARM4GLASS — FINANCE + HOSPITALITY CLUSTER IMPORTER
+   FARM4GLASS — CLUSTER IMPORTER (Finance · Hospitality · Business Mgmt)
    -------------------------------------------------------------------------
-   Loads the shared question bank into the Finance and Hospitality cluster
-   courses. Each command is locked to one course and takes no arguments, so
-   there is nothing to mistype.
+   Loads the shared question bank into the Finance, Hospitality + Tourism, and
+   Business Management + Administration cluster courses. Each command is
+   locked to one course and takes no arguments.
 
-   REQUIRES f4g-questions-ent.js — this file reads the bank from it rather
-   than carrying a third copy of the same 220 questions. Keep that script tag
-   in index.html for as long as you're using this one.
+   REQUIRES f4g-questions-ent.js — this file reads the shared bank from it
+   rather than carrying another copy of the same 220 questions. Keep that
+   script tag in index.html (plain <script>, no type="module") ABOVE this one.
 
    HOW TO USE
-   1. Upload this file to the repo next to index.html.
-   2. In index.html, add this AFTER the f4g-questions-ent.js line:
+   1. Replace f4g-import-clusters.js in the repo with this file. No change to
+      index.html is needed if the tags are already there:
 
+        <script src="f4g-questions-ent.js"></script>
         <script type="module" src="f4g-import-clusters.js"></script>
 
-   3. Reload, sign in as admin, open the console. Four commands:
+   2. Reload, sign in as admin, open the console. Six commands:
 
         f4gPreviewFinance()        preview finance — writes nothing
         f4gImportFinance()         write to finance
@@ -23,15 +24,23 @@
         f4gPreviewHospitality()    preview hospitality — writes nothing
         f4gImportHospitality()     write to hospitality
 
-   4. Delete the script tag when you're done. Keep the file in the repo.
+        f4gPreviewBusiness()       preview business mgmt — writes nothing
+        f4gImportBusiness()        write to business mgmt
+
+   3. Delete the script tag when you're done. Keep the file in the repo.
 
    IT WILL NOT CREATE UNITS. If an instructional area has no matching unit in
-   the course, it reports "no matching unit" and moves on. Channel Management
-   and Marketing-Information Management aren't units in these courses, so
-   expect two skipped rows in every run — that's correct, not an error.
+   the course, it reports "no matching unit" and moves on. Expect skipped rows
+   in every run — each course only has some of the areas:
 
-   To land those two somewhere, either add units with those exact names in
-   Admin > Courses, or ignore them.
+     Finance / Hospitality (21 units)  -> 3 skipped (Channel Mgmt,
+       Marketing-Information Mgmt, Project Mgmt)
+     Business Management (17 units)    -> 7 skipped (Channel Mgmt, Pricing,
+       Product/Service Mgmt, Promotion, Selling, Market Planning,
+       Marketing-Information Mgmt)
+
+   That's correct, not an error. To land a skipped area somewhere, add a unit
+   with that exact name in Admin > Courses and re-run.
    ========================================================================= */
 
 import { getApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
@@ -39,18 +48,19 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-aut
 import { getFirestore, doc, getDoc, setDoc }
   from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
-/* The only two courses this file can touch. If either ID is different in
+/* The only courses this file can touch. If an ID is different in
    Admin > Courses, change it here — this is the single place they appear. */
 const FINANCE_COURSE = "finance";
 const HOSPITALITY_COURSE = "hospitality";
+const BUSINESS_COURSE = "business-management";
 
 const NEW_QUIZ_XP = 25;
 const NEW_QUIZ_DURATION = "5 min";
 
-/* ============ KNOWLEDGE MANAGEMENT (new — not in the shared bank) ============
-   These 10 are written from standard DECA terminology rather than from an
-   uploaded cluster guide, so check them against yours before students see
-   them. Everything else comes from the bank you already reviewed. */
+/* ================= EXTRA AREAS (not in the shared bank) =================
+   Written from standard DECA terminology rather than from an uploaded
+   cluster guide, so check them against yours before students see them.
+   Everything else comes from the bank you already reviewed. */
 
 function Q(q, options, answer, explanation) {
   return { q, options, answer, explanation };
@@ -93,6 +103,45 @@ const KNOWLEDGE_MANAGEMENT = {
   ]
 };
 
+const PROJECT_MANAGEMENT = {
+  ia: "Project Management",
+  aliases: ["Project Mgmt"],
+  questions: [
+    Q("A company organizes a temporary effort with a defined start, end, and goal, separate from its ongoing daily work. What is this?",
+      ["A project", "An operation", "A standing order", "A quality circle"], 0,
+      "A project is temporary and has a defined beginning, end, and objective — unlike ongoing operations."),
+    Q("A manager plans, organizes, and oversees the work needed to complete a project on time and within budget. Which concept is this?",
+      ["Supply chain management", "Project management", "Risk retention", "Benchmarking"], 1,
+      "Project management is directing the resources and schedule needed to deliver a project."),
+    Q("A team documents exactly what work is included in a project and what is not. Which concept is this?",
+      ["Project scope", "A milestone", "A deliverable", "A stakeholder"], 0,
+      "Scope defines the boundaries of the project — what's in and what's out."),
+    Q("Halfway through, a client keeps adding small requests that were never in the original plan, and the project falls behind. What is this called?",
+      ["A deliverable", "Scope creep", "The critical path", "Feedback control"], 1,
+      "Scope creep is uncontrolled growth of a project's scope after work has begun."),
+    Q("A project plan marks the date the design phase must be finished before building can start. What is this point called?",
+      ["A stakeholder", "A deliverable", "A milestone", "Scope creep"], 2,
+      "A milestone is a significant checkpoint in the project timeline."),
+    Q("A team is contracted to produce a finished training manual at the end of a project. What is the manual?",
+      ["A milestone", "A deliverable", "A stakeholder", "A constraint"], 1,
+      "A deliverable is a tangible output the project is required to produce."),
+    Q("A manager charts each task as a horizontal bar across a calendar so overlapping work is visible at a glance. Which tool is this?",
+      ["A Gantt chart", "A SWOT analysis", "A Likert scale", "A balance sheet"], 0,
+      "A Gantt chart shows tasks as bars against a timeline."),
+    Q("A manager identifies the longest sequence of dependent tasks, because any delay in it delays the whole project. What is this?",
+      ["The critical path", "The product mix", "The chain of command", "The scope statement"], 0,
+      "The critical path is the longest chain of dependent tasks and sets the minimum project duration."),
+    Q("Anyone affected by a project's outcome — clients, employees, investors, the community — is known as what?",
+      ["A deliverable", "An intermediary", "A stakeholder", "A vendor"], 2,
+      "A stakeholder is any party with an interest in or affected by the project."),
+    Q("A project manager balances the trade-off between scope, time, and cost, knowing a change to one forces a change in the others. What is this relationship called?",
+      ["The triple constraint", "The product life cycle", "The chain of command", "The marketing mix"], 0,
+      "The triple constraint is the interdependence of scope, time, and cost.")
+  ]
+};
+
+const EXTRA_AREAS = [KNOWLEDGE_MANAGEMENT, PROJECT_MANAGEMENT];
+
 /* deterministic option shuffle — same helper the shared bank uses, so the new
    questions don't sit in a predictable answer position either */
 
@@ -129,11 +178,11 @@ function buildBank() {
   if (!Array.isArray(shared) || !shared.length) return null;
   return [
     ...shared,
-    {
-      ia: KNOWLEDGE_MANAGEMENT.ia,
-      aliases: KNOWLEDGE_MANAGEMENT.aliases,
-      questions: KNOWLEDGE_MANAGEMENT.questions.map(shuffleQuestion)
-    }
+    ...EXTRA_AREAS.map(area => ({
+      ia: area.ia,
+      aliases: area.aliases,
+      questions: area.questions.map(shuffleQuestion)
+    }))
   ];
 }
 
@@ -173,7 +222,7 @@ function normalizeQuestionText(q) {
   return String(q || "").toLowerCase().replace(/\s+/g, " ").trim();
 }
 
-async function run(courseId, label, apply) {
+async function run(courseId, label, applyCommand, apply) {
   const bank = buildBank();
   if (!bank) {
     console.error(
@@ -294,7 +343,7 @@ async function run(courseId, label, apply) {
   if (!apply) {
     console.log(
       "PREVIEW ONLY — nothing was written.\n" +
-      `When it looks right, run:  ${courseId === FINANCE_COURSE ? "f4gImportFinance()" : "f4gImportHospitality()"}`
+      `When it looks right, run:  ${applyCommand}`
     );
     return report;
   }
@@ -312,13 +361,17 @@ async function run(courseId, label, apply) {
   return report;
 }
 
-window.f4gPreviewFinance     = () => run(FINANCE_COURSE, "Finance Cluster", false);
-window.f4gImportFinance      = () => run(FINANCE_COURSE, "Finance Cluster", true);
-window.f4gPreviewHospitality = () => run(HOSPITALITY_COURSE, "Hospitality + Tourism Cluster", false);
-window.f4gImportHospitality  = () => run(HOSPITALITY_COURSE, "Hospitality + Tourism Cluster", true);
+window.f4gPreviewFinance     = () => run(FINANCE_COURSE, "Finance Cluster", "f4gImportFinance()", false);
+window.f4gImportFinance      = () => run(FINANCE_COURSE, "Finance Cluster", "f4gImportFinance()", true);
+window.f4gPreviewHospitality = () => run(HOSPITALITY_COURSE, "Hospitality + Tourism Cluster", "f4gImportHospitality()", false);
+window.f4gImportHospitality  = () => run(HOSPITALITY_COURSE, "Hospitality + Tourism Cluster", "f4gImportHospitality()", true);
+window.f4gPreviewBusiness    = () => run(BUSINESS_COURSE, "Business Management + Administration", "f4gImportBusiness()", false);
+window.f4gImportBusiness     = () => run(BUSINESS_COURSE, "Business Management + Administration", "f4gImportBusiness()", true);
 
 console.log("%cCluster importer ready.", "font-weight:bold;color:#167db5");
 console.log(`  f4gPreviewFinance()       preview  -> ${FINANCE_COURSE}`);
 console.log(`  f4gImportFinance()        write    -> ${FINANCE_COURSE}`);
 console.log(`  f4gPreviewHospitality()   preview  -> ${HOSPITALITY_COURSE}`);
 console.log(`  f4gImportHospitality()    write    -> ${HOSPITALITY_COURSE}`);
+console.log(`  f4gPreviewBusiness()      preview  -> ${BUSINESS_COURSE}`);
+console.log(`  f4gImportBusiness()       write    -> ${BUSINESS_COURSE}`);

@@ -1,8 +1,8 @@
 /* =========================================================================
-   FARM4GLASS — CLUSTER IMPORTER (Finance · Hospitality · Business Mgmt)
+   FARM4GLASS — CLUSTER IMPORTER
+   Finance · Hospitality + Tourism · Business Management · Business Admin Core
    -------------------------------------------------------------------------
-   Loads the shared question bank into the Finance, Hospitality + Tourism, and
-   Business Management + Administration cluster courses. Each command is
+   Loads the shared question bank into four cluster courses. Each command is
    locked to one course and takes no arguments.
 
    REQUIRES f4g-questions-ent.js — this file reads the shared bank from it
@@ -16,28 +16,31 @@
         <script src="f4g-questions-ent.js"></script>
         <script type="module" src="f4g-import-clusters.js"></script>
 
-   2. Reload, sign in as admin, open the console. Six commands:
+   2. Reload, sign in as admin, open the console. Eight commands:
 
-        f4gPreviewFinance()        preview finance — writes nothing
-        f4gImportFinance()         write to finance
+        f4gPreviewFinance()        f4gImportFinance()
+        f4gPreviewHospitality()    f4gImportHospitality()
+        f4gPreviewBusiness()       f4gImportBusiness()
+        f4gPreviewCore()           f4gImportCore()
 
-        f4gPreviewHospitality()    preview hospitality — writes nothing
-        f4gImportHospitality()     write to hospitality
-
-        f4gPreviewBusiness()       preview business mgmt — writes nothing
-        f4gImportBusiness()        write to business mgmt
+      The Preview commands write nothing. Run one, read the table, then run
+      the matching Import.
 
    3. Delete the script tag when you're done. Keep the file in the repo.
 
-   IT WILL NOT CREATE UNITS. If an instructional area has no matching unit in
-   the course, it reports "no matching unit" and moves on. Expect skipped rows
-   in every run — each course only has some of the areas:
+   AFTER REPLACING THIS FILE: a normal reload keeps the old copy in the
+   browser's module map. Use a hard reload (Cmd/Ctrl + Shift + R), or run
+   this in the console to load the new version immediately:
 
-     Finance / Hospitality (21 units)  -> 3 skipped (Channel Mgmt,
-       Marketing-Information Mgmt, Project Mgmt)
-     Business Management (17 units)    -> 7 skipped (Channel Mgmt, Pricing,
-       Product/Service Mgmt, Promotion, Selling, Market Planning,
-       Marketing-Information Mgmt)
+        await import('/f4g-import-clusters.js?x=' + Date.now())
+
+   IT WILL NOT CREATE UNITS. If an instructional area has no matching unit in
+   the course, it reports "no matching unit" and moves on. Every course only
+   has some of the 24 areas, so expect skipped rows in every run:
+
+     Finance / Hospitality  21 units ->  3 skipped
+     Business Management    17 units ->  7 skipped
+     Business Admin Core    13 units -> 11 skipped
 
    That's correct, not an error. To land a skipped area somewhere, add a unit
    with that exact name in Admin > Courses and re-run.
@@ -53,6 +56,7 @@ import { getFirestore, doc, getDoc, setDoc }
 const FINANCE_COURSE = "finance";
 const HOSPITALITY_COURSE = "hospitality";
 const BUSINESS_COURSE = "business-management";
+const CORE_COURSE = "business-admin-core";
 
 const NEW_QUIZ_XP = 25;
 const NEW_QUIZ_DURATION = "5 min";
@@ -367,6 +371,8 @@ window.f4gPreviewHospitality = () => run(HOSPITALITY_COURSE, "Hospitality + Tour
 window.f4gImportHospitality  = () => run(HOSPITALITY_COURSE, "Hospitality + Tourism Cluster", "f4gImportHospitality()", true);
 window.f4gPreviewBusiness    = () => run(BUSINESS_COURSE, "Business Management + Administration", "f4gImportBusiness()", false);
 window.f4gImportBusiness     = () => run(BUSINESS_COURSE, "Business Management + Administration", "f4gImportBusiness()", true);
+window.f4gPreviewCore        = () => run(CORE_COURSE, "Business Administration Core", "f4gImportCore()", false);
+window.f4gImportCore         = () => run(CORE_COURSE, "Business Administration Core", "f4gImportCore()", true);
 
 console.log("%cCluster importer ready.", "font-weight:bold;color:#167db5");
 console.log(`  f4gPreviewFinance()       preview  -> ${FINANCE_COURSE}`);
@@ -375,3 +381,5 @@ console.log(`  f4gPreviewHospitality()   preview  -> ${HOSPITALITY_COURSE}`);
 console.log(`  f4gImportHospitality()    write    -> ${HOSPITALITY_COURSE}`);
 console.log(`  f4gPreviewBusiness()      preview  -> ${BUSINESS_COURSE}`);
 console.log(`  f4gImportBusiness()       write    -> ${BUSINESS_COURSE}`);
+console.log(`  f4gPreviewCore()          preview  -> ${CORE_COURSE}`);
+console.log(`  f4gImportCore()           write    -> ${CORE_COURSE}`);

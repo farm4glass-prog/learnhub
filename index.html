@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700;800;900&family=Montserrat:wght@300;400;500;600;700;800&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="units.css">
+  <link rel="stylesheet" href="partners.css">
 </head>
 <body>
 
@@ -31,6 +32,7 @@
       <a href="#hero">Home</a>
       <a href="#about">About</a>
       <a href="#features">Features</a>
+      <a href="#partners">Partners</a>
       <button id="landingLogin" class="nav-login-btn">Sign In with Google</button>
     </div>
   </nav>
@@ -354,6 +356,117 @@
         <h3>Nikhil Krishnan</h3>
         <span class="guest-role">Project Management</span>
         <p>Short description of who they are, their competitive background, and what they shared with our members.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PARTNERSHIPS =====
+       Swap the three cards below for real partners. Each logo tile shows the
+       initials until you add a file: drop the logo in images/ and uncomment
+       the <img> line inside that card. A missing file falls back to the
+       initials instead of a broken image. -->
+  <section id="partners" class="partners-section reveal">
+    <div class="partners-inner">
+      <div class="section-head">
+        <div class="section-tag">Partnerships</div>
+        <h2>Chapters and organizations<br>we work with.</h2>
+        <p class="partners-lede">
+          We partner with DECA chapters, districts, and student organizations to get free
+          prep in front of the members who need it. If your chapter wants in, it costs
+          nothing — we build the resources, you bring the competitors.
+        </p>
+      </div>
+
+      <div class="partners-grid">
+        <div class="partner-card">
+          <div class="partner-logo">
+            <span class="partner-monogram">WR</span>
+            <!-- <img src="images/partner-1.png" alt="Partner logo" data-no-placeholder> -->
+          </div>
+          <div class="partner-name">Partner Name</div>
+          <span class="partner-role">DECA Chapter</span>
+          <p class="partner-blurb">
+            One or two lines on who they are and what you do together — shared study
+            sessions, a mock conference, officer training.
+          </p>
+        </div>
+
+        <div class="partner-card">
+          <div class="partner-logo">
+            <span class="partner-monogram">SC</span>
+            <!-- <img src="images/partner-2.png" alt="Partner logo" data-no-placeholder> -->
+          </div>
+          <div class="partner-name">Partner Name</div>
+          <span class="partner-role">District Action Team</span>
+          <p class="partner-blurb">
+            One or two lines on who they are and what you do together — content
+            collaborations, event promotion, guest speakers.
+          </p>
+        </div>
+
+        <div class="partner-card">
+          <div class="partner-logo">
+            <span class="partner-monogram">F4G</span>
+            <!-- <img src="images/partner-3.png" alt="Partner logo" data-no-placeholder> -->
+          </div>
+          <div class="partner-name">Partner Name</div>
+          <span class="partner-role">Student Organization</span>
+          <p class="partner-blurb">
+            One or two lines on who they are and what you do together — cross-promotion,
+            workshops, shared resources.
+          </p>
+        </div>
+      </div>
+
+      <div class="partner-perks">
+        <div class="partner-perk">
+          <span class="partner-perk-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </span>
+          <div>
+            <h3>Free access for every member</h3>
+            <p>Your whole chapter gets the courses, practice exams, and KPI database at no cost.</p>
+          </div>
+        </div>
+
+        <div class="partner-perk">
+          <span class="partner-perk-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 11v4a1 1 0 0 0 1 1h3l7 4V6l-7 4H4a1 1 0 0 0-1 1z"/>
+              <path d="M18 8a5 5 0 0 1 0 8"/><path d="M21 5a9 9 0 0 1 0 14"/>
+            </svg>
+          </span>
+          <div>
+            <h3>Shared promotion</h3>
+            <p>We feature your chapter here and on our socials, and help push your conferences and deadlines.</p>
+          </div>
+        </div>
+
+        <div class="partner-perk">
+          <span class="partner-perk-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>
+            </svg>
+          </span>
+          <div>
+            <h3>Sessions built for you</h3>
+            <p>Guest speakers, roleplay practice, and workshops scheduled around your conference calendar.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="partner-cta">
+        <div>
+          <h3>Want to partner with us?</h3>
+          <p>
+            Tell us your chapter or organization, roughly how many members you have, and what
+            you need help with. We'll get back to you within a few days.
+          </p>
+        </div>
+        <a class="partner-cta-btn" href="mailto:farm4glass@gmail.com?subject=Farm4Glass%20Partnership">Email us →</a>
       </div>
     </div>
   </section>
@@ -768,6 +881,10 @@
   // Headshots that haven't been uploaded yet fall back to a neutral
   // placeholder, so a missing file doesn't leave a broken image in the grid
   // or spam 404s in the console. Uploading the real file overrides this.
+  //
+  // Partner logos opt out with data-no-placeholder — a person silhouette
+  // behind a company name would look wrong, so a missing logo just hides the
+  // image and lets the initials tile underneath show through.
   (function () {
     const PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">' +
@@ -778,6 +895,7 @@
     function swap(img) {
       if (img.dataset.fbApplied) return;
       img.dataset.fbApplied = '1';
+      if (img.hasAttribute('data-no-placeholder')) { img.style.display = 'none'; return; }
       img.src = PLACEHOLDER;
     }
     document.querySelectorAll('img').forEach(img => {

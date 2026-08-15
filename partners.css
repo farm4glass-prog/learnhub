@@ -1,0 +1,247 @@
+/* =========================================================================
+   FARM4GLASS — PARTNERSHIPS SECTION
+   Landing page only. Kept in its own file so style.css doesn't have to be
+   touched — index.html loads it after style.css and units.css.
+   Same palette, fonts, and stroke-icon language as the rest of the site.
+   ========================================================================= */
+
+.partners-section {
+  padding: 96px 6vw;
+  background: #ffffff;
+}
+
+.partners-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.partners-lede {
+  max-width: 620px;
+  margin: 18px 0 0;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #4a6c8c;
+}
+
+/* ---- partner cards ---- */
+
+.partners-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 42px;
+}
+
+.partner-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 26px 24px;
+  border: 1px solid rgba(22, 125, 181, .18);
+  border-radius: 16px;
+  background: #ffffff;
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+
+.partner-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(22, 125, 181, .38);
+  box-shadow: 0 14px 34px rgba(10, 26, 43, .09);
+}
+
+/* Logo tile. The initials sit underneath; a real logo image is layered on
+   top of them, so a missing or broken file falls back to the monogram
+   instead of a gap. */
+.partner-logo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(22, 125, 181, .16) 0%, rgba(56, 189, 248, .10) 100%);
+  border: 1px solid rgba(22, 125, 181, .18);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.partner-monogram {
+  font-family: 'League Spartan', sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: .04em;
+  color: #167db5;
+}
+
+.partner-logo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
+  background: #ffffff;
+}
+
+.partner-name {
+  font-family: 'League Spartan', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #0a1a2b;
+  line-height: 1.2;
+}
+
+.partner-role {
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: -6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(22, 125, 181, .10);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #167db5;
+}
+
+.partner-blurb {
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #4a6c8c;
+}
+
+/* ---- what partners get ---- */
+
+.partner-perks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 26px;
+  margin-top: 56px;
+  padding-top: 44px;
+  border-top: 1px solid rgba(22, 125, 181, .16);
+}
+
+.partner-perk {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.partner-perk-icon {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: rgba(22, 125, 181, .12);
+  color: #167db5;
+}
+
+.partner-perk-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.partner-perk h3 {
+  margin: 0 0 6px;
+  font-family: 'League Spartan', sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  color: #0a1a2b;
+}
+
+.partner-perk p {
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #4a6c8c;
+}
+
+/* ---- closing call to action ---- */
+
+.partner-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  margin-top: 56px;
+  padding: 34px 36px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #0a1a2b 0%, #167db5 100%);
+}
+
+.partner-cta h3 {
+  margin: 0 0 8px;
+  font-family: 'League Spartan', sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  color: #ffffff;
+  line-height: 1.15;
+}
+
+.partner-cta p {
+  margin: 0;
+  max-width: 520px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, .8);
+}
+
+.partner-cta-btn {
+  display: inline-block;
+  padding: 15px 28px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0a1a2b;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.partner-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .22);
+}
+
+.partner-cta-btn:focus-visible,
+.partner-card:focus-visible {
+  outline: 3px solid #38bdf8;
+  outline-offset: 3px;
+}
+
+/* ---- phones ---- */
+
+@media (max-width: 768px) {
+  .partners-section { padding: 64px 5vw; }
+  .partners-grid { gap: 16px; margin-top: 32px; }
+  .partner-perks { margin-top: 44px; padding-top: 34px; gap: 22px; }
+  .partner-cta {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 28px 24px;
+    margin-top: 44px;
+  }
+  .partner-cta h3 { font-size: 22px; }
+  .partner-cta-btn { width: 100%; text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .partner-card,
+  .partner-cta-btn { transition: none; }
+  .partner-card:hover,
+  .partner-cta-btn:hover { transform: none; }
+}

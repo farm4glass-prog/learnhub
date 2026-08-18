@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="units.css">
   <link rel="stylesheet" href="partners.css">
+  <link rel="stylesheet" href="finder.css">
 </head>
 <body>
 
@@ -33,6 +34,7 @@
       <a href="#about">About</a>
       <a href="#features">Features</a>
       <a href="#partners">Partner</a>
+      <a href="#finder">Find Your Event</a>
       <button id="landingLogin" class="nav-login-btn">Sign In with Google</button>
     </div>
   </nav>
@@ -66,7 +68,8 @@
 
     <div class="hero-visual">
       <div class="hero-photo p1"><img src="glass.png" alt="DECA glass"></div>
-      <div class="hero-photo p2"><img src="hero-award.jpg" alt="DECA award" style="object-position: center 30%;"></div>
+      <!-- smaller circle: swap the src below if you name the new photo something else -->
+      <div class="hero-photo p2"><img src="hero-award.jpg" alt="DECA member with medal" style="object-position: center 30%;"></div>
       <div class="hero-badge">
         <div class="hb-top">Now studying</div>
         <div class="hb-main">Marketing Cluster</div>
@@ -472,6 +475,82 @@
           </a>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ===== FIND YOUR EVENT =====
+       Screens live inside this one section and swap with JS.
+       All logic + the event database are in finder.js. -->
+  <section id="finder" class="reveal">
+    <div class="f-inner">
+
+      <!-- SCREEN 1: pick a path -->
+      <div class="f-screen f-active" id="fScreenChooser">
+        <div class="f-center">
+          <div class="f-tag">Find your event</div>
+          <h2 class="f-h2">Not sure what to compete in?</h2>
+          <p class="f-lede">
+            Answer a few questions about how you like to compete and which parts of business
+            you actually enjoy. We'll point you at the events worth trying — it takes about
+            two minutes.
+          </p>
+        </div>
+
+        <div class="f-paths">
+          <button class="f-path" data-act="start-roleplay">
+            <span class="f-path-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+            </span>
+            <h3>Find your roleplay event</h3>
+            <p>
+              For the events where you take a cluster exam and then walk into a room with a
+              judge — Principles, Individual Series, and Team Decision Making.
+            </p>
+            <span class="f-path-go">Start the quiz &rarr;</span>
+          </button>
+
+          <button class="f-path" data-act="start-prepared">
+            <span class="f-path-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/>
+              </svg>
+            </span>
+            <h3>Find your prepared event</h3>
+            <p>
+              For the written events — you build a project across the year and present it.
+              Business Operations Research, Project Management, Entrepreneurship, and IMC.
+            </p>
+            <span class="f-path-note">Coming soon</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SCREEN 2: the roleplay quiz (rendered by finder.js) -->
+      <div class="f-screen" id="fScreenQuiz"></div>
+
+      <!-- SCREEN 3: results (rendered by finder.js) -->
+      <div class="f-screen" id="fScreenResults"></div>
+
+      <!-- SCREEN 4: browse all events (rendered by finder.js) -->
+      <div class="f-screen" id="fScreenBrowse"></div>
+
+      <!-- SCREEN 5: prepared event placeholder -->
+      <div class="f-screen" id="fScreenPrepared">
+        <div class="f-soon">
+          <h3>Prepared event finder</h3>
+          <p>
+            We're still building this one. In the meantime, the roleplay quiz will tell you
+            which career area suits you, and that's usually the right place to start a
+            written event too.
+          </p>
+          <button class="f-btn" data-act="start-roleplay">Take the roleplay quiz</button>
+          <button class="f-btn f-btn-ghost" data-act="home">Back</button>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -904,6 +983,7 @@
   })();
 </script>
 <script src="admin-rubric-templates.js"></script>
+<script src="finder.js"></script>
 
 <script type="module" src="script.js"></script>
 

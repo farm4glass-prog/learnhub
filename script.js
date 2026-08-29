@@ -4959,6 +4959,39 @@ function rpMatches(r, q) {
 }
 
 /* ---- rendering ---- */
+/* ---- navigation ---- */
+window.rpFilterCategory = function(cat) { rpCategory = cat; renderRoleplaysTab(); };
+window.rpOpenEvent = function(code) {
+  rpSelectedEvent = code; rpSelectedArea = null; rpSelectedId = null; rpQuery = "";
+  renderRoleplaysTab(); window.scrollTo({ top: 0, behavior: "smooth" });
+};
+window.rpOpenArea = function(encoded) {
+  rpSelectedArea = decodeURIComponent(encoded); rpSelectedId = null;
+  renderRoleplaysTab(); window.scrollTo({ top: 0, behavior: "smooth" });
+};
+window.rpBackToEvents = function() {
+  rpSelectedEvent = null; rpSelectedArea = null; rpSelectedId = null; rpQuery = "";
+  renderRoleplaysTab();
+};
+window.rpBackToAreas = function() {
+  rpSelectedArea = null; rpSelectedId = null; renderRoleplaysTab();
+};
+window.rpSelect = function(id) { rpSelectedId = id; renderRoleplaysTab(); };
+
+// Only the results block re-renders, so the search box keeps focus as you type.
+window.rpSearch = function(value) {
+  rpQuery = String(value || "").toLowerCase().trim();
+  const el = document.getElementById("rpResults");
+  if (el) el.innerHTML = rpResultsHtml();
+};
+
+// Search matches the competitive event itself — name, code, and category —
+// not individual roleplay titles, descriptions, or instructional areas.
+function rpEventMatches(e, q) {
+  return `${e.name} ${e.code} ${e.category}`.toLowerCase().includes(q);
+}
+
+/* ---- rendering ---- */
 function renderRoleplaysTab() {
   const container = document.getElementById("roleplaysContent");
   if (!container) return;
@@ -4967,37 +5000,32 @@ function renderRoleplaysTab() {
     return;
   }
 
-  const searchHtml = `
-    <div class="course-search-row">
-      <div class="search-wrap">
-        <input type="text" id="rpSearchBox" placeholder="Search roleplays, events, or instructional areas..."
-               value="${esc(rpQuery)}" oninput="rpSearch(this.value)">
-      </div>
-    </div>`;
-
-  if (rpSelectedEvent && rpSelectedArea) return renderRoleplayListView(container, searchHtml);
-  if (rpSelectedEvent) return renderRoleplayAreaView(container, searchHtml);
+  // Search only applies at the top-level event grid.
+  if (rpSelectedEvent && rpSelectedArea) return renderRoleplayListView(container);
+  if (rpSelectedEvent) return renderRoleplayAreaView(container);
 
   container.innerHTML = `
-    ${searchHtml}
+    <div class="rp-search-wrap">
+      <span class="rp-search-icon">${icon("search")}</span>
+      <input type="text" id="rpSearchBox" placeholder="Search competitive events (e.g. Retail Merchandising, RMS)..."
+             value="${esc(rpQuery)}" oninput="rpSearch(this.value)">
+    </div>
     <div class="category-filters" id="rpFilters">
       ${roleplayCategories().map(cat => `
-        <button class="cat-btn ${cat === rpCategory ? "active" : ""}"
-                onclick="rpFilterCategory('${encodeURIComponent(cat)}' && decodeURIComponent('${encodeURIComponent(cat)}'))">${esc(cat)}</button>
+        <button class="cat-btn ${cat === rpCategory ? "active" : ""}" onclick="rpFilterCategory('${cat}')">${esc(cat)}</button>
       `).join("")}
     </div>
     <div id="rpResults">${rpResultsHtml()}</div>
   `;
 }
 
-// Searching cuts across everything — you get roleplays, not bubbles to dig through.
 function rpResultsHtml() {
-  if (rpQuery) return rpSearchHitsHtml(roleplays.filter(r => rpMatches(r, rpQuery)));
+  const events = roleplayEventIndex().filter(e => {
+    const matchCat = rpCategory === "All Events" || e.category === rpCategory;
+    const matchQ = !rpQuery || rpEventMatches(e, rpQuery);
+    return matchCat && matchQ;
+  });
 
-  if (rpSelectedEvent && rpSelectedArea) return "";
-  if (rpSelectedEvent) return "";
-
-  const events = roleplayEventIndex().filter(e => rpCategory === "All Events" || e.category === rpCategory);
   const cards = events.map(e => {
     const n = roleplaysForEvent(e.code).length;
     const areas = rpAreasForEvent(e.code).length;
@@ -5015,36 +5043,16 @@ function rpResultsHtml() {
       </div>`;
   }).join("");
 
-  return `<div class="course-grid">${cards || `<div class="admin-empty-state">No events in this category.</div>`}</div>`;
+  return `<div class="course-grid">${cards || `<div class="admin-empty-state">No events match "${esc(rpQuery)}".</div>`}</div>`;
 }
 
-function rpSearchHitsHtml(hits) {
-  if (!hits.length) return `<div class="admin-empty-state">Nothing matches "${esc(rpQuery)}".</div>`;
-  return `
-    <div class="rp-hits-label">${hits.length} ${hits.length === 1 ? "result" : "results"}</div>
-    ${hits.map(r => {
-      const ev = roleplayEventByCode(r.eventCode);
-      return `
-        <button class="rp-hit" onclick="rpJumpTo('${esc(r.id)}')">
-          ${icon("file")}
-          <span class="rp-hit-main">
-            <span class="rp-hit-title">${esc(r.title)}</span>
-            <span class="rp-hit-sub">${esc(ev ? ev.name : r.eventCode)} · ${esc(rpAreaOf(r))}</span>
-          </span>
-          <span class="rp-hit-arrow">›</span>
-        </button>`;
-    }).join("")}
-  `;
-}
-
-function renderRoleplayAreaView(container, searchHtml) {
+function renderRoleplayAreaView(container) {
   const ev = roleplayEventByCode(rpSelectedEvent);
   const areas = rpAreasForEvent(rpSelectedEvent);
 
   const cards = areas.map(a => `
     <div class="course-card-new rp-area-card" onclick="rpOpenArea('${encodeURIComponent(a.area)}')">
       <div class="cc-body">
-        <div class="cc-icon rp-area-icon">${icon("target")}</div>
         <div class="cc-title">${esc(a.area)}</div>
         <div class="cc-footer">
           <span class="cc-pct">${a.n} ${a.n === 1 ? "roleplay" : "roleplays"}</span>
@@ -5059,13 +5067,11 @@ function renderRoleplayAreaView(container, searchHtml) {
       <h2>${esc(ev ? ev.name : rpSelectedEvent)}</h2>
       <div class="page-sub">${esc(ev ? ev.category : "")} · pick an instructional area</div>
     </div>
-    ${searchHtml}
-    <div id="rpResults">${rpQuery ? rpSearchHitsHtml(roleplays.filter(r => rpMatches(r, rpQuery))) : ""}</div>
-    ${rpQuery ? "" : `<div class="course-grid">${cards || `<div class="admin-empty-state">No practice roleplays for this event yet — check back soon.</div>`}</div>`}
+    <div class="course-grid">${cards || `<div class="admin-empty-state">No practice roleplays for this event yet — check back soon.</div>`}</div>
   `;
 }
 
-function renderRoleplayListView(container, searchHtml) {
+function renderRoleplayListView(container) {
   const ev = roleplayEventByCode(rpSelectedEvent);
   const list = roleplaysForArea(rpSelectedEvent, rpSelectedArea);
   if (!rpSelectedId || !list.some(r => r.id === rpSelectedId)) rpSelectedId = list[0]?.id || null;

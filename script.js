@@ -542,6 +542,8 @@ let currentUnitKey = null;
 let currentUnitTab = "video";
 let quizState = {};
 let lbMode = "xp";
+let lbPage = 0;
+let lbUsers = [];
 let adminSelectedCourseId = null;
 let adminActiveSubTab = "courses";
 let kpis = [];
@@ -1597,57 +1599,89 @@ async function checkAndAwardBadges() {
 async function renderLeaderboard() {
   const container = document.getElementById("leaderboardList");
   if (!container) return;
+  container.innerHTML = `<div class="lb-loading">Loading rankings... </div>`;
 
   try {
-    const q = query(collection(db, "users"), orderBy(lbMode === "lessons" ? "xp" : lbMode, "desc"), limit(20));
+    const q = query(collection(db, "users"), orderBy(lbMode === "lessons" ? "xp" : lbMode, "desc"));
     const snap = await getDocs(q);
-    const users = [];
+    let users = [];
     snap.forEach(d => users.push({ id: d.id, ...d.data() }));
+
+    users = users.filter(u => !u.hiddenFromLeaderboard);
 
     if (lbMode === "lessons") {
       users.sort((a, b) => (b.completedLessons?.length || 0) - (a.completedLessons?.length || 0));
     }
 
-    container.innerHTML = "";
-    users.forEach((u, i) => {
-      const isYou = u.id === currentUser?.uid;
-      const rankClass = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
-      const val = lbMode === "xp" ? (u.xp || 0) : lbMode === "streak" ? (u.streak || 0) : (u.completedLessons?.length || 0);
-      const unit = lbMode === "xp" ? "XP" : lbMode === "streak" ? "days" : "lessons";
-      const animal = getAnimalForXP(u.xp || 0);
-      const rankContent = i === 0 ? icon("trophy") : i === 1 ? icon("medal") : i === 2 ? icon("award") : `#${i+1}`;
-
-      const row = document.createElement("div");
-      row.className = `lb-row${isYou ? " you" : ""}`;
-      row.innerHTML = `
-        <div class="lb-rank ${rankClass}">${rankContent}</div>
-        <div class="lb-avatar">${animal.name}</div>
-        <div class="lb-info">
-          <div class="lb-name">${u.displayName || "DECA Student"}${isYou ? " (You)" : ""}</div>
-          <div class="lb-chapter">${u.chapter || "No chapter set"} · ${animal.name}</div>
-        </div>
-        <div>
-          <div class="lb-val">${val.toLocaleString()}</div>
-          <div class="lb-unit">${unit}</div>
-        </div>
-      `;
-      container.appendChild(row);
-    });
-
-    if (users.length === 0) {
-      container.innerHTML = '<div class="lb-loading">No data yet. Be the first!</div>';
-    }
+    lbUsers = users;
+    lbPage = 0;
+    renderLeaderboardPage();
   } catch (e) {
     container.innerHTML = `<div class="lb-loading">Couldn't load rankings — check Firestore rules.</div>`;
     console.error(e);
   }
 }
 
-window.switchLbTab = function(mode, el) {
-  lbMode = mode;
-  document.querySelectorAll(".lb-tab").forEach(b => b.classList.remove("active"));
-  el.classList.add("active");
-  renderLeaderboard();
+const LB_PAGE_SIZE = 20;
+
+function renderLeaderboardPage() {
+  const container = document.getElementById("leaderboardList");
+  if (!container) return;
+
+  const start = lbPage * LB_PAGE_SIZE;
+  const pageUsers = lbUsers.slice(start, start + LB_PAGE_SIZE);
+
+  if (lbUsers.length === 0) {
+    container.innerHTML = '<div class="lb-loading">No data yet. Be the first!</div>';
+    return;
+  }
+
+  container.innerHTML = "";
+  pageUsers.forEach((u, i) => {
+    const rank = start + i; // overall rank, not just position on this page
+    const isYou = u.id === currentUser?.uid;
+    const rankClass = rank === 0 ? "gold" : rank === 1 ? "silver" : rank === 2 ? "bronze" : "";
+    const val = lbMode === "xp" ? (u.xp || 0) : lbMode === "streak" ? (u.streak || 0) : (u.completedLessons?.length || 0);
+    const unit = lbMode === "xp" ? "XP" : lbMode === "streak" ? "days" : "lessons";
+    const animal = getAnimalForXP(u.xp || 0);
+    const rankContent = rank === 0 ? icon("trophy") : rank === 1 ? icon("medal") : rank === 2 ? icon("award") : `#${rank + 1}`;
+
+    const row = document.createElement("div");
+    row.className = `lb-row${isYou ? " you" : ""}`;
+    row.innerHTML = `
+      <div class="lb-rank ${rankClass}">${rankContent}</div>
+      <div class="lb-avatar">${animal.name}</div>
+      <div class="lb-info">
+        <div class="lb-name">${u.displayName || "DECA Student"}${isYou ? " (You)" : ""}</div>
+        <div class="lb-chapter">${u.chapter || "No chapter set"} · ${animal.name}</div>
+      </div>
+      <div>
+        <div class="lb-val">${val.toLocaleString()}</div>
+        <div class="lb-unit">${unit}</div>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+
+  const totalPages = Math.ceil(lbUsers.length / LB_PAGE_SIZE);
+  if (totalPages > 1) {
+    const nav = document.createElement("div");
+    nav.className = "lb-pagination";
+    nav.innerHTML = `
+      <button class="lb-page-btn" onclick="lbGoToPage(${lbPage - 1})" ${lbPage === 0 ? "disabled" : ""} aria-label="Previous page">‹</button>
+      <span class="lb-page-label">Page ${lbPage + 1} of ${totalPages}</span>
+      <button class="lb-page-btn" onclick="lbGoToPage(${lbPage + 1})" ${lbPage >= totalPages - 1 ? "disabled" : ""} aria-label="Next page">›</button>
+    `;
+    container.appendChild(nav);
+  }
+}
+
+window.lbGoToPage = function(page) {
+  const totalPages = Math.ceil(lbUsers.length / LB_PAGE_SIZE);
+  if (page < 0 || page >= totalPages) return;
+  lbPage = page;
+  renderLeaderboardPage();
+  document.getElementById("leaderboardList")?.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
 // ========================= PERFORMANCE ANALYTICS =========================

@@ -4030,9 +4030,12 @@ async function renderAdminMembersSection() {
     body.innerHTML = `
       <div class="admin-panel-body">
         <h3 style="margin-bottom:16px;">${members.length} Members</h3>
+        <div class="admin-seed-banner">
+          <div>Deleting a member here removes their profile data (XP, progress, badges) from the database. It does NOT delete their Google sign-in — they could sign back in and get a fresh profile. To fully block someone, also remove or disable their account in Firebase Authentication.</div>
+        </div>
         <div class="admin-members-table">
           <div class="admin-members-row admin-members-head">
-            <span>Name</span><span>Email</span><span>Chapter</span><span>Association</span><span>XP</span>
+            <span>Name</span><span>Email</span><span>Chapter</span><span>Association</span><span>XP</span><span>Actions</span>
           </div>
           ${members.map(m => `
             <div class="admin-members-row">
@@ -4041,6 +4044,7 @@ async function renderAdminMembersSection() {
               <span>${m.chapter || "—"}</span>
               <span>${m.association || "—"}</span>
               <span>${m.xp || 0}</span>
+              <span><button class="admin-btn-sm danger" onclick="adminDeleteMember('${m.id}', '${(m.displayName || "this member").replace(/'/g, "\\'")}')">${icon("trash")} Delete</button></span>
             </div>
           `).join("")}
         </div>
@@ -4051,6 +4055,20 @@ async function renderAdminMembersSection() {
     body.innerHTML = `<div class="admin-empty-state">${icon("alert")} Couldn't load members — check Firestore rules allow the admin account to read the "users" collection.</div>`;
   }
 }
+
+window.adminDeleteMember = async function(uid, name) {
+  if (!isAdmin(currentUser)) return;
+  if (uid === currentUser?.uid) return alert("You can't delete your own admin account from here.");
+  if (!confirm(`Delete ${name}'s profile data? This removes their XP, progress, and badges and cannot be undone. Their Google sign-in itself isn't deleted — only the Firestore profile.`)) return;
+
+  try {
+    await deleteDoc(doc(db, "users", uid));
+    renderAdminMembersSection();
+  } catch (e) {
+    console.error("Failed to delete member:", e);
+    alert("Couldn't delete that member — check the console and your Firestore rules.");
+  }
+};
 
 // ========================================================================
 // ========================= CALENDAR ======================================

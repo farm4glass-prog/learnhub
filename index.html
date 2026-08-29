@@ -798,6 +798,7 @@
         <button class="lb-tab active" onclick="switchLbTab('xp', this)">XP Rankings</button>
         <button class="lb-tab" onclick="switchLbTab('streak', this)">Streaks</button>
         <button class="lb-tab" onclick="switchLbTab('lessons', this)">Lessons</button>
+        <button class="lb-tab" onclick="switchLbTab('chapter', this)">My Chapter</button>
       </div>
       <div class="leaderboard-list" id="leaderboardList">
         <div class="lb-loading">Loading rankings... </div>
@@ -840,6 +841,16 @@
         </div>
       </div>
 
+          <div class="widget profile-edit-widget" id="partnerWidget">
+        <h3>Chapter Partnership</h3>
+        <p class="page-sub" id="partnerStatus" style="margin-bottom:16px;">No chapter linked yet.</p>
+        <div class="form-group">
+          <label>Access Code</label>
+          <input type="text" id="partnerCodeInput" placeholder="Enter your chapter's code">
+        </div>
+        <button class="btn-primary" onclick="redeemPartnerCode()">Unlock Chapter Features</button>
+      </div>
+      
       <div class="widget profile-edit-widget">
         <h3>Edit Profile</h3>
         <div class="form-group">
@@ -923,6 +934,10 @@
       <div id="kpiContent"></div>
     </div>
 
+          <button class="nav-btn hidden" onclick="showTab('advisor')" id="nav-advisor">
+        Advisor Dashboard
+      </button>
+
     <!-- ===== CALENDAR ===== -->
 
     
@@ -946,12 +961,21 @@
       <div id="preparedContent"></div>
     </div>
 
+
+        <!-- ===== ADVISOR DASHBOARD ===== -->
+    <div id="advisor" class="tab-content hidden">
+      <h1>Advisor Dashboard</h1>
+      <p class="page-sub">Your chapter's members and progress.</p>
+      <div id="advisorContent"></div>
+    </div>
+
     <!-- ===== ADMIN ===== -->
     <div id="admin" class="tab-content hidden">
       <h1>Admin Panel</h1>
       <p class="page-sub">Manage course content, community features, and site data. Only visible to admin accounts.</p>
       <div id="adminContent"></div>
     </div>
+
 
   </div><!-- /main -->
 

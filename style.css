@@ -505,6 +505,20 @@ h1, h2, .logo-text, .nav-links a, .hero-title,
 .lb-val { font-size: 20px; font-weight: 900; color: var(--blue); }
 .lb-unit { font-size: 12px; color: var(--muted); font-weight: 600; }
 .lb-loading { text-align: center; padding: 60px; color: var(--muted); font-size: 18px; }
+.lb-pagination {
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  margin-top: 18px; padding-top: 14px;
+}
+.lb-page-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: white; border: 2px solid var(--border); cursor: pointer;
+  font-size: 20px; font-weight: 700; color: var(--blue);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.lb-page-btn:hover:not(:disabled) { border-color: var(--blue); background: #f0f9ff; }
+.lb-page-btn:disabled { opacity: 0.3; cursor: default; color: var(--muted); }
+.lb-page-label { font-size: 13px; font-weight: 700; color: var(--muted); }
 
 /* ========================= PROFILE ========================= */
 #profile h1 { font-size: 38px; font-weight: 900; margin-bottom: 24px; }

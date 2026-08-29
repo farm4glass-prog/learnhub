@@ -4031,22 +4031,27 @@ async function renderAdminMembersSection() {
       <div class="admin-panel-body">
         <h3 style="margin-bottom:16px;">${members.length} Members</h3>
         <div class="admin-seed-banner">
-          <div>Deleting a member here removes their profile data (XP, progress, badges) from the database. It does NOT delete their Google sign-in — they could sign back in and get a fresh profile. To fully block someone, also remove or disable their account in Firebase Authentication.</div>
+          <div>Hiding a member from the leaderboard keeps all their data and progress intact — it just skips them when the rankings are built. They can still be un-hidden any time.</div>
         </div>
         <div class="admin-members-table">
           <div class="admin-members-row admin-members-head">
-            <span>Name</span><span>Email</span><span>Chapter</span><span>Association</span><span>XP</span><span>Actions</span>
+            <span>Name</span><span>Email</span><span>Chapter</span><span>Association</span><span>XP</span><span>Leaderboard</span>
           </div>
-          ${members.map(m => `
+          ${members.map(m => {
+            const hidden = !!m.hiddenFromLeaderboard;
+            return `
             <div class="admin-members-row">
               <span>${m.displayName || "DECA Student"}</span>
               <span>${m.email || "—"}</span>
               <span>${m.chapter || "—"}</span>
               <span>${m.association || "—"}</span>
               <span>${m.xp || 0}</span>
-              <span><button class="admin-btn-sm danger" onclick="adminDeleteMember('${m.id}', '${(m.displayName || "this member").replace(/'/g, "\\'")}')">${icon("trash")} Delete</button></span>
+              <span><button class="admin-btn-sm ${hidden ? "ghost" : "danger"}" onclick="adminToggleLeaderboardVisibility('${m.id}', ${hidden})">
+                ${hidden ? "Unhide" : "Hide"}
+              </button></span>
             </div>
-          `).join("")}
+          `;
+          }).join("")}
         </div>
       </div>
     `;
@@ -4056,17 +4061,15 @@ async function renderAdminMembersSection() {
   }
 }
 
-window.adminDeleteMember = async function(uid, name) {
+window.adminToggleLeaderboardVisibility = async function(uid, currentlyHidden) {
   if (!isAdmin(currentUser)) return;
-  if (uid === currentUser?.uid) return alert("You can't delete your own admin account from here.");
-  if (!confirm(`Delete ${name}'s profile data? This removes their XP, progress, and badges and cannot be undone. Their Google sign-in itself isn't deleted — only the Firestore profile.`)) return;
-
   try {
-    await deleteDoc(doc(db, "users", uid));
+    await updateDoc(doc(db, "users", uid), { hiddenFromLeaderboard: !currentlyHidden });
     renderAdminMembersSection();
+    if (document.getElementById("leaderboard")?.classList.contains("active")) renderLeaderboard();
   } catch (e) {
-    console.error("Failed to delete member:", e);
-    alert("Couldn't delete that member — check the console and your Firestore rules.");
+    console.error("Failed to update leaderboard visibility:", e);
+    alert("Couldn't update that — check the console.");
   }
 };
 

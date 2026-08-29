@@ -780,7 +780,7 @@ window.redeemPartnerCode = async function() {
   if (!code) return;
 
   const match = partners.find(p => (p.accessCode || "").toUpperCase() === code);
-  if (!match) return alert("That code isn't valid — check with your chapter officer.");
+  if (!match) return alert("That code isn't valid — check with your advisor or chapter officer.");
 
   try {
     await updateDoc(doc(db, "users", currentUser.uid), { partnerId: match.id });
@@ -2126,7 +2126,7 @@ function renderProfile() {
 
   const p = partnerRecord();
   const statusEl = document.getElementById("partnerStatus");
-  if (statusEl) statusEl.textContent = p ? `Linked to ${p.name}` : "No chapter linked yet.";
+  if (statusEl) statusEl.textContent = p ? `Linked to ${p.name}` : "Not linked yet.";
   document.getElementById("editDisplayName").value = userData.displayName || "";
   document.getElementById("editChapter").value = userData.chapter || "";
   document.getElementById("editAssociation").value = userData.association || "";
@@ -4200,7 +4200,7 @@ function renderAdminPartnersSection() {
           <button class="admin-btn-sm danger" onclick="adminDeletePartner('${p.id}')">${icon("trash")} Delete</button>
         </div>
       </div>
-      <div style="font-size:12px;color:var(--muted);">Code: ${p.accessCode} · ${(p.advisorEmails || []).length} advisor(s)</div>
+        <div style="font-size:12px;color:var(--muted);">${p.type ? p.type.charAt(0).toUpperCase() + p.type.slice(1) + " · " : ""}Code: ${p.accessCode} · ${(p.advisorEmails || []).length} advisor(s)</div>
     </div>
   `).join("") || `<div class="admin-empty-state">No partners yet.</div>`;
 
@@ -4214,6 +4214,11 @@ function renderAdminPartnersSection() {
         <h3 style="margin-bottom:16px;">${editing ? "Edit Partner" : "Add a Partner"}</h3>
         <div class="admin-kpi-form">
           <input type="text" id="partner-name" placeholder="Chapter/association name" value="${editing ? editing.name.replace(/"/g, "&quot;") : ""}">
+                    <select id="partner-type">
+            <option value="chapter" ${!editing || editing.type === "chapter" ? "selected" : ""}>Chapter</option>
+            <option value="district" ${editing && editing.type === "district" ? "selected" : ""}>District</option>
+            <option value="association" ${editing && editing.type === "association" ? "selected" : ""}>Association</option>
+          </select>
           <input type="text" id="partner-code" placeholder="Access code (e.g. NORCAL2026)" value="${editing ? editing.accessCode : ""}">
           <textarea id="partner-advisors" rows="3" placeholder="Advisor emails, one per line">${editing ? (editing.advisorEmails || []).join("\n") : ""}</textarea>
           <div style="display:flex;gap:10px;">
@@ -4231,6 +4236,7 @@ window.adminCancelEditPartner = function() { adminEditingPartnerId = null; rende
 
 window.adminSavePartner = async function() {
   const name = document.getElementById("partner-name").value.trim();
+  const type = document.getElementById("partner-type").value;
   const accessCode = document.getElementById("partner-code").value.trim().toUpperCase();
   const advisorEmails = document.getElementById("partner-advisors").value
     .split("\n").map(s => s.trim()).filter(Boolean);
@@ -4238,7 +4244,7 @@ window.adminSavePartner = async function() {
   if (!name || !accessCode) return alert("Please enter a name and an access code.");
 
   const id = adminEditingPartnerId || name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || `partner-${Date.now()}`;
-  const partnerDoc = { id, name, accessCode, advisorEmails };
+  const partnerDoc = { id, name, type, accessCode, advisorEmails };
 
   try {
     await setDoc(doc(db, "partners", id), partnerDoc);

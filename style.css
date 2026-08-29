@@ -187,6 +187,10 @@ h1, h2, .logo-text, .nav-links a, .hero-title,
 .sa-bar { height: 4px; background: rgba(255,255,255,0.15); border-radius: 999px; overflow: hidden; }
 .sa-fill { height: 100%; background: #38bdf8; border-radius: 999px; transition: width 0.5s; }
 
+
+
+
+
 .logout-btn {
   display: flex; align-items: center; gap: 8px;
   background: transparent; border: none; color: rgba(255,255,255,0.4);
@@ -1109,6 +1113,28 @@ h1, h2, .logo-text, .nav-links a, .hero-title,
   border-radius: 2px; background: var(--blue-light);
   animation: f4g-grow .26s cubic-bezier(.2,.8,.2,1) both;
 }
+
+/* ========================= ADVISOR DASHBOARD BUTTON ========================= */
+.nav-btn.advisor-btn {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  font-weight: 800;
+}
+.nav-btn.advisor-btn:hover {
+  background: rgba(245, 158, 11, 0.3);
+  color: #fff;
+}
+.nav-btn.advisor-btn.active {
+  background: #f59e0b;
+  color: #1e293b;
+  border-color: #f59e0b;
+}
+
+/* portal v2 restyles .nav-btn later in the file, so override again here */
+#portal .nav-btn.advisor-btn { background: rgba(245, 158, 11, 0.18); color: #92400e; border-color: rgba(245, 158, 11, 0.4); }
+#portal .nav-btn.advisor-btn:hover { background: rgba(245, 158, 11, 0.3); color: #78350f; }
+#portal .nav-btn.advisor-btn.active { background: #f59e0b; color: #1e293b; box-shadow: 0 8px 20px rgba(245,158,11,.3); }
 
 /* ---------- progress bar shimmer ---------- */
 .xp-bar-inner, .pasture-bar-inner, .cc-progress-fill,

@@ -2306,7 +2306,6 @@ function renderAdminPanel() {
     <div class="admin-subtabs">
       <button class="admin-subtab-btn ${adminActiveSubTab === "partners" ? "active" : ""}" onclick="adminSwitchSubTab('partners')">Partners</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "courses" ? "active" : ""}" onclick="adminSwitchSubTab('courses')">Courses</button>
-      <button class="admin-subtab-btn ${adminActiveSubTab === "courses" ? "active" : ""}" onclick="adminSwitchSubTab('courses')">Courses</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "kpi" ? "active" : ""}" onclick="adminSwitchSubTab('kpi')">KPI Database</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "members" ? "active" : ""}" onclick="adminSwitchSubTab('members')">Members</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "calendar" ? "active" : ""}" onclick="adminSwitchSubTab('calendar')">Calendar</button>
@@ -2321,10 +2320,11 @@ function renderAdminPanel() {
   if (adminActiveSubTab === "partners") renderAdminPartnersSection();
   else if (adminActiveSubTab === "kpi") renderAdminKPISection();
 
-  if (adminActiveSubTab === "kpi") renderAdminKPISection();
+  if (adminActiveSubTab === "partners") renderAdminPartnersSection();
+  else if (adminActiveSubTab === "kpi") renderAdminKPISection();
   else if (adminActiveSubTab === "members") renderAdminMembersSection();
   else if (adminActiveSubTab === "calendar") renderAdminCalendarSection();
-  else if (adminActiveSubTab === "roleplays") renderAdminRoleplaysSection();   // <-- add
+  else if (adminActiveSubTab === "roleplays") renderAdminRoleplaysSection();
   else if (adminActiveSubTab === "blog") renderAdminBlogSection();
   else if (adminActiveSubTab === "rubrics") renderAdminRubricsSection();
   else renderAdminCoursesSection();

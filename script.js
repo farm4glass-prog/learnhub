@@ -6,7 +6,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
-  collection, getDocs, orderBy, query, limit
+  collection, getDocs, orderBy, query, limit, where
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app-check.js";
 import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-ai.js";
@@ -558,6 +558,9 @@ let blogsLoaded = false;
 let adminEditingBlogId = null;
 let examState = null;
 let examTimerInterval = null;
+let partners = [];
+let partnersLoaded = false;
+let adminEditingPartnerId = null;
 
 // ========================= LOGIN =========================
 async function loginWithGoogle() {
@@ -705,8 +708,8 @@ function startDataLoads() {
   loadRoleplays();
   loadBlogs();
   loadRubrics();
+  loadPartners();
 }
-
 // This one touches no network, so it can run immediately.
 populateAssociationsDatalist();
 
@@ -746,6 +749,51 @@ async function loadCourses() {
     );
   }
 }
+
+// ========================= PARTNERS =========================
+async function loadPartners() {
+  try {
+    const snap = await getDocs(collection(db, "partners"));
+    partners = snap.docs.map(d => d.data());
+  } catch (e) {
+    console.error("Failed to load partners:", e);
+  }
+  partnersLoaded = true;
+  document.getElementById("nav-advisor")?.classList.toggle("hidden", !isAdvisor(currentUser));
+  if (document.getElementById("profile")?.classList.contains("active")) renderProfile();
+  if (adminActiveSubTab === "partners" && document.getElementById("admin")?.classList.contains("active")) renderAdminPartnersSection();
+}
+
+function partnerRecord() {
+  return partners.find(p => p.id === userData?.partnerId) || null;
+}
+function isAdvisor(user) {
+  return !!user && partners.some(p => (p.advisorEmails || []).includes(user.email));
+}
+function advisorPartner(user) {
+  return user ? partners.find(p => (p.advisorEmails || []).includes(user.email)) || null : null;
+}
+
+window.redeemPartnerCode = async function() {
+  const input = document.getElementById("partnerCodeInput");
+  const code = input.value.trim().toUpperCase();
+  if (!code) return;
+
+  const match = partners.find(p => (p.accessCode || "").toUpperCase() === code);
+  if (!match) return alert("That code isn't valid — check with your chapter officer.");
+
+  try {
+    await updateDoc(doc(db, "users", currentUser.uid), { partnerId: match.id });
+    userData.partnerId = match.id;
+    document.getElementById("nav-advisor")?.classList.toggle("hidden", !isAdvisor(currentUser));
+    input.value = "";
+    renderProfile();
+    alert(`You're in! ${match.name} features unlocked.`);
+  } catch (e) {
+    console.error("Failed to redeem partner code:", e);
+    alert("Couldn't save that — check the console.");
+  }
+};
 
 function normalizeCourse(course, courseIndex = 0) {
   return {
@@ -1600,7 +1648,26 @@ async function renderLeaderboard() {
   const container = document.getElementById("leaderboardList");
   if (!container) return;
   container.innerHTML = `<div class="lb-loading">Loading rankings... </div>`;
-
+  if (lbMode === "chapter") {
+    const p = partnerRecord();
+    if (!p) {
+      container.innerHTML = `<div class="lb-loading">Enter your chapter's code on your Profile to see this.</div>`;
+      return;
+    }
+    try {
+      const q = query(collection(db, "users"), where("partnerId", "==", p.id));
+      const snap = await getDocs(q);
+      let users = [];
+      snap.forEach(d => users.push({ id: d.id, ...d.data() }));
+      lbUsers = users.filter(u => !u.hiddenFromLeaderboard).sort((a, b) => (b.xp || 0) - (a.xp || 0));
+      lbPage = 0;
+      renderLeaderboardPage();
+    } catch (e) {
+      container.innerHTML = `<div class="lb-loading">Couldn't load your chapter's rankings — check Firestore rules.</div>`;
+      console.error(e);
+    }
+    return;
+  }
   try {
     const q = query(collection(db, "users"), orderBy(lbMode === "lessons" ? "xp" : lbMode, "desc"));
     const snap = await getDocs(q);
@@ -2057,6 +2124,9 @@ function renderProfile() {
   f4gCountUp(document.getElementById("pStatLessons"), (userData.completedLessons || []).length, 600);
   f4gCountUp(document.getElementById("pStatBadges"), (userData.earnedBadges || []).length, 600);
 
+  const p = partnerRecord();
+  const statusEl = document.getElementById("partnerStatus");
+  if (statusEl) statusEl.textContent = p ? `Linked to ${p.name}` : "No chapter linked yet.";
   document.getElementById("editDisplayName").value = userData.displayName || "";
   document.getElementById("editChapter").value = userData.chapter || "";
   document.getElementById("editAssociation").value = userData.association || "";
@@ -2161,6 +2231,7 @@ function populateAssociationsDatalist() {
 // ========================= TABS =========================
 window.showTab = function(tabName) {
   if (tabName === "admin" && !isAdmin(currentUser)) return;
+  if (tabName === "advisor" && !isAdvisor(currentUser)) return;
 
   document.querySelectorAll(".tab-content").forEach(el => {
     el.classList.remove("active");
@@ -2188,6 +2259,7 @@ window.showTab = function(tabName) {
   if (tabName === "blog") renderBlogList();
   if (tabName === "prepared") renderPreparedEventTab();
   if (tabName === "admin") renderAdminPanel();
+  if (tabName === "advisor") renderAdvisorDashboard();
 
   document.getElementById("sidebar")?.classList.remove("open");
 };
@@ -2232,6 +2304,8 @@ function renderAdminPanel() {
 
   const subtabsHtml = `
     <div class="admin-subtabs">
+      <button class="admin-subtab-btn ${adminActiveSubTab === "partners" ? "active" : ""}" onclick="adminSwitchSubTab('partners')">Partners</button>
+      <button class="admin-subtab-btn ${adminActiveSubTab === "courses" ? "active" : ""}" onclick="adminSwitchSubTab('courses')">Courses</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "courses" ? "active" : ""}" onclick="adminSwitchSubTab('courses')">Courses</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "kpi" ? "active" : ""}" onclick="adminSwitchSubTab('kpi')">KPI Database</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "members" ? "active" : ""}" onclick="adminSwitchSubTab('members')">Members</button>
@@ -2243,6 +2317,9 @@ function renderAdminPanel() {
     <div id="adminSubtabBody"></div>
   `;
   container.innerHTML = subtabsHtml;
+
+  if (adminActiveSubTab === "partners") renderAdminPartnersSection();
+  else if (adminActiveSubTab === "kpi") renderAdminKPISection();
 
   if (adminActiveSubTab === "kpi") renderAdminKPISection();
   else if (adminActiveSubTab === "members") renderAdminMembersSection();
@@ -4106,6 +4183,134 @@ window.adminToggleLeaderboardVisibility = async function(uid, currentlyHidden) {
     alert("Couldn't update that — check the console.");
   }
 };
+
+// ========================= ADMIN: PARTNERS =========================
+function renderAdminPartnersSection() {
+  const body = document.getElementById("adminSubtabBody");
+  if (!body) return;
+
+  const editing = adminEditingPartnerId ? partners.find(p => p.id === adminEditingPartnerId) : null;
+
+  const listHtml = partners.map(p => `
+    <div class="admin-lesson-block">
+      <div class="admin-lesson-head">
+        <h4>${p.name}</h4>
+        <div style="display:flex;gap:8px;">
+          <button class="admin-btn-sm ghost" onclick="adminEditPartner('${p.id}')">Edit</button>
+          <button class="admin-btn-sm danger" onclick="adminDeletePartner('${p.id}')">${icon("trash")} Delete</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);">Code: ${p.accessCode} · ${(p.advisorEmails || []).length} advisor(s)</div>
+    </div>
+  `).join("") || `<div class="admin-empty-state">No partners yet.</div>`;
+
+  body.innerHTML = `
+    <div class="admin-seed-banner">
+      <div>Share the access code with chapter officers — students enter it on their Profile tab. Advisor emails must match the Google account they sign in with, and get the Advisor Dashboard nav button.</div>
+    </div>
+    <div class="admin-layout">
+      <div class="admin-course-list">${listHtml}</div>
+      <div class="admin-panel-body">
+        <h3 style="margin-bottom:16px;">${editing ? "Edit Partner" : "Add a Partner"}</h3>
+        <div class="admin-kpi-form">
+          <input type="text" id="partner-name" placeholder="Chapter/association name" value="${editing ? editing.name.replace(/"/g, "&quot;") : ""}">
+          <input type="text" id="partner-code" placeholder="Access code (e.g. NORCAL2026)" value="${editing ? editing.accessCode : ""}">
+          <textarea id="partner-advisors" rows="3" placeholder="Advisor emails, one per line">${editing ? (editing.advisorEmails || []).join("\n") : ""}</textarea>
+          <div style="display:flex;gap:10px;">
+            <button class="admin-btn-sm" onclick="adminSavePartner()">${editing ? "Save Changes" : "Add Partner"}</button>
+            ${editing ? `<button class="admin-btn-sm ghost" onclick="adminCancelEditPartner()">Cancel</button>` : ""}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+window.adminEditPartner = function(id) { adminEditingPartnerId = id; renderAdminPartnersSection(); };
+window.adminCancelEditPartner = function() { adminEditingPartnerId = null; renderAdminPartnersSection(); };
+
+window.adminSavePartner = async function() {
+  const name = document.getElementById("partner-name").value.trim();
+  const accessCode = document.getElementById("partner-code").value.trim().toUpperCase();
+  const advisorEmails = document.getElementById("partner-advisors").value
+    .split("\n").map(s => s.trim()).filter(Boolean);
+
+  if (!name || !accessCode) return alert("Please enter a name and an access code.");
+
+  const id = adminEditingPartnerId || name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || `partner-${Date.now()}`;
+  const partnerDoc = { id, name, accessCode, advisorEmails };
+
+  try {
+    await setDoc(doc(db, "partners", id), partnerDoc);
+    const idx = partners.findIndex(p => p.id === id);
+    if (idx >= 0) partners[idx] = partnerDoc; else partners.push(partnerDoc);
+    adminEditingPartnerId = null;
+    renderAdminPartnersSection();
+    document.getElementById("nav-advisor")?.classList.toggle("hidden", !isAdvisor(currentUser));
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+};
+
+window.adminDeletePartner = async function(id) {
+  if (!confirm("Delete this partner? Students who redeemed its code keep their partnerId, but it will no longer match anything.")) return;
+  try {
+    await deleteDoc(doc(db, "partners", id));
+    partners = partners.filter(p => p.id !== id);
+    renderAdminPartnersSection();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't delete — check the console.");
+  }
+};
+
+// ========================= ADVISOR DASHBOARD =========================
+async function renderAdvisorDashboard() {
+  const container = document.getElementById("advisorContent");
+  if (!container) return;
+  const partner = advisorPartner(currentUser);
+  if (!partner) {
+    container.innerHTML = `<div class="admin-empty-state">You're not linked as an advisor to a chapter yet.</div>`;
+    return;
+  }
+
+  container.innerHTML = `<div class="lb-loading">Loading ${partner.name}...</div>`;
+
+  try {
+    const snap = await getDocs(query(collection(db, "users"), where("partnerId", "==", partner.id)));
+    const members = [];
+    snap.forEach(d => members.push({ id: d.id, ...d.data() }));
+    members.sort((a, b) => (b.xp || 0) - (a.xp || 0));
+
+    container.innerHTML = `
+      <div class="stats-grid" style="margin-bottom:24px;">
+        <div class="stat-card"><div class="stat-value">${members.length}</div><div class="stat-label">Members</div></div>
+        <div class="stat-card"><div class="stat-value">${members.reduce((s, m) => s + (m.xp || 0), 0).toLocaleString()}</div><div class="stat-label">Total XP</div></div>
+        <div class="stat-card"><div class="stat-value">${members.filter(m => m.streak > 0).length}</div><div class="stat-label">Active Streaks</div></div>
+        <div class="stat-card"><div class="stat-value">${members.reduce((s, m) => s + (m.completedLessons?.length || 0), 0)}</div><div class="stat-label">Lessons Completed</div></div>
+      </div>
+      <div class="admin-members-table">
+        <div class="admin-members-row admin-members-head">
+          <span>Name</span><span>Email</span><span>XP</span><span>Streak</span><span>Lessons</span><span>Chapter</span>
+        </div>
+        ${members.map(m => `
+          <div class="admin-members-row">
+            <span>${m.displayName || "DECA Student"}</span>
+            <span>${m.email || "—"}</span>
+            <span>${m.xp || 0}</span>
+            <span>${m.streak || 0}</span>
+            <span>${m.completedLessons?.length || 0}</span>
+            <span>${m.chapter || "—"}</span>
+          </div>
+        `).join("") || `<div class="admin-empty-state">No members have redeemed this chapter's code yet.</div>`}
+      </div>
+    `;
+  } catch (e) {
+    console.error("Failed to load advisor dashboard:", e);
+    container.innerHTML = `<div class="admin-empty-state">Couldn't load your chapter's members — check Firestore rules allow reading "users" where partnerId matches.</div>`;
+  }
+}
 
 // ========================================================================
 // ========================= CALENDAR ======================================

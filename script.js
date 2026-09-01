@@ -722,6 +722,10 @@ async function loadCourses() {
     const snap = await getDocs(collection(db, "courses"));
     if (!snap.empty) {
       courses = snap.docs.map((d, i) => normalizeCourse(d.data(), i));
+      // A hidden course stays out of the catalog, the dashboard, the planner,
+      // and practice exams. Admins keep seeing it so they can finish building
+      // it and unhide it when it's ready.
+      if (!isAdmin(currentUser)) courses = courses.filter(c => !c.hidden);
       coursesLoaded = true;
       renderCourseGrid();
       renderFeaturedCourses();
@@ -1108,7 +1112,7 @@ function renderFilteredCourses(list) {
     card.innerHTML = `
       <div class="cc-body">
         <div class="cc-icon" style="background:${course.color}22;color:${course.color};">${icon(groupIcon(course.group))}</div>
-        <div class="cc-title">${course.title}</div>
+        <div class="cc-title">${course.title}${course.hidden ? `<span class="cc-hidden-tag">Hidden</span>` : ""}</div>
         <div class="cc-desc">${course.description}</div>
         <div class="cc-meta">
           <span> ${unitCount} ${unitCount === 1 ? "unit" : "units"}</span>
@@ -2351,10 +2355,15 @@ function renderAdminCoursesSection() {
   const courseListHtml = courses.map(c => {
     const n = buildUnits(c).length;
     return `
-      <button class="admin-course-btn ${c.id === adminSelectedCourseId ? "active" : ""}" onclick="adminSelectCourse('${c.id}')">
-        ${c.title}
-        <span class="admin-course-sub">${n} ${n === 1 ? "unit" : "units"}</span>
-      </button>
+      <div class="admin-course-item ${c.hidden ? "is-hidden" : ""}">
+        <button class="admin-course-btn ${c.id === adminSelectedCourseId ? "active" : ""}" onclick="adminSelectCourse('${c.id}')">
+          ${c.title}${c.hidden ? `<span class="cc-hidden-tag">Hidden</span>` : ""}
+          <span class="admin-course-sub">${n} ${n === 1 ? "unit" : "units"}</span>
+        </button>
+        <button class="admin-btn-sm ghost admin-course-vis" onclick="adminToggleCourseHidden('${c.id}')">
+          ${c.hidden ? "Show" : "Hide"}
+        </button>
+      </div>
     `;
   }).join("");
 
@@ -2375,6 +2384,30 @@ function renderAdminCoursesSection() {
 window.adminSelectCourse = function(id) {
   adminSelectedCourseId = id;
   renderAdminCoursesSection();
+};
+
+// Hiding writes one field and touches nothing else — the course, its units,
+// and anyone's progress in it are all left alone. Unhide and everything is
+// exactly where it was.
+window.adminToggleCourseHidden = async function(id) {
+  if (!isAdmin(currentUser)) return;
+  const course = courses.find(c => c.id === id);
+  if (!course) return;
+
+  const nextHidden = !course.hidden;
+  if (nextHidden && !confirm(`Hide "${course.title}" from students? Anyone part-way through it stops seeing it until you show it again.`)) return;
+
+  try {
+    await setDoc(doc(db, "courses", id), { hidden: nextHidden }, { merge: true });
+    course.hidden = nextHidden;
+    renderAdminCoursesSection();
+    renderCourseGrid();
+    renderFeaturedCourses();
+    renderPlannerForm();
+  } catch (e) {
+    console.error("Couldn't change course visibility:", e);
+    alert("Couldn't save that — check the console.");
+  }
 };
 
 // ---- KPI Database admin management ----

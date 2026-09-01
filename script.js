@@ -806,13 +806,28 @@ window.redeemPartnerCode = async function() {
   const match = partners.find(p => (p.accessCode || "").toUpperCase() === code);
   if (!match) return alert("That code isn't valid — check with your advisor or chapter officer.");
 
+  // The code already says where the student is, so fill it in for them rather
+  // than making them retype it. A chapter code fills DECA Chapter; an
+  // association code fills DECA Association; a district code fills neither,
+  // since a district isn't either one. Both fields stay editable, and
+  // redeeming a code overwrites whatever was typed there before.
+  const updates = { partnerId: match.id };
+  if (match.type === "association") updates.association = match.name;
+  else if (match.type !== "district") updates.chapter = match.name;
+
   try {
-    await updateDoc(doc(db, "users", currentUser.uid), { partnerId: match.id });
-    userData.partnerId = match.id;
+    await updateDoc(doc(db, "users", currentUser.uid), updates);
+    Object.assign(userData, updates);
     document.getElementById("nav-advisor")?.classList.toggle("hidden", !isAdvisor(currentUser));
     input.value = "";
     renderProfile();
-    alert(`You're in! ${match.name} features unlocked.`);
+
+    const filled = updates.chapter
+      ? ` Your DECA Chapter is now set to ${match.name} — change it below if that's not exactly how you'd write it.`
+      : updates.association
+        ? ` Your DECA Association is now set to ${match.name} — change it below if needed.`
+        : "";
+    alert(`You're in! ${match.name} features unlocked.${filled}`);
   } catch (e) {
     console.error("Failed to redeem partner code:", e);
     alert("Couldn't save that — check the console.");

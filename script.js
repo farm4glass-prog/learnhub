@@ -184,9 +184,14 @@ function courseCategory(course) {
 }
 
 // Progress helper used by the dashboard and the catalog.
+function activeLessons(course) {
+  return (course?.lessons || []).filter(l => !l.comingSoon);
+}
+
 function courseProgress(course) {
-  const done = (userData?.completedLessons || []).filter(id => course.lessons.some(l => l.id === id)).length;
-  const total = course.lessons.length;
+  const active = activeLessons(course);
+  const done = (userData?.completedLessons || []).filter(id => active.some(l => l.id === id)).length;
+  const total = active.length;
   return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
 }
 
@@ -238,7 +243,10 @@ function buildUnits(course) {
     unit.title = stripUnitSuffix(source?.title) || `Unit ${i + 1}`;
     const numbered = unit.title.match(/^Unit\s+(\d+)/i);
     unit.number = numbered ? numbered[1] : String(i + 1);
-    unit.xp = unit.lessons.reduce((sum, l) => sum + (l.xp || 0), 0);
+        unit.xp = unit.lessons.reduce((sum, l) => sum + (l.xp || 0), 0);
+    // A unit is "coming soon" when every part inside it is flagged. One part
+    // flagged on its own just locks that tab.
+    unit.comingSoon = unit.lessons.length > 0 && unit.lessons.every(l => !!l.comingSoon);
   });
 
   return units;
@@ -257,6 +265,20 @@ function tabForLesson(lesson) {
   if (lesson.type === "article") return "article";
   return "video";
 }
+
+function lessonComingSoon(lesson) {
+  return !!(lesson && lesson.comingSoon);
+}
+
+// Units a student can actually work through — used by progress, the planner,
+// and the practice exam pool.
+function activeUnits(course) {
+  return buildUnits(course).filter(u => u.lessons.length && !u.comingSoon);
+}
+
+window.unitComingSoonNotice = function() {
+  f4gNotice("Coming soon", "This lesson is coming soon!");
+};
 
 function unitPartDone(lesson) {
   return !!lesson && (userData?.completedLessons || []).includes(lesson.id);
@@ -297,12 +319,10 @@ const BADGES = [
 function checkCourseComplete(userData, courses) {
   if (!courses || !userData.completedLessons) return false;
 
-  return courses.some(course =>
-    course.lessons.length > 0 &&
-    course.lessons.every(lesson =>
-      userData.completedLessons.includes(lesson.id)
-    )
-  );
+  return courses.some(course => {
+    const active = activeLessons(course);
+    return active.length > 0 && active.every(l => userData.completedLessons.includes(l.id));
+  });
 }
 
 // ========================= DECA ASSOCIATIONS (High School) =========================
@@ -1198,6 +1218,47 @@ function unitRowHtml(course, unit, bookmarked) {
     { key: "article",  label: "Article",            lesson: unit.article }
   ];
 
+  // Locked unit: it still shows in the list so students see what's planned,
+  // it just doesn't open.
+  if (unit.comingSoon) {
+    return `
+      <div class="lesson-row unit-row coming-soon" onclick="unitComingSoonNotice()">
+        <div class="lr-status pending">${unit.number}</div>
+        <div class="lr-info">
+          <div class="lr-title">${unit.title}</div>
+          <div class="unit-chips"><span class="unit-chip soon">Not published yet</span></div>
+        </div>
+        <span class="lr-soon">Coming soon</span>
+      </div>
+    `;
+  }
+
+  const allDone = unit.lessons.length > 0 && unit.lessons.every(l => unitPartDone(l));
+  const bookmarkTarget = (unit.video || unit.quiz || unit.article)?.id || "";
+  const isBookmarked = bookmarked.includes(bookmarkTarget);
+
+  const chips = parts.map(p => {
+    if (!p.lesson) return `<span class="unit-chip missing">${p.label}</span>`;
+    if (p.lesson.comingSoon) return `<span class="unit-chip soon">${p.label} — soon</span>`;
+    return `<span class="unit-chip ${unitPartDone(p.lesson) ? "done" : ""}">${
+      unitPartDone(p.lesson) ? icon("check") : ""
+    }${p.label}</span>`;
+  }).join("");
+
+  return `
+    <div class="lesson-row unit-row ${allDone ? "done" : ""}" onclick="openUnit('${course.id}', '${unit.key}')">
+      <div class="lr-status ${allDone ? "completed" : "pending"}">${allDone ? "✓" : unit.number}</div>
+      <div class="lr-info">
+        <div class="lr-title">${unit.title}</div>
+        <div class="unit-chips">${chips}</div>
+      </div>
+      <button class="bookmark-btn ${isBookmarked ? "active" : ""}" onclick="event.stopPropagation(); toggleLessonBookmark('${bookmarkTarget}')" title="${isBookmarked ? "Remove bookmark" : "Bookmark this unit"}">${icon(isBookmarked ? "bookmarkFilled" : "bookmark")}</button>
+      <span class="lr-xp">+${unit.xp} XP</span>
+      <span class="lr-arrow">›</span>
+    </div>
+  `;
+}
+
   const allDone = unit.lessons.length > 0 && unit.lessons.every(l => unitPartDone(l));
   const bookmarkTarget = (unit.video || unit.quiz || unit.article)?.id || "";
   const isBookmarked = bookmarked.includes(bookmarkTarget);
@@ -1228,6 +1289,7 @@ window.openUnit = function(courseId, unitKey, tab) {
   const course = courses.find(c => c.id === courseId);
   const unit = findUnit(courseId, unitKey);
   if (!course || !unit) return;
+  if (unit.comingSoon) return unitComingSoonNotice();
 
   currentCourseId = courseId;
   currentUnitKey = unitKey;
@@ -1281,8 +1343,9 @@ function renderUnitTabs() {
   bar.innerHTML = tabs.map(t => {
     const lesson = unitLessonForTab(unit, t.key);
     const done = unitPartDone(lesson);
+    const soon = lessonComingSoon(lesson);
     return `
-      <button class="unit-tab ${t.key === currentUnitTab ? "active" : ""} ${lesson ? "" : "empty"}"
+      <button class="unit-tab ${t.key === currentUnitTab ? "active" : ""} ${lesson ? "" : "empty"} ${soon ? "soon" : ""}"
               role="tab" aria-selected="${t.key === currentUnitTab}"
               onclick="switchUnitTab('${t.key}')">
         ${icon(done ? "check" : t.iconName)}<span>${t.label}</span>
@@ -1298,6 +1361,7 @@ function renderUnitPane() {
   if (!pane || !course || !unit) return;
 
   if (currentUnitTab === "practice") {
+    if (lessonComingSoon(unit.quiz)) { pane.innerHTML = comingSoonPaneHtml(); return; }
     if (!unit.quiz) {
       pane.innerHTML = emptyPaneHtml("Practice questions for this unit are coming soon.");
       return;
@@ -1308,6 +1372,7 @@ function renderUnitPane() {
   }
 
   if (currentUnitTab === "article") {
+    if (lessonComingSoon(unit.article)) { pane.innerHTML = comingSoonPaneHtml(); return; }
     if (!unit.article || !unit.article.url) {
       pane.innerHTML = emptyPaneHtml("The reading for this unit hasn't been added yet.");
       return;
@@ -1317,6 +1382,7 @@ function renderUnitPane() {
     return;
   }
 
+  if (lessonComingSoon(unit.video)) { pane.innerHTML = comingSoonPaneHtml(); return; }
   if (!unit.video || !unit.video.url) {
     pane.innerHTML = emptyPaneHtml("The video for this unit hasn't been added yet.");
     return;
@@ -1327,6 +1393,10 @@ function renderUnitPane() {
 
 function emptyPaneHtml(message) {
   return `<div class="admin-empty-state">${message}</div>`;
+}
+
+function comingSoonPaneHtml() {
+  return `<div class="admin-empty-state coming-soon-pane">This lesson is coming soon!</div>`;
 }
 
 function youtubeIdFromUrl(url) {
@@ -3922,9 +3992,10 @@ function renderProfileBookmarks() {
 // library to load, no server to call, and nothing to store.
 
 function courseIsComplete(course) {
-  if (!course || !course.lessons.length) return false;
+  const active = activeLessons(course);
+  if (!active.length) return false;
   const done = userData?.completedLessons || [];
-  return course.lessons.every(l => done.includes(l.id));
+  return active.every(l => done.includes(l.id));
 }
 
 function completedCourses() {
@@ -4860,7 +4931,7 @@ window.openExamSetup = function(courseId) {
   currentUnitKey = null;
 
   const pool = course.lessons
-    .filter(l => l.type === "quiz")
+    .filter(l => l.type === "quiz" && !l.comingSoon)
     .flatMap(l => (l.questions || []).map(q => ({ ...q, sourceTitle: stripUnitSuffix(l.title) })));
 
   const maxQ = pool.length;

@@ -1,0 +1,167 @@
+/* =========================================================================
+   FARM4GLASS — EXTRAS
+   -------------------------------------------------------------------------
+   Two unrelated things live here, both additive, neither one restyling an
+   existing component:
+
+     1. The version roadmap section on the landing page.
+     2. The "Hidden" tags that mark a course students can't see yet.
+
+   Load order in index.html puts this after style.css, so the few places
+   that share a selector with the portal win here.
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   1. ROADMAP — what's in version 1, what's coming in version 2
+   ------------------------------------------------------------------------- */
+
+#landingPage .roadmap-section {
+  background: transparent;
+  padding: 0 6% 110px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+#landingPage .roadmap-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  max-width: 1180px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+#landingPage .roadmap-card {
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.9);
+  border-radius: 26px;
+  padding: 34px 34px 30px;
+  box-shadow: 0 16px 44px rgba(15,95,140,.13);
+}
+
+/* The shipped side is the confident one: solid blue, white type. The
+   upcoming side stays quiet glass so the contrast does the explaining. */
+#landingPage .roadmap-card.live {
+  background: linear-gradient(150deg, #0f5f8c 0%, #167db5 62%, #38bdf8 140%);
+  border-color: rgba(255,255,255,.22);
+  box-shadow: 0 26px 62px rgba(15,95,140,.3);
+}
+
+#landingPage .roadmap-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-bottom: 18px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(15,95,140,.14);
+}
+#landingPage .roadmap-card.live .roadmap-card-head { border-bottom-color: rgba(255,255,255,.26); }
+
+#landingPage .roadmap-version {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -.03em;
+  color: #0a1a2b;
+}
+#landingPage .roadmap-card.live .roadmap-version { color: #fff; }
+
+#landingPage .roadmap-when {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-dark);
+  background: rgba(22,125,181,.12);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+#landingPage .roadmap-card.live .roadmap-when {
+  color: #0a1a2b;
+  background: rgba(255,255,255,.9);
+}
+
+#landingPage .roadmap-list { list-style: none; margin: 0; padding: 0; }
+#landingPage .roadmap-list li {
+  position: relative;
+  padding: 0 0 16px 34px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #3d5f80;
+}
+#landingPage .roadmap-list li:last-child { padding-bottom: 0; }
+#landingPage .roadmap-card.live .roadmap-list li { color: rgba(255,255,255,.92); }
+
+#landingPage .roadmap-list strong {
+  display: block;
+  font-weight: 800;
+  font-size: 15.5px;
+  color: #0a1a2b;
+  letter-spacing: -.01em;
+  margin-bottom: 2px;
+}
+#landingPage .roadmap-card.live .roadmap-list strong { color: #fff; }
+
+/* Shipped items get a check. Upcoming items get an open ring — the same
+   marker the site uses for a lesson that hasn't been finished yet. */
+#landingPage .roadmap-card.live .roadmap-list li::before {
+  content: "";
+  position: absolute; left: 0; top: 3px;
+  width: 20px; height: 20px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m20 6-11 11-5-5'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+#landingPage .roadmap-card.next .roadmap-list li::before {
+  content: "";
+  position: absolute; left: 3px; top: 7px;
+  width: 13px; height: 13px;
+  border: 2.5px solid rgba(22,125,181,.45);
+  border-radius: 50%;
+}
+
+#landingPage .roadmap-note {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #4a6c8c;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(15,95,140,.14);
+}
+
+@media (max-width: 900px) {
+  #landingPage .roadmap-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  #landingPage .roadmap-section { padding: 0 20px 68px; }
+  #landingPage .roadmap-card { padding: 26px 24px 24px; border-radius: 20px; }
+  #landingPage .roadmap-version { font-size: 22px; }
+  #landingPage .roadmap-list li { font-size: 14.5px; padding-left: 30px; }
+}
+
+/* -------------------------------------------------------------------------
+   2. HIDDEN COURSES
+   A course with hidden:true is filtered out of the catalog for students.
+   Admins still see it, tagged, so it's obvious why students aren't.
+   ------------------------------------------------------------------------- */
+
+.cc-hidden-tag {
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-left: 8px;
+  background: rgba(100,116,139,.15);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+/* Admin course list: the title button and the Hide/Show control sit side
+   by side. A button can't nest inside a button, hence the wrapper. */
+.admin-course-item { display: flex; align-items: stretch; gap: 8px; }
+.admin-course-item .admin-course-btn { flex: 1; min-width: 0; }
+.admin-course-item .admin-course-vis { flex-shrink: 0; align-self: center; }
+
+/* A hidden course dims in the admin list so the state reads at a glance. */
+.admin-course-item.is-hidden .admin-course-btn { opacity: .6; }
+.admin-course-item.is-hidden .admin-course-btn.active { opacity: 1; }

@@ -330,3 +330,29 @@
   .adv-member-head { flex-direction: column; }
   .adv-mail { width: 100%; justify-content: center; }
 }
+
+
+/* =========================================================================
+   CHAPTER DASHBOARD NAV BUTTON
+   Overrides the amber advisor button in style.css. Loaded after it, and
+   scoped one level deeper, so these win.
+   ========================================================================= */
+
+#portal .sidebar-nav .nav-btn.advisor-btn {
+  background: #ffffff;
+  color: var(--blue-dark);
+  border: 1px solid rgba(255,255,255,.9);
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(10,26,43,.16);
+}
+#portal .sidebar-nav .nav-btn.advisor-btn:hover {
+  background: #ffffff;
+  color: var(--blue);
+  box-shadow: 0 10px 24px rgba(10,26,43,.24);
+}
+#portal .sidebar-nav .nav-btn.advisor-btn.active {
+  background: #ffffff;
+  color: var(--blue-dark);
+  border-color: #ffffff;
+  box-shadow: 0 10px 24px rgba(10,26,43,.26);
+}

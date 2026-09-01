@@ -165,3 +165,19 @@
 /* A hidden course dims in the admin list so the state reads at a glance. */
 .admin-course-item.is-hidden .admin-course-btn { opacity: .6; }
 .admin-course-item.is-hidden .admin-course-btn.active { opacity: 1; }
+
+
+.rp-status-note {
+  background: #fff7e6;
+  border: 1px solid #f3d999;
+  border-left: 4px solid #e8a33d;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 4px 0 20px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #6b4a12;
+}
+.rp-status-note strong {
+  color: #4a3308;
+}

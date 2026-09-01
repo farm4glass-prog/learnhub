@@ -2605,7 +2605,7 @@ function renderAdminCourseEditor() {
 
     const videoHtml = `
       <div class="admin-unit-part">
-        <div class="admin-unit-part-label">${icon("play")} Video</div>
+        <div class="admin-unit-part-label">${icon("play")} Video${v ? `<button class="admin-btn-sm ghost admin-soon-toggle" onclick="adminToggleComingSoon('${unit.key}','video')">${v.comingSoon ? "Make available" : "Coming soon"}</button>` : ""}</div>
         <div class="admin-field-row">
           <input type="text" id="v-title-${unit.key}" placeholder="Unit title (e.g. Unit 1: Business Law)" value="${(v ? v.title : unit.title).replace(/"/g, "&quot;")}">
           <input type="text" id="v-url-${unit.key}" placeholder="YouTube URL" value="${v ? (v.url || "") : ""}">
@@ -2617,7 +2617,7 @@ function renderAdminCourseEditor() {
 
     const articleHtml = `
       <div class="admin-unit-part">
-        <div class="admin-unit-part-label">${icon("file")} Article (PDF)</div>
+        <div class="admin-unit-part-label">${icon("file")} Article (PDF)${a ? `<button class="admin-btn-sm ghost admin-soon-toggle" onclick="adminToggleComingSoon('${unit.key}','article')">${a.comingSoon ? "Make available" : "Coming soon"}</button>` : ""}</div>
         <div class="admin-field-row">
           <input type="text" id="art-url-${unit.key}" placeholder="PDF URL (e.g. pdfs/unit-1-business-law.pdf)" value="${a ? (a.url || "") : ""}">
           <input type="number" id="art-xp-${unit.key}" placeholder="XP" style="max-width:90px;" value="${a ? a.xp : 15}">
@@ -2642,7 +2642,7 @@ function renderAdminCourseEditor() {
 
     const practiceHtml = `
       <div class="admin-unit-part">
-        <div class="admin-unit-part-label">${icon("quiz")} Practice questions</div>
+        <div class="admin-unit-part-label">${icon("quiz")} Practice questions${q ? `<button class="admin-btn-sm ghost admin-soon-toggle" onclick="adminToggleComingSoon('${unit.key}','quiz')">${q.comingSoon ? "Make available" : "Coming soon"}</button>` : ""}</div>
         ${questionsHtml}
         <div class="admin-add-question-form">
           <textarea rows="2" placeholder="Question text" id="q-text-${unit.key}"></textarea>
@@ -2668,9 +2668,14 @@ function renderAdminCourseEditor() {
 
     return `
       <div class="admin-lesson-block admin-unit-block" id="admin-unit-${unit.key}">
-        <div class="admin-lesson-head">
-          <h4>${unit.title}</h4>
-          <button class="admin-btn-sm danger" onclick="adminDeleteUnit('${unit.key}')">${icon("trash")} Delete unit</button>
+              <div class="admin-lesson-head">
+          <h4>${unit.title}${unit.comingSoon ? `<span class="admin-soon-tag">Coming soon</span>` : ""}</h4>
+          <div style="display:flex;gap:8px;">
+            <button class="admin-btn-sm ghost" onclick="adminToggleComingSoon('${unit.key}','unit')">
+              ${unit.comingSoon ? "Make available" : "Mark coming soon"}
+            </button>
+            <button class="admin-btn-sm danger" onclick="adminDeleteUnit('${unit.key}')">${icon("trash")} Delete unit</button>
+          </div>
         </div>
         ${videoHtml}
         ${articleHtml}
@@ -2812,6 +2817,36 @@ window.adminDeleteUnit = async function(unitKey) {
   const newLessons = course.lessons.filter(l => unitKeyFor(l) !== unitKey);
   try {
     await saveCourseLessons(course.id, newLessons);
+    renderAdminPanel();
+    renderCourseGrid();
+    renderFeaturedCourses();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+};
+
+// Flags parts of a unit as coming soon. Nothing is deleted and no one's
+// progress is touched — flip it back and everything is exactly where it was.
+window.adminToggleComingSoon = async function(unitKey, scope) {
+  const course = courses.find(c => c.id === adminSelectedCourseId);
+  if (!course) return;
+
+  const inUnit = course.lessons.filter(l => unitKeyFor(l) === unitKey);
+  const targets = scope === "unit" ? inUnit : inUnit.filter(l => {
+    if (scope === "quiz") return l.type === "quiz";
+    if (scope === "article") return l.type === "article";
+    return l.type !== "quiz" && l.type !== "article";
+  });
+  if (!targets.length) return;
+
+  const next = !targets.every(l => l.comingSoon);
+  const lessons = course.lessons.map(l =>
+    targets.some(t => t.id === l.id) ? { ...l, comingSoon: next } : l
+  );
+
+  try {
+    await saveCourseLessons(course.id, lessons);
     renderAdminPanel();
     renderCourseGrid();
     renderFeaturedCourses();

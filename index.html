@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="units.css">
   <link rel="stylesheet" href="partners.css">
   <link rel="stylesheet" href="finder.css">
+  <!-- CHANGE 1 of 4: advisor dashboard styles -->
+  <link rel="stylesheet" href="advisor.css">
 </head>
 <body>
 
@@ -663,6 +665,12 @@
         Prepared Event AI
       </button>
 
+      <!-- CHANGE 2 of 4: this button used to sit inside .main, below the KPI
+           tab, so it never appeared in the sidebar. It belongs here. -->
+      <button class="nav-btn advisor-btn hidden" onclick="showTab('advisor')" id="nav-advisor">
+        Chapter Dashboard
+      </button>
+
       <button class="nav-btn hidden" onclick="showTab('admin')" id="nav-admin">
         Admin
       </button>
@@ -740,6 +748,10 @@
             <span id="acXPNeeded">100 XP to evolve</span>
           </div>
           <div class="xp-bar-outer"><div class="xp-bar-inner" id="acXPBar" style="width:0%"></div></div>
+
+          <!-- CHANGE 3 of 4: work an advisor assigns shows up here. Stays
+               empty (and invisible) for anyone with nothing assigned. -->
+          <div id="studentAssignments"></div>
 
           <h2 class="section-title">Courses</h2>
           <div id="featuredCourses"></div>
@@ -934,13 +946,7 @@
       <div id="kpiContent"></div>
     </div>
 
-    <button class="nav-btn advisor-btn hidden" onclick="showTab('advisor')" id="nav-advisor">
-      Advisor Dashboard
-    </button>
-
     <!-- ===== CALENDAR ===== -->
-
-    
     <div id="calendar" class="tab-content hidden">
       <h1>DECA Calendar</h1>
       <p class="page-sub">Conferences, deadlines, and other key dates — filtered to your association when you've set one on your profile.</p>
@@ -961,12 +967,15 @@
       <div id="preparedContent"></div>
     </div>
 
-
-        <!-- ===== ADVISOR DASHBOARD ===== -->
+    <!-- ===== CHAPTER DASHBOARD (advisors and chapter officers) =====
+         CHANGE 4 of 4: the container is now #advisorRoot. The old stub in
+         script.js looks for #advisorContent, doesn't find it, and returns
+         on its first line — so advisor.js owns this tab without any edits
+         to script.js. -->
     <div id="advisor" class="tab-content hidden">
-      <h1>Advisor Dashboard</h1>
-      <p class="page-sub">Your chapter's members and progress.</p>
-      <div id="advisorContent"></div>
+      <h1>Chapter Dashboard</h1>
+      <p class="page-sub">Everyone who joined with your access code: what they've finished, what they're competing in, and what you've assigned them.</p>
+      <div id="advisorRoot"></div>
     </div>
 
     <!-- ===== ADMIN ===== -->
@@ -1049,13 +1058,15 @@
 <script src="finder.js"></script>
 
 <script type="module" src="script.js"></script>
+<!-- Chapter Dashboard. Must load AFTER script.js — it reuses the Firebase
+     app script.js sets up, and wraps showTab once that exists. -->
+<script type="module" src="advisor.js"></script>
 
 
         <script src="f4g-questions-1.js"></script>
         <script src="f4g-questions-2.js"></script>
         <script src="f4g-questions-3.js"></script>
         <script src="f4g-questions-ent.js"></script>
-        <script type="module" src="f4g-import-ent.js"></script>
         <script type="module" src="f4g-import-ent.js"></script>
         <script type="module" src="f4g-import-clusters.js"></script>
         <script type="module" src="f4g-undo-ent-import.js"></script>

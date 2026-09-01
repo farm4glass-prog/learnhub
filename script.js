@@ -1259,32 +1259,6 @@ function unitRowHtml(course, unit, bookmarked) {
   `;
 }
 
-  const allDone = unit.lessons.length > 0 && unit.lessons.every(l => unitPartDone(l));
-  const bookmarkTarget = (unit.video || unit.quiz || unit.article)?.id || "";
-  const isBookmarked = bookmarked.includes(bookmarkTarget);
-
-  const chips = parts.map(p => {
-    if (!p.lesson) return `<span class="unit-chip missing">${p.label}</span>`;
-    return `<span class="unit-chip ${unitPartDone(p.lesson) ? "done" : ""}">${
-      unitPartDone(p.lesson) ? icon("check") : ""
-    }${p.label}</span>`;
-  }).join("");
-
-  return `
-    <div class="lesson-row unit-row ${allDone ? "done" : ""}" onclick="openUnit('${course.id}', '${unit.key}')">
-      <div class="lr-status ${allDone ? "completed" : "pending"}">${allDone ? "✓" : unit.number}</div>
-      <div class="lr-info">
-        <div class="lr-title">${unit.title}</div>
-        <div class="unit-chips">${chips}</div>
-      </div>
-      <button class="bookmark-btn ${isBookmarked ? "active" : ""}" onclick="event.stopPropagation(); toggleLessonBookmark('${bookmarkTarget}')" title="${isBookmarked ? "Remove bookmark" : "Bookmark this unit"}">${icon(isBookmarked ? "bookmarkFilled" : "bookmark")}</button>
-      <span class="lr-xp">+${unit.xp} XP</span>
-      <span class="lr-arrow">›</span>
-    </div>
-  `;
-}
-
-// ========================= UNIT VIEW (tabbed) =========================
 window.openUnit = function(courseId, unitKey, tab) {
   const course = courses.find(c => c.id === courseId);
   const unit = findUnit(courseId, unitKey);

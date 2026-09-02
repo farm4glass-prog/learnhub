@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="finder.css">
   <!-- CHANGE 1 of 4: advisor dashboard styles -->
   <link rel="stylesheet" href="advisor.css">
-  <!-- Version roadmap section + hidden-course tags -->
+  <!-- Version info block, hidden-course tags, and the nav-only landing views -->
   <link rel="stylesheet" href="extras.css">
 </head>
 <body>
@@ -28,6 +28,8 @@
     <span class="s1"></span><span class="s2"></span><span class="s3"></span><span class="s4"></span>
   </div>
 
+  <!-- Links carrying data-view are NOT scroll anchors. landing-views.js turns
+       them into buttons that swap the whole page over to that section. -->
   <nav class="top-nav">
     <div class="nav-logo">
       <img src="Farm4Glass logo.jpg" class="logo-icon" alt="Farm4Glass Logo">
@@ -37,9 +39,8 @@
       <a href="#hero">Home</a>
       <a href="#about">About</a>
       <a href="#features">Features</a>
-      <a href="#roadmap">What's New</a>
-      <a href="#partners">Partner</a>
-      <a href="#finder">Find Your Event</a>
+      <a href="#partners" data-view="partners">Partner</a>
+      <a href="#finder" data-view="finder">Find Your Event</a>
       <button id="landingLogin" class="nav-login-btn">Sign In with Google</button>
     </div>
   </nav>
@@ -145,48 +146,45 @@
         <p>Step-by-step design courses and templates built for DECA written events, so your entry looks as sharp as it reads.</p>
       </div>
     </div>
-  </section>
 
-  <!-- ===== VERSION ROADMAP =====
-       What's live today vs what lands next. As things ship, move the item
-       from the right card to the left one and update the date. -->
-  <section id="roadmap" class="roadmap-section reveal">
-    <div class="section-head center">
-      <div class="section-tag">What's new</div>
-      <h2>Version 1 is live.<br>Version 2 lands September 30.</h2>
-    </div>
-
-    <div class="roadmap-grid">
-      <div class="roadmap-card live">
-        <div class="roadmap-card-head">
-          <span class="roadmap-version">Version 1</span>
-          <span class="roadmap-when">Available now</span>
-        </div>
-        <ul class="roadmap-list">
-          <li><strong>Cluster exam courses</strong>Marketing, Finance, Hospitality and Tourism, Business Management, Entrepreneurship, Business Administration Core, and Personal Financial Literacy.</li>
-          <li><strong>Study planner</strong>Give it your event and your conference date and it builds the sessions around the time you actually have.</li>
-          <li><strong>Practice roleplay prompts</strong>Sorted by event and instructional area, so you can drill the areas costing you points.</li>
-          <li><strong>Performance analytics</strong>Your scores unit by unit, plus what to go back and redo first.</li>
-          <li><strong>Chapter partnership program</strong>Your advisor and officers get a dashboard of the whole chapter and can assign work.</li>
-          <li><strong>Association calendar</strong>Conferences and deadlines, filtered to your association.</li>
-        </ul>
+    <!-- ===== VERSION INFO =====
+         Lives inside Features now. As things ship, move the item from the
+         right card to the left one and update the date. -->
+    <div class="roadmap-section roadmap-in-features">
+      <div class="roadmap-inline-head">
+        <h3>Version 1 is live. Version 2 lands September 30.</h3>
+        <p>Everything below is free, and version 2 appears in your account the day it ships.</p>
       </div>
 
-      <div class="roadmap-card next">
-        <div class="roadmap-card-head">
-          <span class="roadmap-version">Version 2</span>
-          <span class="roadmap-when">September 30</span>
+      <div class="roadmap-grid">
+        <div class="roadmap-card live">
+          <div class="roadmap-card-head">
+            <span class="roadmap-version">Version 1</span>
+            <span class="roadmap-when">Available now</span>
+          </div>
+          <ul class="roadmap-list">
+            <li><strong>Cluster exam courses</strong>Marketing, Finance, Hospitality and Tourism, Business Management, Entrepreneurship, Business Administration Core, and Personal Financial Literacy.</li>
+            <li><strong>Study planner</strong>Give it your event and your conference date and it builds the sessions around the time you actually have.</li>
+            <li><strong>Practice roleplay prompts</strong>Sorted by event and instructional area, so you can drill the areas costing you points.</li>
+            <li><strong>Performance analytics</strong>Your scores unit by unit, plus what to go back and redo first.</li>
+            <li><strong>Chapter partnership program</strong>Your advisor and officers get a dashboard of the whole chapter and can assign work.</li>
+            <li><strong>Association calendar</strong>Conferences and deadlines, filtered to your association.</li>
+          </ul>
         </div>
-        <ul class="roadmap-list">
-          <li><strong>Prepared event penalty point checker</strong>Upload your written entry and see the page limits, missing sections, and penalty points before a judge does.</li>
-          <li><strong>Courses for the online challenges</strong>Virtual Business Challenge and the Stock Market Game.</li>
-          <li><strong>Courses for roleplay events</strong>Principles, Individual Series, and Team Decision Making, each built around its own performance indicators.</li>
-          <li><strong>Courses for prepared events</strong>The written events, walked through section by section.</li>
-          <li><strong>KPI database</strong>Every performance indicator with an explanation, a real example, what judges are listening for, and a sample answer.</li>
-        </ul>
-        <p class="roadmap-note">
-          Version 2 is free as well. Sign in now and it appears in your account the day it ships.
-        </p>
+
+        <div class="roadmap-card next">
+          <div class="roadmap-card-head">
+            <span class="roadmap-version">Version 2</span>
+            <span class="roadmap-when">September 30</span>
+          </div>
+          <ul class="roadmap-list">
+            <li><strong>Prepared event penalty point checker</strong>Upload your written entry and see the page limits, missing sections, and penalty points before a judge does.</li>
+            <li><strong>Courses for the online challenges</strong>Virtual Business Challenge and the Stock Market Game.</li>
+            <li><strong>Courses for roleplay events</strong>Principles, Individual Series, and Team Decision Making, each built around its own performance indicators.</li>
+            <li><strong>Courses for prepared events</strong>The written events, walked through section by section.</li>
+            <li><strong>KPI database</strong>Every performance indicator with an explanation, a real example, what judges are listening for, and a sample answer.</li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>
@@ -202,125 +200,123 @@
         <button id="aboutLogin" class="btn-primary">Start Learning →</button>
       </div>
 
-    <div class="animal-showcase">
-  <div class="animal-tier">
-    <span class="at-fig">
-      <svg viewBox="0 0 56 52" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-        <ellipse cx="24" cy="30" rx="13" ry="11"/>
-        <circle cx="24" cy="15" r="8.5"/>
-        <polygon points="32,15 39,17.5 32,20" fill="currentColor" stroke="none"/>
-        <circle cx="27" cy="13" r="1.4" fill="currentColor" stroke="none"/>
-        <path d="M20 41v5M28 41v5M17 46h6M25 46h6"/>
-        <path d="M24 6c1.5-3 4-3 4-3"/>
-      </svg>
-    </span>
-    <small>Chick</small>
-  </div>
+      <div class="animal-showcase">
+        <div class="animal-tier">
+          <span class="at-fig">
+            <svg viewBox="0 0 56 52" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="24" cy="30" rx="13" ry="11"/>
+              <circle cx="24" cy="15" r="8.5"/>
+              <polygon points="32,15 39,17.5 32,20" fill="currentColor" stroke="none"/>
+              <circle cx="27" cy="13" r="1.4" fill="currentColor" stroke="none"/>
+              <path d="M20 41v5M28 41v5M17 46h6M25 46h6"/>
+              <path d="M24 6c1.5-3 4-3 4-3"/>
+            </svg>
+          </span>
+          <small>Chick</small>
+        </div>
 
-  <div class="arrow">→</div>
+        <div class="arrow">→</div>
 
-  <!-- NEW: Duckling -->
-  <div class="animal-tier">
-    <span class="at-fig">
-      <svg viewBox="0 0 56 52" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-        <ellipse cx="26" cy="32" rx="15" ry="12"/>
-        <circle cx="30" cy="16" r="9"/>
-        <polygon points="38,16 46,18.5 38,21" fill="currentColor" stroke="none"/>
-        <circle cx="33" cy="14" r="1.4" fill="currentColor" stroke="none"/>
-        <path d="M22 43v5M30 43v5M19 48h6M27 48h6"/>
-        <path d="M13 30c-4-1-4 5 0 5"/>
-      </svg>
-    </span>
-    <small>Duckling</small>
-  </div>
+        <div class="animal-tier">
+          <span class="at-fig">
+            <svg viewBox="0 0 56 52" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="26" cy="32" rx="15" ry="12"/>
+              <circle cx="30" cy="16" r="9"/>
+              <polygon points="38,16 46,18.5 38,21" fill="currentColor" stroke="none"/>
+              <circle cx="33" cy="14" r="1.4" fill="currentColor" stroke="none"/>
+              <path d="M22 43v5M30 43v5M19 48h6M27 48h6"/>
+              <path d="M13 30c-4-1-4 5 0 5"/>
+            </svg>
+          </span>
+          <small>Duckling</small>
+        </div>
 
-  <div class="arrow">→</div>
+        <div class="arrow">→</div>
 
-  <div class="animal-tier">
-    <span class="at-fig">
-      <svg viewBox="0 0 56 52" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="18" cy="30" r="8"/><circle cx="26" cy="26" r="9"/>
-        <circle cx="34" cy="31" r="8"/><circle cx="25" cy="36" r="8"/>
-        <ellipse cx="42" cy="21" rx="6" ry="7"/>
-        <path d="M37 17c-2-3 0-5 2-4M47 17c2-3 0-5-2-4"/>
-        <circle cx="41" cy="20" r="1.2" fill="currentColor" stroke="none"/>
-        <path d="M20 43v5M30 43v5"/>
-      </svg>
-    </span>
-    <small>Sheep</small>
-  </div>
+        <div class="animal-tier">
+          <span class="at-fig">
+            <svg viewBox="0 0 56 52" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18" cy="30" r="8"/><circle cx="26" cy="26" r="9"/>
+              <circle cx="34" cy="31" r="8"/><circle cx="25" cy="36" r="8"/>
+              <ellipse cx="42" cy="21" rx="6" ry="7"/>
+              <path d="M37 17c-2-3 0-5 2-4M47 17c2-3 0-5-2-4"/>
+              <circle cx="41" cy="20" r="1.2" fill="currentColor" stroke="none"/>
+              <path d="M20 43v5M30 43v5"/>
+            </svg>
+          </span>
+          <small>Sheep</small>
+        </div>
 
-  <div class="arrow">→</div>
+        <div class="arrow">→</div>
 
-  <div class="animal-tier">
-    <span class="at-fig">
-      <svg viewBox="0 0 56 52" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-        <ellipse cx="24" cy="28" rx="15" ry="11"/>
-        <circle cx="39" cy="23" r="8"/>
-        <ellipse cx="46" cy="23" rx="4" ry="3.4"/>
-        <circle cx="45" cy="22" r="0.9" fill="currentColor" stroke="none"/>
-        <circle cx="47.5" cy="24" r="0.9" fill="currentColor" stroke="none"/>
-        <polygon points="34,16 39,11 41,17" fill="currentColor" stroke="none"/>
-        <path d="M18 38v6M29 38v6"/>
-        <path d="M9 25c-4-1-4 4-1 4"/>
-      </svg>
-    </span>
-    <small>Pig</small>
-  </div>
+        <div class="animal-tier">
+          <span class="at-fig">
+            <svg viewBox="0 0 56 52" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="24" cy="28" rx="15" ry="11"/>
+              <circle cx="39" cy="23" r="8"/>
+              <ellipse cx="46" cy="23" rx="4" ry="3.4"/>
+              <circle cx="45" cy="22" r="0.9" fill="currentColor" stroke="none"/>
+              <circle cx="47.5" cy="24" r="0.9" fill="currentColor" stroke="none"/>
+              <polygon points="34,16 39,11 41,17" fill="currentColor" stroke="none"/>
+              <path d="M18 38v6M29 38v6"/>
+              <path d="M9 25c-4-1-4 4-1 4"/>
+            </svg>
+          </span>
+          <small>Pig</small>
+        </div>
 
-  <div class="arrow">→</div>
+        <div class="arrow">→</div>
 
-  <!-- NEW: Bee -->
-  <div class="animal-tier">
-    <span class="at-fig">
-      <svg viewBox="0 0 56 52" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-        <ellipse cx="28" cy="31" rx="15" ry="11"/>
-        <path d="M20 24h16M18 31h20M20 38h16"/>
-        <ellipse cx="18" cy="18" rx="8" ry="6" transform="rotate(-18 18 18)"/>
-        <ellipse cx="38" cy="18" rx="8" ry="6" transform="rotate(18 38 18)"/>
-        <path d="M14 25c-4-1-3 5 0 5M42 25c4-1 3 5 0 5"/>
-        <circle cx="13" cy="26" r="1.2" fill="currentColor" stroke="none"/>
-      </svg>
-    </span>
-    <small>Bee</small>
-  </div>
+        <div class="animal-tier">
+          <span class="at-fig">
+            <svg viewBox="0 0 56 52" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="28" cy="31" rx="15" ry="11"/>
+              <path d="M20 24h16M18 31h20M20 38h16"/>
+              <ellipse cx="18" cy="18" rx="8" ry="6" transform="rotate(-18 18 18)"/>
+              <ellipse cx="38" cy="18" rx="8" ry="6" transform="rotate(18 38 18)"/>
+              <path d="M14 25c-4-1-3 5 0 5M42 25c4-1 3 5 0 5"/>
+              <circle cx="13" cy="26" r="1.2" fill="currentColor" stroke="none"/>
+            </svg>
+          </span>
+          <small>Bee</small>
+        </div>
 
-  <div class="arrow">→</div>
+        <div class="arrow">→</div>
 
-  <div class="animal-tier">
-    <span class="at-fig">
-      <svg viewBox="0 0 56 52" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-        <ellipse cx="23" cy="29" rx="16" ry="11"/>
-        <ellipse cx="41" cy="22" rx="8" ry="7"/>
-        <path d="M35 16c-3-4-1-6 2-4M47 16c3-4 1-6-2-4"/>
-        <ellipse cx="44" cy="25" rx="4" ry="3"/>
-        <circle cx="39" cy="20" r="1.1" fill="currentColor" stroke="none"/>
-        <ellipse cx="18" cy="26" rx="4" ry="3" fill="currentColor" stroke="none"/>
-        <ellipse cx="28" cy="32" rx="3" ry="2.4" fill="currentColor" stroke="none"/>
-        <path d="M16 39v7M29 39v7"/>
-        <path d="M7 23c-4 0-3 6 0 6"/>
-      </svg>
-    </span>
-    <small>Cow</small>
-  </div>
+        <div class="animal-tier">
+          <span class="at-fig">
+            <svg viewBox="0 0 56 52" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="23" cy="29" rx="16" ry="11"/>
+              <ellipse cx="41" cy="22" rx="8" ry="7"/>
+              <path d="M35 16c-3-4-1-6 2-4M47 16c3-4 1-6-2-4"/>
+              <ellipse cx="44" cy="25" rx="4" ry="3"/>
+              <circle cx="39" cy="20" r="1.1" fill="currentColor" stroke="none"/>
+              <ellipse cx="18" cy="26" rx="4" ry="3" fill="currentColor" stroke="none"/>
+              <ellipse cx="28" cy="32" rx="3" ry="2.4" fill="currentColor" stroke="none"/>
+              <path d="M16 39v7M29 39v7"/>
+              <path d="M7 23c-4 0-3 6 0 6"/>
+            </svg>
+          </span>
+          <small>Cow</small>
+        </div>
 
-  <div class="arrow">→</div>
+        <div class="arrow">→</div>
 
-  <div class="animal-tier">
-    <span class="at-fig gold">
-      <svg viewBox="0 0 56 52" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-        <ellipse cx="23" cy="29" rx="15" ry="10"/>
-        <ellipse cx="40" cy="21" rx="7" ry="6.5"/>
-        <path d="M36 14c-2-6 2-8 4-5M44 14c2-6-2-8-4-5"/>
-        <path d="M40 28c0 5 3 5 3 5"/>
-        <circle cx="38" cy="19" r="1.1" fill="currentColor" stroke="none"/>
-        <path d="M17 38v7M28 38v7"/>
-        <path d="M8 24c-4-1-3 5 0 5"/>
-      </svg>
-    </span>
-    <small>Goat</small>
-  </div>
-</div>
+        <div class="animal-tier">
+          <span class="at-fig gold">
+            <svg viewBox="0 0 56 52" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="23" cy="29" rx="15" ry="10"/>
+              <ellipse cx="40" cy="21" rx="7" ry="6.5"/>
+              <path d="M36 14c-2-6 2-8 4-5M44 14c2-6-2-8-4-5"/>
+              <path d="M40 28c0 5 3 5 3 5"/>
+              <circle cx="38" cy="19" r="1.1" fill="currentColor" stroke="none"/>
+              <path d="M17 38v7M28 38v7"/>
+              <path d="M8 24c-4-1-3 5 0 5"/>
+            </svg>
+          </span>
+          <small>Goat</small>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -427,32 +423,63 @@
       <div class="guest-card">
         <h3>Shrihan Thangam</h3>
         <span class="guest-role">Principles Events</span>
-        <p></p>
       </div>
       <div class="guest-card">
         <h3>Shreshta Ramji</h3>
         <span class="guest-role">Marketing Cluster Exam</span>
-        <p></p>
       </div>
       <div class="guest-card">
         <h3>Robert Flores</h3>
         <span class="guest-role">Team Decision Making Events</span>
-        <p></p></p>
       </div>
       <div class="guest-card">
         <h3>Kyra Zhang</h3>
         <span class="guest-role">Team Decision Making Events</span>
-        <p></p>
       </div>
     </div>
   </section>
 
-  <!-- ===== PARTNER WITH US =====
-       PASTE YOUR PARTNERSHIP GUIDE LINK IN BOTH PLACES MARKED
-       "PARTNERSHIP_GUIDE_LINK" below (the step 1 link and the CTA button).
-       If it's a Google Drive file, share it as "Anyone with the link — Viewer"
-       first, or people hit a sign-in wall instead of the PDF. -->
-  <section id="partners" class="partners-section reveal">
+  <!-- ===== THANK YOU, TESTERS =====
+       One <span class="tt-name"> per person. They wrap on their own, so add
+       as many as you want without touching the layout. -->
+  <section id="testers" class="tt-section reveal">
+    <div class="tt-inner">
+      <div class="section-head center">
+        <div class="section-tag">Thank you</div>
+        <h2>To everyone who broke it<br>before our members could.</h2>
+        <p class="tt-lede">
+          These competitors tested Farm4Glass early — sat through half-finished courses,
+          found the bugs, and told us what was actually useless. The site is better
+          because they were honest about it.
+        </p>
+      </div>
+
+      <div class="tt-names">
+        <span class="tt-name">Anish Jaladi</span>
+        <span class="tt-name">Connor Du</span>
+        <span class="tt-name">Jachin Thilak</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FINAL CTA ===== -->
+  <section class="cta-section reveal">
+    <div class="cta-inner">
+      <h2>Ready to farm for glass?</h2>
+      <p>Join free with your Google account and start your first course today.</p>
+      <button class="btn-primary" onclick="document.getElementById('landingLogin').click()">Get Started Free →</button>
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       NAV-ONLY VIEWS
+       Everything below carries .landing-view, so it is hidden from the normal
+       scroll and only appears when its nav link is clicked. The two partner
+       sections share data-view="partners", so one click opens both.
+       ===================================================================== -->
+
+  <!-- ===== PARTNER WITH US ===== -->
+  <section id="partners" class="partners-section reveal landing-view" data-view="partners">
     <div class="partners-inner">
       <div class="section-head">
         <div class="section-tag">Partner with us</div>
@@ -562,10 +589,10 @@
     </div>
   </section>
 
-    <!-- ===== OUR PARTNERS =====
+  <!-- ===== OUR PARTNERS =====
        Add or remove a .op-card block per partner. Delete the .op-card-meta
        line if you don't want the association under a name. -->
-  <section id="our-partners" class="op-section reveal">
+  <section id="our-partners" class="op-section reveal landing-view" data-view="partners">
     <div class="op-inner">
       <div class="section-head center">
         <div class="section-tag">Our partners</div>
@@ -597,41 +624,20 @@
           <div class="op-card-name">West Ranch High School</div>
           <div class="op-card-meta">California DECA</div>
         </div>
+      </div>
 
       <p class="op-cta-line">
-        Want your chapter here? <a href="#partners">Read the partnership guide</a> or
-        <a href="mailto:farm4glass@gmail.com?subject=Farm4Glass%20Partnership">email us</a>.
+        Want your chapter here?
+        <a href="mailto:farm4glass@gmail.com?subject=Farm4Glass%20Partnership">Email us</a>
+        and we'll get your members set up before your next conference.
       </p>
-    </div>
-  </section>
-
-  <!-- ===== THANK YOU, TESTERS =====
-       One <span class="tt-name"> per person. They wrap on their own, so add
-       as many as you want without touching the layout. -->
-  <section id="testers" class="tt-section reveal">
-    <div class="tt-inner">
-      <div class="section-head center">
-        <div class="section-tag">Thank you</div>
-        <h2>To everyone who broke it<br>before our members could.</h2>
-        <p class="tt-lede">
-          These competitors tested Farm4Glass early — sat through half-finished courses,
-          found the bugs, and told us what was actually useless. The site is better
-          because they were honest about it.
-        </p>
-      </div>
-
-      <div class="tt-names">
-        <span class="tt-name">Anish Jaladi</span>
-        <span class="tt-name">Connor Du</span>
-        <span class="tt-name">Jachin Thilak</span>
-      </div>
     </div>
   </section>
 
   <!-- ===== FIND YOUR EVENT =====
        Screens live inside this one section and swap with JS.
        All logic + the event database are in finder.js. -->
-  <section id="finder" class="reveal">
+  <section id="finder" class="reveal landing-view" data-view="finder">
     <div class="f-inner">
 
       <!-- SCREEN 1: pick a path -->
@@ -701,15 +707,6 @@
         </div>
       </div>
 
-    </div>
-  </section>
-
-  <!-- ===== FINAL CTA ===== -->
-  <section class="cta-section reveal">
-    <div class="cta-inner">
-      <h2>Ready to farm for glass?</h2>
-      <p>Join free with your Google account and start your first course today.</p>
-      <button class="btn-primary" onclick="document.getElementById('landingLogin').click()">Get Started Free →</button>
     </div>
   </section>
 
@@ -962,16 +959,16 @@
         </div>
       </div>
 
-<div class="widget profile-edit-widget" id="partnerWidget">
-  <h3>Partnership</h3>
-  <p class="page-sub" id="partnerStatus" style="margin-bottom:16px;">Not linked yet.</p>
-  <div class="form-group">
-    <label>Access Code</label>
-    <input type="text" id="partnerCodeInput" placeholder="Enter your access code">
-  </div>
-  <button class="btn-primary" onclick="redeemPartnerCode()">Unlock Features</button>
-</div>
-      
+      <div class="widget profile-edit-widget" id="partnerWidget">
+        <h3>Partnership</h3>
+        <p class="page-sub" id="partnerStatus" style="margin-bottom:16px;">Not linked yet.</p>
+        <div class="form-group">
+          <label>Access Code</label>
+          <input type="text" id="partnerCodeInput" placeholder="Enter your access code">
+        </div>
+        <button class="btn-primary" onclick="redeemPartnerCode()">Unlock Features</button>
+      </div>
+
       <div class="widget profile-edit-widget">
         <h3>Edit Profile</h3>
         <div class="form-group">
@@ -1023,7 +1020,7 @@
       </div>
     </div>
 
-<!-- ===== STUDY PLANNER ===== -->
+    <!-- ===== STUDY PLANNER ===== -->
     <div id="planner" class="tab-content hidden">
       <h1>Study Planner</h1>
       <p class="page-sub">Pick what you're competing in, tell us when your conference is, and we'll build a step-by-step plan around it.</p>
@@ -1031,18 +1028,18 @@
       <div id="plannerResults"></div>
     </div>
 
-<!-- ===== PRACTICE ROLEPLAYS ===== -->
-<div id="roleplays" class="tab-content hidden">
-  <h1>Practice Roleplays</h1>
-  <p class="page-sub">Practice roleplays written by the Farm4Glass team, sorted by event. Pick your event, then work through them out loud and on the clock.</p>
+    <!-- ===== PRACTICE ROLEPLAYS ===== -->
+    <div id="roleplays" class="tab-content hidden">
+      <h1>Practice Roleplays</h1>
+      <p class="page-sub">Practice roleplays written by the Farm4Glass team, sorted by event. Pick your event, then work through them out loud and on the clock.</p>
 
-  <div class="rp-status-note">
-    <strong>Retail Merchandising Series (RMS)</strong> is fully complete and ready to practice now.
-    Roleplays for every other event will be added on <strong>September 2nd</strong>.
-  </div>
+      <div class="rp-status-note">
+        <strong>Retail Merchandising Series (RMS)</strong> is fully complete and ready to practice now.
+        Roleplays for every other event will be added on <strong>September 2nd</strong>.
+      </div>
 
-  <div id="roleplaysContent"></div>
-</div>
+      <div id="roleplaysContent"></div>
+    </div>
 
     <!-- ===== PERFORMANCE ANALYTICS ===== -->
     <div id="analytics" class="tab-content hidden">
@@ -1099,7 +1096,6 @@
       <p class="page-sub">Manage course content, community features, and site data. Only visible to admin accounts.</p>
       <div id="adminContent"></div>
     </div>
-
 
   </div><!-- /main -->
 
@@ -1171,6 +1167,9 @@
 </script>
 <script src="admin-rubric-templates.js"></script>
 <script src="finder.js"></script>
+<!-- Turns the Partner and Find Your Event nav links into full-page views
+     instead of scroll anchors. -->
+<script src="landing-views.js"></script>
 
 <script type="module" src="script.js"></script>
 <!-- Chapter Dashboard. Must load AFTER script.js — it reuses the Firebase
@@ -1186,6 +1185,6 @@
         <script type="module" src="f4g-import-clusters.js"></script>
         <script type="module" src="f4g-undo-ent-import.js"></script>
         <script type="module" src="f4g-import-questions.js"></script>
-  
+
 </body>
 </html>

@@ -1,11 +1,12 @@
 /* =========================================================================
    FARM4GLASS — EXTRAS
    -------------------------------------------------------------------------
-   Two unrelated things live here, both additive, neither one restyling an
+   Three unrelated things live here, all additive, none restyling an
    existing component:
 
-     1. The version roadmap section on the landing page.
+     1. The version roadmap cards (now nested inside the Features section).
      2. The "Hidden" tags that mark a course students can't see yet.
+     3. Landing views — sections that open from the nav instead of scrolling.
 
    Load order in index.html puts this after style.css, so the few places
    that share a selector with the portal win here.
@@ -137,6 +138,54 @@
   #landingPage .roadmap-list li { font-size: 14.5px; padding-left: 30px; }
 }
 
+/* ---- 1b. The roadmap nested inside Features ----
+   Everything above was written for a full-width section of its own. Inside
+   Features it already sits within that section's padding, so the outer
+   padding, max-width, and bottom space all have to come back off — otherwise
+   the cards indent away from the heading above them. Same #landingPage
+   prefix, so these beat the rules above rather than losing to them. */
+
+#landingPage .roadmap-section.roadmap-in-features {
+  max-width: none;
+  margin: 64px 0 0;
+  padding: 48px 0 0;
+  border-top: 1px solid rgba(22, 125, 181, .14);
+}
+
+/* The grid centres itself at 1180px on its own. In here it should just fill
+   the Features section so it lines up with the feature cards above it. */
+#landingPage .roadmap-in-features .roadmap-grid { max-width: none; }
+
+#landingPage .roadmap-inline-head {
+  max-width: 620px;
+  margin: 0 auto 34px;
+  text-align: center;
+}
+#landingPage .roadmap-inline-head h3 {
+  margin: 0 0 10px;
+  font-family: 'League Spartan', 'Montserrat', sans-serif;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -.02em;
+  line-height: 1.2;
+  color: #0a1a2b;
+}
+#landingPage .roadmap-inline-head p {
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #4a6c8c;
+}
+
+@media (max-width: 700px) {
+  #landingPage .roadmap-section.roadmap-in-features {
+    margin-top: 48px;
+    padding: 36px 0 0;
+  }
+  #landingPage .roadmap-inline-head h3 { font-size: 22px; }
+}
+
 /* -------------------------------------------------------------------------
    2. HIDDEN COURSES
    A course with hidden:true is filtered out of the catalog for students.
@@ -180,4 +229,64 @@
 }
 .rp-status-note strong {
   color: #4a3308;
+}
+
+/* -------------------------------------------------------------------------
+   3. LANDING VIEWS
+   Sections marked .landing-view are pulled out of the normal scroll. They
+   only render once landing-views.js adds .f4g-view-active, which happens
+   when their nav link is clicked. Partner and Our Partners share a view
+   name, so one click opens both.
+   ------------------------------------------------------------------------- */
+
+.landing-view { display: none; }
+
+body.f4g-view-open #landingPage > *:not(.top-nav):not(.aurora):not(.float-shapes):not(.landing-footer):not(.f4g-view-active):not(.f4g-back-bar) {
+  display: none;
+}
+body.f4g-view-open .landing-view.f4g-view-active { display: block; }
+
+/* The back button is injected above the first active section. The top
+   padding clears the fixed nav — drop it to ~40px if .top-nav isn't fixed. */
+.f4g-back-bar {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 118px 6vw 0;
+}
+.f4g-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1px solid rgba(22, 125, 181, .25);
+  border-radius: 999px;
+  background: #fff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #167db5;
+  cursor: pointer;
+  transition: background .2s ease, border-color .2s ease, transform .2s ease;
+}
+.f4g-back-btn:hover {
+  background: rgba(22, 125, 181, .07);
+  border-color: rgba(22, 125, 181, .45);
+  transform: translateX(-2px);
+}
+.f4g-back-btn:focus-visible {
+  outline: 3px solid #38bdf8;
+  outline-offset: 3px;
+}
+
+/* These sections normally get their top padding from sitting mid-page. With
+   the back bar directly above, that gap doubles up — pull it back. */
+body.f4g-view-open .f4g-view-active { padding-top: 34px; }
+
+@media (max-width: 700px) {
+  .f4g-back-bar { padding: 96px 5vw 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .f4g-back-btn { transition: none; }
+  .f4g-back-btn:hover { transform: none; }
 }

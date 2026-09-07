@@ -54,10 +54,10 @@
       length: '4 min'
     },
     {
-      id: 'REPLACE_WITH_YOUTUBE_ID',
-      title: 'Structuring your roleplay presentation',
-      course: 'Roleplay Skills',
-      length: '8 min'
+      id: '6sAJrMWJOik',
+      title: 'Guest Speaker Video',
+      course: 'Principles of Business Management Events',
+      length: '6 min'
     }
   ];
 

@@ -42,10 +42,10 @@
 
   var VIDEOS = [
     {
-      id: 'REPLACE_WITH_YOUTUBE_ID',
-      title: 'Product/Service Management in a roleplay',
-      course: 'Marketing Cluster',
-      length: '6 min'
+      id: 'euQy6Z422bs',
+      title: 'Unit 12: Marketing',
+      course: 'Marketing Cluster Exam',
+      length: '3 min'
     },
     {
       id: 'REPLACE_WITH_YOUTUBE_ID',

@@ -1752,68 +1752,99 @@ async function renderLeaderboard() {
   }
 }
 
-const LB_PAGE_SIZE = 20;
+/* =========================================================================
+   FARM4GLASS — LEADERBOARD: TOP 10 + YOUR RANK
+   REPLACES the whole renderLeaderboardPage() function in script.js.
+   -------------------------------------------------------------------------
+   Shows the top 10 only. Below that, where you actually sit:
+
+     - inside the top 10  -> a one-line note, since your row is already
+                             highlighted up there
+     - outside it         -> your full row with your real rank
+     - not on the board   -> a short explanation instead of silence
+
+   LB_PAGE_SIZE, lbPage and lbGoToPage are left unused by this. Harmless to
+   leave them; delete them if you want the file tidy.
+   ========================================================================= */
+
+const LB_TOP_COUNT = 10;
+
+// One row. rank is zero-based, so rank 0 is first place.
+function lbRowHtml(u, rank) {
+  const isYou = u.id === currentUser?.uid;
+  const rankClass = rank === 0 ? "gold" : rank === 1 ? "silver" : rank === 2 ? "bronze" : "";
+  const val = lbMode === "xp" ? (u.xp || 0)
+            : lbMode === "streak" ? (u.streak || 0)
+            : (u.completedLessons?.length || 0);
+  const unit = lbMode === "xp" ? "XP" : lbMode === "streak" ? "days" : "lessons";
+  const animal = getAnimalForXP(u.xp || 0);
+  const rankContent = rank === 0 ? icon("trophy")
+                    : rank === 1 ? icon("medal")
+                    : rank === 2 ? icon("award")
+                    : `#${rank + 1}`;
+
+  return `
+    <div class="lb-row${isYou ? " you" : ""}">
+      <div class="lb-rank ${rankClass}">${rankContent}</div>
+      <div class="lb-avatar">${esc(animal.name)}</div>
+      <div class="lb-info">
+        <div class="lb-name">${esc(u.displayName || "DECA Student")}${isYou ? " (You)" : ""}</div>
+        <div class="lb-chapter">${esc(u.chapter || "No chapter set")} · ${esc(animal.name)}</div>
+      </div>
+      <div>
+        <div class="lb-val">${val.toLocaleString()}</div>
+        <div class="lb-unit">${unit}</div>
+      </div>
+    </div>
+  `;
+}
 
 function renderLeaderboardPage() {
   const container = document.getElementById("leaderboardList");
   if (!container) return;
-
-  const start = lbPage * LB_PAGE_SIZE;
-  const pageUsers = lbUsers.slice(start, start + LB_PAGE_SIZE);
 
   if (lbUsers.length === 0) {
     container.innerHTML = '<div class="lb-loading">No data yet. Be the first!</div>';
     return;
   }
 
-  container.innerHTML = "";
-  pageUsers.forEach((u, i) => {
-    const rank = start + i; // overall rank, not just position on this page
-    const isYou = u.id === currentUser?.uid;
-    const rankClass = rank === 0 ? "gold" : rank === 1 ? "silver" : rank === 2 ? "bronze" : "";
-    const val = lbMode === "xp" ? (u.xp || 0) : lbMode === "streak" ? (u.streak || 0) : (u.completedLessons?.length || 0);
-    const unit = lbMode === "xp" ? "XP" : lbMode === "streak" ? "days" : "lessons";
-    const animal = getAnimalForXP(u.xp || 0);
-    const rankContent = rank === 0 ? icon("trophy") : rank === 1 ? icon("medal") : rank === 2 ? icon("award") : `#${rank + 1}`;
+  const topHtml = lbUsers.slice(0, LB_TOP_COUNT).map((u, i) => lbRowHtml(u, i)).join("");
 
-    const row = document.createElement("div");
-    row.className = `lb-row${isYou ? " you" : ""}`;
-    row.innerHTML = `
-      <div class="lb-rank ${rankClass}">${rankContent}</div>
-      <div class="lb-avatar">${animal.name}</div>
-      <div class="lb-info">
-        <div class="lb-name">${u.displayName || "DECA Student"}${isYou ? " (You)" : ""}</div>
-        <div class="lb-chapter">${u.chapter || "No chapter set"} · ${animal.name}</div>
-      </div>
-      <div>
-        <div class="lb-val">${val.toLocaleString()}</div>
-        <div class="lb-unit">${unit}</div>
-      </div>
-    `;
-    container.appendChild(row);
-  });
+  const myIndex = lbUsers.findIndex(u => u.id === currentUser?.uid);
+  const total = lbUsers.length;
+  let yourRankHtml = "";
 
-  const totalPages = Math.ceil(lbUsers.length / LB_PAGE_SIZE);
-  if (totalPages > 1) {
-    const nav = document.createElement("div");
-    nav.className = "lb-pagination";
-    nav.innerHTML = `
-      <button class="lb-page-btn" onclick="lbGoToPage(${lbPage - 1})" ${lbPage === 0 ? "disabled" : ""} aria-label="Previous page">‹</button>
-      <span class="lb-page-label">Page ${lbPage + 1} of ${totalPages}</span>
-      <button class="lb-page-btn" onclick="lbGoToPage(${lbPage + 1})" ${lbPage >= totalPages - 1 ? "disabled" : ""} aria-label="Next page">›</button>
-    `;
-    container.appendChild(nav);
+  if (myIndex === -1) {
+    // Hidden from the leaderboard, or filtered out of this board entirely.
+    yourRankHtml = `
+      <div class="lb-your-rank">
+        <div class="lb-your-rank-label">Your rank</div>
+        <div class="lb-your-rank-empty">
+          You're not on this board yet${lbMode === "chapter" ? " — enter your chapter's code on your Profile" : ""}.
+        </div>
+      </div>`;
+  } else if (myIndex < LB_TOP_COUNT) {
+    yourRankHtml = `
+      <div class="lb-your-rank">
+        <div class="lb-your-rank-label">Your rank</div>
+        <div class="lb-your-rank-inline">
+          You're <strong>#${myIndex + 1}</strong> of ${total.toLocaleString()} — you're up there.
+        </div>
+      </div>`;
+  } else {
+    yourRankHtml = `
+      <div class="lb-your-rank">
+        <div class="lb-your-rank-label">Your rank · #${myIndex + 1} of ${total.toLocaleString()}</div>
+        ${lbRowHtml(lbUsers[myIndex], myIndex)}
+      </div>`;
   }
+
+  container.innerHTML = `
+    <div class="lb-top-label">Top ${Math.min(LB_TOP_COUNT, total)}</div>
+    ${topHtml}
+    ${yourRankHtml}
+  `;
 }
-
-window.lbGoToPage = function(page) {
-  const totalPages = Math.ceil(lbUsers.length / LB_PAGE_SIZE);
-  if (page < 0 || page >= totalPages) return;
-  lbPage = page;
-  renderLeaderboardPage();
-  document.getElementById("leaderboardList")?.scrollIntoView({ behavior: "smooth", block: "start" });
-};
-
 // ========================= PERFORMANCE ANALYTICS =========================
 function renderAnalytics() {
   const container = document.getElementById("analyticsContent");

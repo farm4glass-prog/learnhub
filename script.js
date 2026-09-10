@@ -6701,3 +6701,317 @@ window.adminSeedRubrics = async function() {
   if (document.readyState !== 'loading') start();
   else document.addEventListener('DOMContentLoaded', start);
 })();
+
+
+/* =========================================================================
+   FARM4GLASS — GUEST SPEAKER VIDEOS
+   PASTE THIS AT THE VERY END OF script.js.
+   -------------------------------------------------------------------------
+   Self-contained. It reuses script.js's own Firebase handles (db, doc,
+   setDoc, deleteDoc, collection, getDocs) and its own helpers (icon, esc,
+   safeUrl, isAdmin, currentUser, f4gNotice), so there is no second file to
+   load and nothing to go wrong with script order.
+
+   Once this is in, guest-speakers.js is dead weight — you can delete it and
+   remove its <script> tag from index.html. Keep guest-speakers.css: it's
+   what styles the student-facing cards.
+
+   Your existing renderAdminGuestSpeakersSection() stub still works unchanged,
+   because this defines window.renderGuestSpeakerAdmin for it to call.
+
+   Speakers live in the Firestore "guestSpeakers" collection:
+     { id, name, role, area, videoUrl, notesUrl, notesLabel,
+       recordedOn, order, description, addedAt }
+   ========================================================================= */
+
+let gsSpeakers = [];
+let gsLoaded = false;
+let gsLoading = false;
+let gsArea = "All areas";
+let gsSelectedId = null;
+let gsEditingId = null;
+
+/* ---------- links ---------- */
+
+function gsYoutubeId(url) {
+  const raw = String(url || "");
+  if (raw.includes("v=")) return raw.split("v=")[1].split("&")[0];
+  if (raw.includes("youtu.be/")) return raw.split("youtu.be/")[1].split("?")[0];
+  if (raw.includes("/embed/")) return raw.split("/embed/")[1].split("?")[0];
+  if (raw.includes("/shorts/")) return raw.split("/shorts/")[1].split("?")[0];
+  return "";
+}
+
+// Empty means we can't embed it, and the card offers a new-tab link instead.
+function gsEmbedUrl(url) {
+  const yt = gsYoutubeId(url);
+  if (yt) return `https://www.youtube.com/embed/${yt}`;
+  const drive = driveFileId(url);
+  return drive ? `https://drive.google.com/file/d/${drive}/preview` : "";
+}
+
+function gsThumbUrl(url) {
+  const yt = gsYoutubeId(url);
+  return yt ? `https://img.youtube.com/vi/${yt}/hqdefault.jpg` : "";
+}
+
+function gsNotesLabel(s) {
+  return String(s.notesLabel || "").trim() || "Key takeaways";
+}
+
+/* ---------- load ---------- */
+
+function gsSort() {
+  gsSpeakers.sort((a, b) => {
+    const oa = a.order == null || a.order === "" ? 9999 : Number(a.order);
+    const ob = b.order == null || b.order === "" ? 9999 : Number(b.order);
+    return oa - ob || String(a.name || "").localeCompare(String(b.name || ""));
+  });
+}
+
+// Lazy: the first render of either tab triggers it, so startDataLoads()
+// doesn't need touching.
+async function loadGuestSpeakers() {
+  if (gsLoading || gsLoaded) return;
+  gsLoading = true;
+  try {
+    const snap = await getDocs(collection(db, "guestSpeakers"));
+    gsSpeakers = snap.docs.map(d => d.data());
+  } catch (e) {
+    console.error("Failed to load guest speakers — check Firestore rules for the \"guestSpeakers\" collection:", e);
+    gsSpeakers = [];
+  }
+  gsSort();
+  gsLoaded = true;
+  gsLoading = false;
+
+  if (document.getElementById("speakers")?.classList.contains("active")) renderGuestSpeakersTab();
+  if (document.getElementById("gsAdminMarker")) window.renderGuestSpeakerAdmin();
+}
+
+/* ---------- student tab ---------- */
+
+function gsAreas() {
+  const found = [...new Set(gsSpeakers.map(s => String(s.area || "").trim()).filter(Boolean))].sort();
+  return ["All areas", ...found];
+}
+
+window.gsFilterArea = function (area) {
+  gsArea = area;
+  gsSelectedId = null;
+  renderGuestSpeakersTab();
+};
+
+window.gsPlay = function (id) {
+  gsSelectedId = gsSelectedId === id ? null : id;
+  renderGuestSpeakersTab();
+};
+
+function renderGuestSpeakersTab() {
+  const container = document.getElementById("guestSpeakersContent");
+  if (!container) return;
+
+  if (!gsLoaded) {
+    container.innerHTML = `<div class="admin-empty-state">Loading talks...</div>`;
+    loadGuestSpeakers();
+    return;
+  }
+
+  const areas = gsAreas();
+  if (!areas.includes(gsArea)) gsArea = "All areas";
+  const list = gsSpeakers.filter(s => gsArea === "All areas" || String(s.area || "").trim() === gsArea);
+
+  const filtersHtml = areas.length > 1
+    ? `<div class="category-filters">${areas.map(a => `
+        <button class="cat-btn ${a === gsArea ? "active" : ""}" onclick="gsFilterArea('${esc(a).replace(/'/g, "\\'")}')">${esc(a)}</button>
+      `).join("")}</div>`
+    : "";
+
+  const cardsHtml = list.map(gsCardHtml).join("") || `
+    <div class="admin-empty-state">${
+      isAdmin(currentUser)
+        ? "No talks yet. Add the first one under Admin &gt; Guest Speakers."
+        : "No talks in this area yet — check back soon."
+    }</div>`;
+
+  container.innerHTML = `${filtersHtml}<div class="gs-grid">${cardsHtml}</div>`;
+}
+
+function gsCardHtml(s) {
+  const open = gsSelectedId === s.id;
+  const embed = gsEmbedUrl(s.videoUrl);
+  const thumb = gsThumbUrl(s.videoUrl);
+  const videoLink = safeUrl(s.videoUrl);
+  const notesLink = safeUrl(s.notesUrl);
+
+  const mediaHtml = open && embed
+    ? `<div class="gs-player"><iframe src="${esc(embed)}" title="${esc(s.name)}" allowfullscreen></iframe></div>`
+    : embed
+      ? `<button class="gs-thumb ${thumb ? "" : "gs-thumb-blank"}" onclick="gsPlay('${esc(s.id)}')"
+                 ${thumb ? `style="background-image:url('${esc(thumb)}')"` : ""}>
+           <span class="gs-thumb-play">${icon("play")}</span>
+         </button>`
+      : `<div class="gs-thumb gs-thumb-blank gs-thumb-static"><span class="gs-thumb-play">${icon("users")}</span></div>`;
+
+  return `
+    <article class="gs-card ${open ? "gs-open" : ""}">
+      ${mediaHtml}
+      <div class="gs-card-body">
+        <h3 class="gs-name">${esc(s.name)}</h3>
+        ${s.role ? `<div class="gs-role">${esc(s.role)}</div>` : ""}
+        <div class="gs-meta">
+          ${s.area ? `<span class="gs-area-tag">${esc(s.area)}</span>` : ""}
+          ${s.recordedOn ? `<span class="gs-recorded">${esc(s.recordedOn)}</span>` : ""}
+        </div>
+        ${s.description ? `<p class="gs-desc">${esc(s.description)}</p>` : ""}
+        <div class="gs-actions">
+          ${embed ? `<button class="gs-play-btn" onclick="gsPlay('${esc(s.id)}')">${icon("play")} ${open ? "Close video" : "Watch the talk"}</button>` : ""}
+          ${notesLink ? `<a class="gs-notes-link" href="${esc(notesLink)}" target="_blank" rel="noopener">${icon("file")} ${esc(gsNotesLabel(s))}</a>` : ""}
+          ${!embed && videoLink ? `<a class="gs-open-link" href="${esc(videoLink)}" target="_blank" rel="noopener">${icon("external")} Open the video</a>` : ""}
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+/* ---------- admin subtab ---------- */
+
+window.renderGuestSpeakerAdmin = function () {
+  const body = document.getElementById("adminSubtabBody");
+  if (!body || !isAdmin(currentUser)) return;
+
+  if (!gsLoaded) {
+    body.innerHTML = `<div class="admin-empty-state" id="gsAdminMarker">Loading speakers...</div>`;
+    loadGuestSpeakers();
+    return;
+  }
+
+  const editing = gsEditingId ? gsSpeakers.find(s => s.id === gsEditingId) : null;
+
+  const listHtml = gsSpeakers.map(s => `
+    <div class="admin-lesson-block">
+      <div class="admin-lesson-head">
+        <h4>${esc(s.name)}</h4>
+        <div style="display:flex;gap:8px;">
+          <button class="admin-btn-sm ghost" onclick="gsEdit('${esc(s.id)}')">Edit</button>
+          <button class="admin-btn-sm danger" onclick="gsDelete('${esc(s.id)}')">${icon("trash")}</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);">
+        ${s.area ? esc(s.area) + " · " : ""}${gsEmbedUrl(s.videoUrl) ? "plays inline" : "opens in a new tab"} ·
+        ${safeUrl(s.notesUrl) ? esc(gsNotesLabel(s)) + " attached" : "<strong>no takeaways doc</strong>"}
+      </div>
+    </div>`).join("") || `<div class="admin-empty-state">No talks yet.</div>`;
+
+  const areaList = [...new Set(gsSpeakers.map(s => s.area).filter(Boolean))]
+    .map(a => `<option value="${esc(a)}"></option>`).join("");
+
+  body.innerHTML = `
+    <span id="gsAdminMarker" hidden></span>
+    <datalist id="gsAreaList">${areaList}</datalist>
+    <div class="admin-seed-banner">
+      <div>Paste a YouTube or Google Drive link for the video, plus the share link for the key-takeaways doc. Anything on Drive or Docs must be shared as <strong>Anyone with the link — Viewer</strong>, or students hit a sign-in wall. A video link that isn't YouTube or Drive still saves — it just opens in a new tab instead of playing in the card.</div>
+    </div>
+    <div class="admin-layout">
+      <div class="admin-course-list">${listHtml}</div>
+      <div class="admin-panel-body">
+        <h3 style="margin-bottom:16px;">${editing ? "Edit talk" : "Add a talk"}</h3>
+        <div class="admin-kpi-form">
+          <input type="text" id="gs-name" placeholder="Speaker name" value="${editing ? esc(editing.name) : ""}">
+          <input type="text" id="gs-role" placeholder="Who they are (e.g. 2026 ICDC champion, RMS)" value="${editing ? esc(editing.role || "") : ""}">
+          <input type="text" id="gs-area" list="gsAreaList" placeholder="Event area (e.g. Corporate Challenges)" value="${editing ? esc(editing.area || "") : ""}">
+          <input type="url" id="gs-url" placeholder="Video link — YouTube or Google Drive" value="${editing ? esc(editing.videoUrl || "") : ""}">
+          <input type="url" id="gs-notes" placeholder="Key takeaways doc link" value="${editing ? esc(editing.notesUrl || "") : ""}">
+          <input type="text" id="gs-notes-label" placeholder="Doc button text (optional — defaults to Key takeaways)" value="${editing ? esc(editing.notesLabel || "") : ""}">
+          <input type="text" id="gs-recorded" placeholder="When it was recorded (optional)" value="${editing ? esc(editing.recordedOn || "") : ""}">
+          <input type="number" id="gs-order" placeholder="Sort position (optional — lower shows first)" value="${editing && editing.order != null ? esc(editing.order) : ""}">
+          <textarea id="gs-desc" rows="3" placeholder="What the talk covers (optional)">${editing ? esc(editing.description || "") : ""}</textarea>
+          <div style="display:flex;gap:10px;">
+            <button class="admin-btn-sm" onclick="gsSave()">${editing ? "Save changes" : "Publish talk"}</button>
+            ${editing ? `<button class="admin-btn-sm ghost" onclick="gsCancelEdit()">Cancel</button>` : ""}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+window.gsEdit = function (id) {
+  gsEditingId = id;
+  window.renderGuestSpeakerAdmin();
+};
+
+window.gsCancelEdit = function () {
+  gsEditingId = null;
+  window.renderGuestSpeakerAdmin();
+};
+
+window.gsSave = async function () {
+  if (!isAdmin(currentUser)) return;
+  const val = id => (document.getElementById(id)?.value || "").trim();
+
+  const name = val("gs-name");
+  const videoUrl = val("gs-url");
+  const notesUrl = val("gs-notes");
+  const orderRaw = val("gs-order");
+
+  if (!name) return alert("Enter the speaker's name.");
+  if (!videoUrl) return alert("Add the video link.");
+  if (!safeUrl(videoUrl)) return alert("The video link needs to start with https://");
+  if (notesUrl && !safeUrl(notesUrl)) return alert("The takeaways doc link needs to start with https://");
+  if (!gsEmbedUrl(videoUrl) &&
+      !confirm("That video link isn't YouTube or Google Drive, so it won't play inside the site — students get a button that opens it in a new tab. Save anyway?")) return;
+
+  const editing = gsEditingId ? gsSpeakers.find(s => s.id === gsEditingId) : null;
+  const id = gsEditingId || `speaker-${Date.now()}`;
+  const speakerDoc = {
+    id, name,
+    role: val("gs-role"),
+    area: val("gs-area"),
+    videoUrl, notesUrl,
+    notesLabel: val("gs-notes-label"),
+    recordedOn: val("gs-recorded"),
+    description: val("gs-desc"),
+    order: orderRaw === "" ? null : Number(orderRaw),
+    addedAt: editing ? editing.addedAt : new Date().toISOString()
+  };
+
+  try {
+    await setDoc(doc(db, "guestSpeakers", id), speakerDoc);
+    const idx = gsSpeakers.findIndex(s => s.id === id);
+    if (idx >= 0) gsSpeakers[idx] = speakerDoc; else gsSpeakers.push(speakerDoc);
+    gsSort();
+    gsEditingId = null;
+    window.renderGuestSpeakerAdmin();
+    renderGuestSpeakersTab();
+    f4gNotice(editing ? "Talk updated" : "Talk published", `${name} is live on the Guest Speaker Videos tab.`);
+  } catch (e) {
+    console.error("Couldn't save that speaker:", e);
+    alert("Couldn't save — check the console. A permissions error means you need a Firestore rule for the \"guestSpeakers\" collection.");
+  }
+};
+
+window.gsDelete = async function (id) {
+  if (!isAdmin(currentUser)) return;
+  const s = gsSpeakers.find(x => x.id === id);
+  if (!confirm(`Remove ${s ? s.name : "this talk"}? The video and the doc themselves aren't touched.`)) return;
+  try {
+    await deleteDoc(doc(db, "guestSpeakers", id));
+    gsSpeakers = gsSpeakers.filter(x => x.id !== id);
+    if (gsSelectedId === id) gsSelectedId = null;
+    if (gsEditingId === id) gsEditingId = null;
+    window.renderGuestSpeakerAdmin();
+    renderGuestSpeakersTab();
+  } catch (e) {
+    console.error("Couldn't delete that speaker:", e);
+    alert("Couldn't remove that — check the console.");
+  }
+};
+
+/* ---------- render the student tab when it's opened ---------- */
+// showTab is defined earlier in this same file, so wrapping it here is safe.
+const gsPrevShowTab = window.showTab;
+window.showTab = function (tabName) {
+  gsPrevShowTab(tabName);
+  if (tabName === "speakers") renderGuestSpeakersTab();
+};

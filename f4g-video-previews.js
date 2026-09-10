@@ -49,13 +49,13 @@
     },
     {
       id: 'BNhKDelvgsg',
-      title: 'Corporate Challenges',
+      title: 'Guest Speaker - Shreshta Ramji',
       course: 'Corporate Challenges',
       length: '4 min'
     },
     {
       id: '6sAJrMWJOik',
-      title: 'Guest Speaker Video',
+      title: 'Guest Speaker - Shrihan Thangam',
       course: 'Principles of Business Management Events',
       length: '6 min'
     }

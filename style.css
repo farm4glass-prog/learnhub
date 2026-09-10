@@ -3189,3 +3189,158 @@ body.f4g-locked { overflow: hidden; }
   .rp-frame { height: 60vh; min-height: 340px; }
   .rp-open-btn { width: 100%; justify-content: center; }
 }
+
+/* =========================================================================
+   FARM4GLASS — GUEST SPEAKER VIDEOS
+   PASTE THIS AT THE VERY END OF style.css.
+   -------------------------------------------------------------------------
+   Additive only — every selector here is new, so nothing above it changes.
+   The cards borrow the same glass surface, radii and blue the portal already
+   uses, so the tab reads as part of the site rather than a bolt-on.
+
+   Once this is in, guest-speakers.css is dead weight — delete it and remove
+   its <link> tag from index.html.
+
+   The admin panel needs nothing here; it reuses your existing .admin-layout,
+   .admin-course-list and .admin-kpi-form styles.
+   ========================================================================= */
+
+.gs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 22px;
+  align-items: start;
+}
+
+/* A card with its player open takes the full row, so the video is watchable
+   instead of squeezed into a third of the screen. */
+.gs-card.gs-open { grid-column: 1 / -1; }
+
+.gs-card {
+  background: rgba(255,255,255,.86);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.92);
+  border-radius: 26px;
+  box-shadow: 0 14px 38px rgba(15,95,140,.12);
+  overflow: hidden;
+  transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s;
+}
+.gs-card:hover { transform: translateY(-5px); box-shadow: 0 28px 62px rgba(15,95,140,.2); }
+.gs-card.gs-open:hover { transform: none; }
+
+/* ---------- thumbnail ---------- */
+
+.gs-thumb {
+  display: block; width: 100%; aspect-ratio: 16 / 9;
+  border: none; padding: 0; margin: 0; cursor: pointer;
+  background-color: #0a1a2b;
+  background-size: cover; background-position: center;
+  position: relative;
+}
+.gs-thumb::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(160deg, rgba(10,26,43,.1), rgba(10,26,43,.55));
+  transition: background .25s;
+}
+.gs-thumb:hover::after { background: linear-gradient(160deg, rgba(10,26,43,.05), rgba(10,26,43,.35)); }
+
+/* No YouTube thumbnail to pull (a Drive video, or no video) — fall back to
+   the brand gradient rather than an empty black box. */
+.gs-thumb-blank { background-image: linear-gradient(140deg, #0f5f8c 0%, #167db5 58%, #38bdf8 130%); }
+.gs-thumb-static { cursor: default; }
+.gs-thumb-static::after { background: none; }
+
+.gs-thumb-play {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  z-index: 1; width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.94); color: var(--blue-dark);
+  box-shadow: 0 12px 28px rgba(10,26,43,.32);
+  transition: transform .25s cubic-bezier(.2,.8,.2,1);
+}
+.gs-thumb-play .icon-svg { width: 26px; height: 26px; }
+.gs-thumb:hover .gs-thumb-play { transform: translate(-50%, -50%) scale(1.08); }
+
+/* ---------- player ---------- */
+
+.gs-player { width: 100%; aspect-ratio: 16 / 9; background: #0a1a2b; }
+.gs-player iframe { display: block; width: 100%; height: 100%; border: none; }
+
+/* ---------- card body ---------- */
+
+.gs-card-body { padding: 22px 24px 24px; }
+.gs-name { font-size: 20px; font-weight: 800; letter-spacing: -.02em; color: #0a1a2b; margin-bottom: 4px; }
+.gs-role { font-size: 13.5px; font-weight: 700; color: var(--blue); line-height: 1.45; }
+
+.gs-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+.gs-area-tag {
+  background: rgba(22,125,181,.11); color: var(--blue-dark);
+  border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 700;
+}
+.gs-recorded { font-size: 12px; font-weight: 600; color: var(--muted); }
+
+.gs-desc { font-size: 14px; line-height: 1.65; color: #3d5f80; margin-top: 14px; }
+
+.gs-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 18px; }
+
+.gs-play-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, #167db5, #0f5f8c); color: #fff;
+  border: none; border-radius: 999px; padding: 10px 20px;
+  font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 10px 24px rgba(15,95,140,.26);
+  transition: transform .15s cubic-bezier(.2,.8,.2,1), box-shadow .2s;
+}
+.gs-play-btn:hover { transform: translateY(-2px); box-shadow: 0 16px 32px rgba(15,95,140,.3); }
+.gs-play-btn:active { transform: translateY(1px) scale(.985); }
+
+/* The takeaways doc gets the amber treatment the site already uses for XP and
+   badges, so it reads as study material next to the blue watch button rather
+   than a second video button. */
+.gs-notes-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1.5px solid rgba(245,158,11,.55); color: #92400e;
+  border-radius: 999px; padding: 9px 18px;
+  font-size: 13px; font-weight: 700; text-decoration: none;
+  transition: all .15s;
+}
+.gs-notes-link:hover { background: #fde68a; border-color: #f59e0b; }
+.gs-notes-link .icon-svg { color: #b45309; }
+
+.gs-open-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.9); border: 1.5px solid rgba(15,95,140,.18);
+  border-radius: 999px; padding: 9px 18px; font-size: 13px; font-weight: 700;
+  color: var(--text); text-decoration: none; transition: all .15s;
+}
+.gs-open-link:hover { border-color: var(--blue); color: var(--blue-dark); background: #fff; }
+.gs-open-link .icon-svg { color: var(--blue); }
+
+/* ---------- keyboard focus ---------- */
+
+.gs-thumb:focus-visible,
+.gs-play-btn:focus-visible,
+.gs-notes-link:focus-visible,
+.gs-open-link:focus-visible {
+  outline: 3px solid var(--blue-light);
+  outline-offset: 3px;
+}
+
+/* ---------- mobile ---------- */
+
+@media (max-width: 768px) {
+  .gs-grid { grid-template-columns: 1fr; gap: 16px; }
+  .gs-card { border-radius: 20px; }
+  .gs-card:hover { transform: none; }
+  .gs-card-body { padding: 18px 18px 20px; }
+  .gs-name { font-size: 18px; }
+  .gs-thumb-play { width: 48px; height: 48px; }
+  .gs-thumb-play .icon-svg { width: 22px; height: 22px; }
+  .gs-actions { flex-direction: column; align-items: stretch; }
+  .gs-play-btn, .gs-notes-link, .gs-open-link { justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gs-card, .gs-thumb-play, .gs-play-btn { transition: none !important; }
+}

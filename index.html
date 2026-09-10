@@ -14,6 +14,8 @@
   <link rel="stylesheet" href="advisor.css">
   <!-- Version info block, hidden-course tags, and the nav-only landing views -->
   <link rel="stylesheet" href="extras.css">
+  <!-- Guest Speaker Videos tab -->
+  <link rel="stylesheet" href="guest-speakers.css">
 </head>
 <body>
 
@@ -760,6 +762,12 @@
         Calendar
       </button>
 
+      <!-- Guest Speaker Videos. Rendered by guest-speakers.js, which wraps
+           showTab — script.js needs no change for this tab. -->
+      <button class="nav-btn" onclick="showTab('speakers')" id="nav-speakers">
+        Guest Speaker Videos
+      </button>
+
       <button class="nav-btn" onclick="showTab('blog')" id="nav-blog">
         Blog
       </button>
@@ -1062,6 +1070,16 @@
       <div id="calendarContent"></div>
     </div>
 
+    <!-- ===== GUEST SPEAKER VIDEOS =====
+         Everything in here is rendered by guest-speakers.js. Speakers live in
+         the Firestore "guestSpeakers" collection, so they're added from the
+         admin controls at the top of this tab rather than in the code. -->
+    <div id="speakers" class="tab-content hidden">
+      <h1>Guest Speaker Videos</h1>
+      <p class="page-sub">Recorded sessions with ICDC champions and finalists — what they actually did to place, in their own words.</p>
+      <div id="guestSpeakersContent"></div>
+    </div>
+
     <!-- ===== BLOG ===== -->
     <div id="blog" class="tab-content hidden">
       <h1>Farm4Glass Blog</h1>
@@ -1172,6 +1190,15 @@
 <!-- Chapter Dashboard. Must load AFTER script.js — it reuses the Firebase
      app script.js sets up, and wraps showTab once that exists. -->
 <script type="module" src="advisor.js"></script>
+
+<!-- Guest Speaker Videos. Same deal as advisor.js: loads after script.js,
+     reuses its Firebase app, and wraps showTab. -->
+<script type="module" src="guest-speakers.js"></script>
+
+<!-- Adds the Corporate Challenges course to the database the first time an
+     admin signs in, then does nothing on every load after that. Safe to
+     delete once the course exists and you've filled it in. -->
+<script type="module" src="f4g-corporate-challenges.js"></script>
 
 
         <script src="f4g-questions-1.js"></script>

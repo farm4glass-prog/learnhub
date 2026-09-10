@@ -1,20 +1,22 @@
 /* =========================================================================
-   FARM4GLASS — GUEST SPEAKER VIDEOS
+   FARM4GLASS — GUEST SPEAKER VIDEOS          build 4
    -------------------------------------------------------------------------
-   Two things live in this file:
+   Two mounts:
 
-     1. The student-facing "Guest Speaker Videos" tab.
-     2. A "Guest Speakers" subtab inside the Admin panel, where you add each
-        talk: the video link plus a link to the key-takeaways doc.
+     1. The student-facing "Guest Speaker Videos" tab (#guestSpeakersContent).
+     2. The admin editor, rendered into #adminSubtabBody by script.js when the
+        "Guest Speakers" subtab is clicked.
 
-   script.js needs no edits. This module loads after it, reuses the Firebase
-   app it set up, and wraps showTab and adminSwitchSubTab. The admin subtab
-   button is injected into the existing subtab bar, and a MutationObserver
-   puts it back whenever the panel re-renders.
+   Mount 2 is now a REAL subtab: script.js draws the button alongside Courses,
+   KPI Database and the rest, and calls window.renderGuestSpeakerAdmin() to
+   fill the body. That needs two small edits in script.js — see the comment
+   block at the bottom of this file for exactly what they are.
 
-   If the button doesn't appear, open the browser console. This file logs
-   "[guest-speakers] ..." lines saying exactly how far it got, and you can
-   force the panel open by running:  gsOpenAdmin()
+   If the admin subtab shows "the guest speaker editor didn't load", this file
+   isn't being fetched. Check it's named exactly guest-speakers.js and sits
+   next to index.html.
+
+   Console diagnostics all start with "[guest-speakers]".
 
    Speakers live in the Firestore "guestSpeakers" collection.
 
@@ -39,22 +41,22 @@ import {
 const firebaseConfig = {
   apiKey: "AIzaSyBbx0tdGbQBeUmWnTMHdipSLPrp6zo6n6c",
   authDomain: "farm4glass-142b7.firebaseapp.com",
-  projectId: "farm4glass-142b7",
   storageBucket: "farm4glass-142b7.firebasestorage.app",
+  projectId: "farm4glass-142b7",
   messagingSenderId: "1080688954531",
   appId: "1:1080688954531:web:334be5bdfae4d338e74316",
   measurementId: "G-27SR58HRSZ"
 };
 
 const ADMIN_EMAILS = ["farm4glass@gmail.com"];
+const GS_BUILD = 4;
 
 const app = getApps()[0] || initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
 const gsLog = (...args) => console.log("[guest-speakers]", ...args);
-
-gsLog("module loaded");
+gsLog(`module loaded (build ${GS_BUILD})`);
 
 /* ---------- state ---------- */
 
@@ -64,14 +66,12 @@ let speakersLoaded = false;
 let gsArea = "All areas";
 let gsSelectedId = null;
 let gsEditingId = null;
-let gsAdminSubTabActive = false;
-let gsObserverStarted = false;
 
 function gsIsAdmin() {
   return !!gsUser && ADMIN_EMAILS.includes(gsUser.email);
 }
 
-/* ---------- small helpers (kept local so script.js stays untouched) ---------- */
+/* ---------- small helpers (kept local so script.js stays lean) ---------- */
 
 function gsEsc(s) {
   return String(s ?? "")
@@ -144,7 +144,7 @@ async function loadGuestSpeakers() {
   try {
     const snap = await getDocs(collection(db, "guestSpeakers"));
     speakers = snap.docs.map(d => d.data());
-    gsLog(`loaded ${speakers.length} speaker(s) from Firestore`);
+    gsLog(`loaded ${speakers.length} speaker(s)`);
   } catch (e) {
     console.error("[guest-speakers] Firestore read failed — check your rules for the \"guestSpeakers\" collection:", e);
     speakers = [];
@@ -153,7 +153,8 @@ async function loadGuestSpeakers() {
   speakersLoaded = true;
 
   if (document.getElementById("speakers")?.classList.contains("active")) renderGuestSpeakers();
-  if (gsAdminSubTabActive) renderGuestSpeakerAdmin();
+  // If the admin editor is already on screen when the read lands, refresh it.
+  if (document.getElementById("gsAdminMarker")) window.renderGuestSpeakerAdmin();
 }
 
 /* =========================================================================
@@ -191,7 +192,6 @@ function renderGuestSpeakers() {
 
   const areas = gsAreas();
   if (!areas.includes(gsArea)) gsArea = "All areas";
-
   const list = speakers.filter(s => gsArea === "All areas" || String(s.area || "").trim() === gsArea);
 
   const filtersHtml = areas.length > 1
@@ -250,74 +250,24 @@ function gsCardHtml(s) {
 
 /* =========================================================================
    ADMIN SUBTAB
-   -------------------------------------------------------------------------
-   script.js's renderAdminPanel() builds the subtab bar from a fixed list and
-   falls through to the Courses editor for any tab it doesn't recognize. So
-   asking it to switch to "speakers" is harmless — it renders Courses, and we
-   replace the body with ours straight after.
+   script.js calls this when the "Guest Speakers" subtab is selected. Same
+   shape as renderAdminRoleplaysSection and friends: list on the left, form
+   on the right.
    ========================================================================= */
 
-function gsInjectAdminSubtab() {
-  if (!gsIsAdmin()) return false;
+window.renderGuestSpeakerAdmin = function () {
+  const body = document.getElementById("adminSubtabBody");
+  if (!body) return;
 
-  const bar = document.querySelector("#adminContent .admin-subtabs");
-  if (!bar) return false;
-
-  let btn = bar.querySelector("#gsAdminSubtabBtn");
-  if (!btn) {
-    btn = document.createElement("button");
-    btn.id = "gsAdminSubtabBtn";
-    btn.className = "admin-subtab-btn";
-    btn.textContent = "Guest Speakers";
-    btn.addEventListener("click", () => window.adminSwitchSubTab("speakers"));
-    bar.appendChild(btn);
-    gsLog("subtab button added to the admin panel");
-  }
-
-  btn.classList.toggle("active", gsAdminSubTabActive);
-
-  if (gsAdminSubTabActive) {
-    bar.querySelectorAll(".admin-subtab-btn").forEach(b => {
-      if (b !== btn) b.classList.remove("active");
-    });
-    renderGuestSpeakerAdmin();
-  }
-  return true;
-}
-
-// Watches the admin panel for the whole session, not just from the first time
-// the Admin tab is opened. renderAdminPanel() runs on sign-in and again after
-// most saves, and each run rebuilds the subtab bar from scratch — so the
-// button has to be re-added rather than added once. Only acts when it's
-// actually missing, so it can't loop on its own writes.
-function gsStartAdminObserver() {
-  if (gsObserverStarted) return;
-  const root = document.getElementById("adminContent");
-  if (!root) return;
-  gsObserverStarted = true;
-  gsLog("watching the admin panel");
-
-  new MutationObserver(() => {
-    const bar = document.querySelector("#adminContent .admin-subtabs");
-    if (bar && !bar.querySelector("#gsAdminSubtabBtn")) gsInjectAdminSubtab();
-  }).observe(root, { childList: true, subtree: true });
-
-  gsInjectAdminSubtab();
-}
-
-// Escape hatch: run gsOpenAdmin() in the console to jump straight there.
-window.gsOpenAdmin = function () {
   if (!gsIsAdmin()) {
-    console.warn("[guest-speakers] not signed in as an admin account.");
+    body.innerHTML = `<div class="admin-empty-state">Admin accounts only.</div>`;
     return;
   }
-  window.showTab("admin");
-  window.adminSwitchSubTab("speakers");
-};
 
-function renderGuestSpeakerAdmin() {
-  const body = document.getElementById("adminSubtabBody");
-  if (!body || !gsIsAdmin()) return;
+  if (!speakersLoaded) {
+    body.innerHTML = `<div class="admin-empty-state" id="gsAdminMarker">Loading speakers...</div>`;
+    return;
+  }
 
   const editing = gsEditingId ? speakers.find(s => s.id === gsEditingId) : null;
 
@@ -344,6 +294,7 @@ function renderGuestSpeakerAdmin() {
     .map(a => `<option value="${gsEsc(a)}"></option>`).join("");
 
   body.innerHTML = `
+    <span id="gsAdminMarker" hidden></span>
     <datalist id="gsAreaList">${areaList}</datalist>
     <div class="admin-seed-banner">
       <div>
@@ -383,17 +334,17 @@ function renderGuestSpeakerAdmin() {
       </div>
     </div>
   `;
-}
+};
 
 window.gsEdit = function (id) {
   gsEditingId = id;
-  renderGuestSpeakerAdmin();
+  window.renderGuestSpeakerAdmin();
   document.getElementById("adminSubtabBody")?.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
 window.gsCancelEdit = function () {
   gsEditingId = null;
-  renderGuestSpeakerAdmin();
+  window.renderGuestSpeakerAdmin();
 };
 
 window.gsSave = async function () {
@@ -434,8 +385,8 @@ window.gsSave = async function () {
     if (idx >= 0) speakers[idx] = speakerDoc; else speakers.push(speakerDoc);
     gsSort();
     gsEditingId = null;
-    renderGuestSpeakerAdmin();
-    if (document.getElementById("speakers")) renderGuestSpeakers();
+    window.renderGuestSpeakerAdmin();
+    if (document.getElementById("guestSpeakersContent")) renderGuestSpeakers();
     window.f4gNotice?.(
       editing ? "Talk updated" : "Talk published",
       `${name} is live on the Guest Speaker Videos tab.`
@@ -455,8 +406,8 @@ window.gsDelete = async function (id) {
     speakers = speakers.filter(x => x.id !== id);
     if (gsSelectedId === id) gsSelectedId = null;
     if (gsEditingId === id) gsEditingId = null;
-    renderGuestSpeakerAdmin();
-    if (document.getElementById("speakers")) renderGuestSpeakers();
+    window.renderGuestSpeakerAdmin();
+    if (document.getElementById("guestSpeakersContent")) renderGuestSpeakers();
   } catch (e) {
     console.error("[guest-speakers] couldn't delete:", e);
     alert("Couldn't remove that — check the console.");
@@ -465,32 +416,18 @@ window.gsDelete = async function (id) {
 
 /* =========================================================================
    WIRING
+   Only the student tab needs a showTab hook now; the admin side is driven by
+   script.js calling renderGuestSpeakerAdmin() directly.
    ========================================================================= */
 
 const gsPrevShowTab = window.showTab;
 if (typeof gsPrevShowTab !== "function") {
-  console.error("[guest-speakers] window.showTab wasn't there when this file ran. It has to load AFTER script.js — check the script tag order in index.html.");
+  console.error("[guest-speakers] window.showTab wasn't defined when this file ran. It must load AFTER script.js — check the script tag order in index.html.");
 }
 
 window.showTab = function (tabName) {
   if (typeof gsPrevShowTab === "function") gsPrevShowTab(tabName);
   if (tabName === "speakers") renderGuestSpeakers();
-  if (tabName === "admin") {
-    gsStartAdminObserver();
-    gsInjectAdminSubtab();
-  }
-};
-
-const gsPrevSwitchSubTab = window.adminSwitchSubTab;
-if (typeof gsPrevSwitchSubTab !== "function") {
-  console.error("[guest-speakers] window.adminSwitchSubTab wasn't there when this file ran — the subtab button will do nothing.");
-}
-
-window.adminSwitchSubTab = function (tab) {
-  gsAdminSubTabActive = tab === "speakers";
-  if (!gsAdminSubTabActive) gsEditingId = null;
-  if (typeof gsPrevSwitchSubTab === "function") gsPrevSwitchSubTab(tab);
-  gsInjectAdminSubtab();
 };
 
 onAuthStateChanged(auth, (user) => {
@@ -498,12 +435,37 @@ onAuthStateChanged(auth, (user) => {
   if (!user) {
     speakers = [];
     speakersLoaded = false;
-    gsAdminSubTabActive = false;
     return;
   }
-  gsLog(gsIsAdmin() ? `signed in as admin (${user.email})` : `signed in as ${user.email} — not an admin, no subtab`);
+  gsLog(gsIsAdmin() ? `signed in as admin (${user.email})` : `signed in as ${user.email} — not an admin`);
   loadGuestSpeakers();
-  // Don't wait for the Admin tab to be clicked; the panel is built as soon as
-  // renderAll() runs for an admin, and it re-renders plenty after that.
-  gsStartAdminObserver();
 });
+
+/* =========================================================================
+   THE TWO EDITS THIS FILE NEEDS IN script.js
+   -------------------------------------------------------------------------
+   EDIT 1 — in renderAdminPanel(), inside the subtabsHtml template, add a
+   button after the Rubrics one:
+
+     <button class="admin-subtab-btn ${adminActiveSubTab === "speakers" ? "active" : ""}"
+             onclick="adminSwitchSubTab('speakers')">Guest Speakers</button>
+
+   EDIT 2 — in the same function, in the else-if chain that ends with
+   "else renderAdminCoursesSection();", add one line just before that else:
+
+     else if (adminActiveSubTab === "speakers") renderAdminGuestSpeakersSection();
+
+   and define this small function anywhere in script.js:
+
+     function renderAdminGuestSpeakersSection() {
+       const body = document.getElementById("adminSubtabBody");
+       if (!body) return;
+       if (typeof window.renderGuestSpeakerAdmin === "function") {
+         window.renderGuestSpeakerAdmin();
+       } else {
+         body.innerHTML = `<div class="admin-empty-state">The guest speaker
+           editor didn't load. Check that guest-speakers.js is in the repo
+           next to index.html, spelled exactly that way.</div>`;
+       }
+     }
+   ========================================================================= */

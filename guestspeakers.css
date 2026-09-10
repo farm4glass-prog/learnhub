@@ -5,19 +5,6 @@
    reads as part of the site rather than a bolt-on.
    ========================================================================= */
 
-/* ---------- admin strip ---------- */
-
-.gs-admin-bar {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 12px;
-  background: rgba(255,255,255,.7); backdrop-filter: blur(10px);
-  border: 1px solid rgba(15,95,140,.16); border-radius: 999px;
-  padding: 12px 12px 12px 22px; margin-bottom: 22px;
-  font-size: 13.5px; font-weight: 600; color: var(--muted);
-}
-
-.gs-admin-panel { margin-bottom: 24px; }
-
 /* ---------- grid ---------- */
 
 .gs-grid {
@@ -108,6 +95,20 @@
 .gs-play-btn:hover { transform: translateY(-2px); box-shadow: 0 16px 32px rgba(15,95,140,.3); }
 .gs-play-btn:active { transform: translateY(1px) scale(.985); }
 
+/* The takeaways doc gets the amber treatment the site already uses for XP and
+   badges, so it reads as the study material next to the blue "watch" action
+   rather than a second video button. */
+.gs-notes-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1.5px solid rgba(245,158,11,.55); color: #92400e;
+  border-radius: 999px; padding: 9px 18px;
+  font-size: 13px; font-weight: 700; text-decoration: none;
+  transition: all .15s;
+}
+.gs-notes-link:hover { background: #fde68a; border-color: #f59e0b; }
+.gs-notes-link .icon-svg { color: #b45309; }
+
 .gs-open-link {
   display: inline-flex; align-items: center; gap: 8px;
   background: rgba(255,255,255,.9); border: 1.5px solid rgba(15,95,140,.18);
@@ -117,10 +118,23 @@
 .gs-open-link:hover { border-color: var(--blue); color: var(--blue-dark); background: #fff; }
 .gs-open-link .icon-svg { color: var(--blue); }
 
+/* ---------- admin form ---------- */
+
+/* Groups the admin fields so the video link, the doc link and the extras
+   don't read as one undifferentiated stack of boxes. */
+.gs-field-label {
+  display: block;
+  font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--blue-dark);
+  margin: 18px 0 8px;
+}
+.gs-field-label:first-child { margin-top: 0; }
+
 /* ---------- keyboard focus ---------- */
 
 .gs-thumb:focus-visible,
 .gs-play-btn:focus-visible,
+.gs-notes-link:focus-visible,
 .gs-open-link:focus-visible {
   outline: 3px solid var(--blue-light);
   outline-offset: 3px;
@@ -137,9 +151,7 @@
   .gs-thumb-play { width: 48px; height: 48px; }
   .gs-thumb-play .icon-svg { width: 22px; height: 22px; }
   .gs-actions { flex-direction: column; align-items: stretch; }
-  .gs-play-btn, .gs-open-link { justify-content: center; }
-  .gs-admin-bar { border-radius: 18px; padding: 14px 16px; }
-  .gs-admin-bar .admin-btn-sm { width: 100%; }
+  .gs-play-btn, .gs-notes-link, .gs-open-link { justify-content: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {

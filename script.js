@@ -2375,13 +2375,11 @@ function renderAdminPanel() {
       <button class="admin-subtab-btn ${adminActiveSubTab === "roleplays" ? "active" : ""}" onclick="adminSwitchSubTab('roleplays')">Roleplays</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "blog" ? "active" : ""}" onclick="adminSwitchSubTab('blog')">Blog</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "rubrics" ? "active" : ""}" onclick="adminSwitchSubTab('rubrics')">Rubrics</button>
+      <button class="admin-subtab-btn ${adminActiveSubTab === "speakers" ? "active" : ""}" onclick="adminSwitchSubTab('speakers')">Guest Speakers</button>
     </div>
     <div id="adminSubtabBody"></div>
   `;
   container.innerHTML = subtabsHtml;
-
-  if (adminActiveSubTab === "partners") renderAdminPartnersSection();
-  else if (adminActiveSubTab === "kpi") renderAdminKPISection();
 
   if (adminActiveSubTab === "partners") renderAdminPartnersSection();
   else if (adminActiveSubTab === "kpi") renderAdminKPISection();
@@ -2390,7 +2388,20 @@ function renderAdminPanel() {
   else if (adminActiveSubTab === "roleplays") renderAdminRoleplaysSection();
   else if (adminActiveSubTab === "blog") renderAdminBlogSection();
   else if (adminActiveSubTab === "rubrics") renderAdminRubricsSection();
+  else if (adminActiveSubTab === "speakers") renderAdminGuestSpeakersSection();
   else renderAdminCoursesSection();
+}
+
+// The editor itself lives in guest-speakers.js, so this just hands off to it.
+// If that file didn't load, say so plainly instead of showing an empty panel.
+function renderAdminGuestSpeakersSection() {
+  const body = document.getElementById("adminSubtabBody");
+  if (!body) return;
+  if (typeof window.renderGuestSpeakerAdmin === "function") {
+    window.renderGuestSpeakerAdmin();
+  } else {
+    body.innerHTML = `<div class="admin-empty-state">The guest speaker editor didn't load. Check that guest-speakers.js is in the repo next to index.html, spelled exactly that way.</div>`;
+  }
 }
 
 window.adminSwitchSubTab = function(tab) {

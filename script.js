@@ -105,7 +105,8 @@ const ICONS = {
   check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m20 6-11 11-5-5"/></svg>`,
   file: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h6"/></svg>`,
   download: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 21h16"/></svg>`,
-  external: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>`
+  external: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>`,
+  pencil: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>`
 };
 
 function icon(name) {
@@ -183,9 +184,23 @@ function courseCategory(course) {
     || "";
 }
 
-// Progress helper used by the dashboard and the catalog.
+// Cluster exam courses keep their practice questions. Every other course
+// swaps them for an interactive Activity worksheet. A course doc can force
+// either one with  mode: "activity"  or  mode: "quiz"  (Admin > Courses has
+// a button for it), which wins over the category.
+function courseUsesActivities(course) {
+  if (!course) return false;
+  if (course.mode === "activity") return true;
+  if (course.mode === "quiz") return false;
+  return courseCategory(course) !== "Cluster Exams";
+}
+
+// Progress helper used by the dashboard and the catalog. In an activity
+// course, any leftover (empty) practice quizzes are ignored so they can't
+// block a student from finishing the course.
 function activeLessons(course) {
-  return (course?.lessons || []).filter(l => !l.comingSoon);
+  const skipQuiz = courseUsesActivities(course);
+  return (course?.lessons || []).filter(l => !l.comingSoon && !(skipQuiz && l.type === "quiz"));
 }
 
 function courseProgress(course) {
@@ -199,8 +214,8 @@ function courseProgress(course) {
 // A course still stores a flat "lessons" array — that's what Firestore has,
 // what the admin editor writes, and what the practice exam pools from. A UNIT
 // is a view over that array: the video, the article, and the practice quiz
-// that all belong to the same topic, grouped so students see one row per unit
-// instead of three.
+// (or, in non-cluster courses, the activity) that all belong to the same
+// topic, grouped so students see one row per unit instead of three.
 //
 // Lessons are matched into a unit by their ID. Both naming schemes work:
 //   marketing-u1-video / marketing-u1-quiz / marketing-u1-article  -> marketing-u1
@@ -208,9 +223,9 @@ function courseProgress(course) {
 
 function unitKeyFor(lesson) {
   const id = String(lesson?.id || "");
-  let m = id.match(/^(.*)-(?:video|quiz|article)$/);
+  let m = id.match(/^(.*)-(?:video|quiz|article|activity)$/);
   if (m) return m[1];
-  m = id.match(/^(.*)-(?:video|quiz|article)-(\d+)$/);
+  m = id.match(/^(.*)-(?:video|quiz|article|activity)-(\d+)$/);
   if (m) return `${m[1]}-${m[2]}`;
   return id;
 }
@@ -218,32 +233,37 @@ function unitKeyFor(lesson) {
 // "Unit 1: Business Law — Practice Quiz" -> "Unit 1: Business Law"
 function stripUnitSuffix(title) {
   return String(title || "")
-    .replace(/\s*[\u2014\u2013-]\s*(Practice Quiz|Quiz|Article|Reading|PDF)\s*$/i, "")
+    .replace(/\s*[\u2014\u2013-]\s*(Practice Quiz|Quiz|Article|Reading|PDF|Activity|Worksheet)\s*$/i, "")
     .trim();
 }
 
 function buildUnits(course) {
   const map = new Map();
+  const usesActivities = courseUsesActivities(course);
 
   (course?.lessons || []).forEach(lesson => {
+    // Activity courses don't show practice quizzes at all.
+    if (usesActivities && lesson.type === "quiz") return;
+
     const key = unitKeyFor(lesson);
     if (!map.has(key)) {
-      map.set(key, { key, courseId: course.id, video: null, article: null, quiz: null, lessons: [] });
+      map.set(key, { key, courseId: course.id, usesActivities, video: null, article: null, quiz: null, activity: null, lessons: [] });
     }
     const unit = map.get(key);
     unit.lessons.push(lesson);
     if (lesson.type === "quiz") unit.quiz = lesson;
     else if (lesson.type === "article") unit.article = lesson;
+    else if (lesson.type === "activity") unit.activity = lesson;
     else unit.video = lesson;
   });
 
   const units = [...map.values()];
   units.forEach((unit, i) => {
-    const source = unit.video || unit.article || unit.quiz;
+    const source = unit.video || unit.article || unit.activity || unit.quiz;
     unit.title = stripUnitSuffix(source?.title) || `Unit ${i + 1}`;
     const numbered = unit.title.match(/^Unit\s+(\d+)/i);
     unit.number = numbered ? numbered[1] : String(i + 1);
-        unit.xp = unit.lessons.reduce((sum, l) => sum + (l.xp || 0), 0);
+    unit.xp = unit.lessons.reduce((sum, l) => sum + (l.xp || 0), 0);
     // A unit is "coming soon" when every part inside it is flagged. One part
     // flagged on its own just locks that tab.
     unit.comingSoon = unit.lessons.length > 0 && unit.lessons.every(l => !!l.comingSoon);
@@ -263,6 +283,7 @@ function tabForLesson(lesson) {
   if (!lesson) return "video";
   if (lesson.type === "quiz") return "practice";
   if (lesson.type === "article") return "article";
+  if (lesson.type === "activity") return "activity";
   return "video";
 }
 
@@ -581,6 +602,7 @@ let examTimerInterval = null;
 let partners = [];
 let partnersLoaded = false;
 let adminEditingPartnerId = null;
+let activityState = null;
 
 // ========================= LOGIN =========================
 async function loginWithGoogle() {
@@ -605,7 +627,11 @@ document.getElementById("aboutLogin")?.addEventListener("click", loginWithGoogle
 // Bound once here, not inside renderSidebar(). renderSidebar runs on every XP
 // change, and re-binding there stacked up a new listener each time — one click
 // then fired signOut several times over.
-document.getElementById("logoutBtn")?.addEventListener("click", () => signOut(auth));
+document.getElementById("logoutBtn")?.addEventListener("click", async () => {
+  // Save any activity answers still waiting on the autosave timer first.
+  await activityFlush();
+  signOut(auth);
+});
 
 // ========================= AUTH STATE =========================
 onAuthStateChanged(auth, async (user) => {
@@ -666,6 +692,7 @@ onAuthStateChanged(auth, async (user) => {
   } else {
     currentUser = null;
     userData = null;
+    activityState = null;
     if (examTimerInterval) { clearInterval(examTimerInterval); examTimerInterval = null; }
     document.getElementById("portal")?.classList.add("hidden");
     document.getElementById("landingPage")?.classList.remove("hidden");
@@ -1135,10 +1162,7 @@ function renderFilteredCourses(list) {
   container.innerHTML = "";
 
   list.forEach(course => {
-    const completed = (userData?.completedLessons || []).filter(id => course.lessons.some(l => l.id === id)).length;
-    const pct = course.lessons.length
-      ? Math.round((completed / course.lessons.length) * 100)
-      : 0;
+    const { pct } = courseProgress(course);
     const unitCount = buildUnits(course).length;
 
     const card = document.createElement("div");
@@ -1175,8 +1199,8 @@ function renderFilteredCourses(list) {
 }
 
 // ========================= OPEN COURSE (unit list) =========================
-// One row per unit. Everything inside a unit — video, practice questions,
-// article — opens together in the unit view, behind a tab bar.
+// One row per unit. Everything inside a unit — video, practice questions or
+// activity, article — opens together in the unit view, behind a tab bar.
 window.openCourse = function(id) {
   currentCourseId = id;
   currentUnitKey = null;
@@ -1188,7 +1212,7 @@ window.openCourse = function(id) {
 
   const units = buildUnits(course);
 
-  const examQuestionCount = course.lessons
+  const examQuestionCount = courseUsesActivities(course) ? 0 : course.lessons
     .filter(l => l.type === "quiz")
     .reduce((sum, l) => sum + (l.questions?.length || 0), 0);
 
@@ -1226,12 +1250,26 @@ window.openCourse = function(id) {
   `;
 };
 
-function unitRowHtml(course, unit, bookmarked) {
-  const parts = [
-    { key: "video",    label: "Video",             lesson: unit.video },
-    { key: "practice", label: "Practice questions", lesson: unit.quiz },
-    { key: "article",  label: "Article",            lesson: unit.article }
+// The tabs a unit shows. Cluster courses: Video | Practice questions | Article.
+// Activity courses: Video | Activity, plus Article only if one was added.
+function unitTabsFor(unit) {
+  if (unit.usesActivities) {
+    const tabs = [
+      { key: "video",    label: "Video",    iconName: "play" },
+      { key: "activity", label: "Activity", iconName: "pencil" }
+    ];
+    if (unit.article) tabs.push({ key: "article", label: "Article", iconName: "file" });
+    return tabs;
+  }
+  return [
+    { key: "video",    label: "Video",              iconName: "play" },
+    { key: "practice", label: "Practice questions", iconName: "quiz" },
+    { key: "article",  label: "Article",            iconName: "file" }
   ];
+}
+
+function unitRowHtml(course, unit, bookmarked) {
+  const parts = unitTabsFor(unit).map(t => ({ key: t.key, label: t.label, lesson: unitLessonForTab(unit, t.key) }));
 
   // Locked unit: it still shows in the list so students see what's planned,
   // it just doesn't open.
@@ -1248,8 +1286,8 @@ function unitRowHtml(course, unit, bookmarked) {
     `;
   }
 
-  const allDone = unit.lessons.length > 0 && unit.lessons.every(l => unitPartDone(l));
-  const bookmarkTarget = (unit.video || unit.quiz || unit.article)?.id || "";
+  const allDone = unit.lessons.length > 0 && unit.lessons.filter(l => !l.comingSoon).every(l => unitPartDone(l));
+  const bookmarkTarget = (unit.video || unit.activity || unit.quiz || unit.article)?.id || "";
   const isBookmarked = bookmarked.includes(bookmarkTarget);
 
   const chips = parts.map(p => {
@@ -1284,7 +1322,7 @@ window.openUnit = function(courseId, unitKey, tab) {
   currentUnitKey = unitKey;
 
   // Land on the first tab that actually has something in it.
-  const available = ["video", "practice", "article"].filter(t => unitLessonForTab(unit, t));
+  const available = unitTabsFor(unit).map(t => t.key).filter(t => unitLessonForTab(unit, t));
   currentUnitTab = tab && available.includes(tab) ? tab : (available[0] || "video");
 
   showTab("lessonView");
@@ -1309,10 +1347,12 @@ window.openUnit = function(courseId, unitKey, tab) {
 function unitLessonForTab(unit, tab) {
   if (tab === "practice") return unit.quiz;
   if (tab === "article") return unit.article;
+  if (tab === "activity") return unit.activity;
   return unit.video;
 }
 
 window.switchUnitTab = function(tab) {
+  activityFlush();
   currentUnitTab = tab;
   renderUnitTabs();
   renderUnitPane();
@@ -1323,13 +1363,7 @@ function renderUnitTabs() {
   const unit = findUnit(currentCourseId, currentUnitKey);
   if (!bar || !unit) return;
 
-  const tabs = [
-    { key: "video",    label: "Video",              iconName: "play" },
-    { key: "practice", label: "Practice questions", iconName: "quiz" },
-    { key: "article",  label: "Article",            iconName: "file" }
-  ];
-
-  bar.innerHTML = tabs.map(t => {
+  bar.innerHTML = unitTabsFor(unit).map(t => {
     const lesson = unitLessonForTab(unit, t.key);
     const done = unitPartDone(lesson);
     const soon = lessonComingSoon(lesson);
@@ -1348,6 +1382,17 @@ function renderUnitPane() {
   const course = courses.find(c => c.id === currentCourseId);
   const unit = findUnit(currentCourseId, currentUnitKey);
   if (!pane || !course || !unit) return;
+
+  if (currentUnitTab === "activity") {
+    if (lessonComingSoon(unit.activity)) { pane.innerHTML = comingSoonPaneHtml(); return; }
+    if (!unit.activity || !activityAnswerable(unit.activity).length) {
+      pane.innerHTML = emptyPaneHtml("The activity for this unit is coming soon.");
+      return;
+    }
+    currentLesson = unit.activity;
+    renderActivityPane(course, unit.activity, pane);
+    return;
+  }
 
   if (currentUnitTab === "practice") {
     if (lessonComingSoon(unit.quiz)) { pane.innerHTML = comingSoonPaneHtml(); return; }
@@ -1436,6 +1481,299 @@ function unitArticleHtml(lesson) {
   `;
 }
 
+// ========================================================================
+// ========================= ACTIVITIES ===================================
+// ========================================================================
+// Non-cluster courses replace practice questions with an interactive
+// worksheet. The worksheet's questions live on the lesson itself, in the
+// course doc, so the admin Courses editor manages them like everything else:
+//
+//   { id: "<unit>-activity", type: "activity", title, xp, duration,
+//     activityTitle, instructions,
+//     fields: [{ id, type, label, help, options }] }
+//
+//   field types: section (a heading, no answer), short, long, choice, checklist
+//
+// A student's answers save to  users/{uid}/activities/{lessonId}  as they
+// type (a short pause after the last keystroke). A copy also goes to this
+// browser's localStorage, so nothing is lost if the connection drops
+// mid-sentence — whichever copy is newer wins when the worksheet reopens.
+//
+// Answers are keyed by field id, not by position, so an admin can reword,
+// reorder, or add questions later without scrambling anyone's answers.
+
+const ACTIVITY_FIELD_TYPES = {
+  short: "Short answer",
+  long: "Paragraph",
+  choice: "Multiple choice",
+  checklist: "Checkboxes",
+  section: "Section heading"
+};
+const ACTIVITY_SAVE_DELAY = 800;
+
+function activityAnswerable(lesson) {
+  return (lesson?.fields || []).filter(f => f.type !== "section");
+}
+
+function activityRef(lessonId) {
+  return doc(db, "users", currentUser.uid, "activities", lessonId);
+}
+
+function activityLocalKey(lessonId) {
+  return `f4g-activity-${currentUser?.uid || "anon"}-${lessonId}`;
+}
+function activityLocalRead(lessonId) {
+  try {
+    const raw = localStorage.getItem(activityLocalKey(lessonId));
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+function activityLocalWrite(lessonId, data) {
+  try { localStorage.setItem(activityLocalKey(lessonId), JSON.stringify(data)); } catch (e) { /* storage off */ }
+}
+
+function activityIsAnswered(field, value) {
+  if (field.type === "checklist") return Array.isArray(value) && value.length > 0;
+  return String(value ?? "").trim().length > 0;
+}
+
+function activityProgress(lesson, answers) {
+  const fields = activityAnswerable(lesson);
+  const done = fields.filter(f => activityIsAnswered(f, (answers || {})[f.id])).length;
+  return { done, total: fields.length };
+}
+
+function activityFieldHtml(f, val, num) {
+  const help = f.help ? `<div class="act-help">${esc(f.help)}</div>` : "";
+  if (f.type === "section") {
+    return `<div class="act-section"><h3>${esc(f.label)}</h3>${help}</div>`;
+  }
+
+  const name = esc(f.id);
+  const head = `<div class="act-q-label"><span class="act-q-num">${num}</span><span>${esc(f.label)}</span></div>${help}`;
+  let input = "";
+
+  if (f.type === "short") {
+    input = `<input type="text" class="act-input" name="${name}" value="${esc(val || "")}" placeholder="Your answer" autocomplete="off">`;
+  } else if (f.type === "long") {
+    input = `<textarea class="act-input act-textarea" name="${name}" rows="5" placeholder="Your answer">${esc(val || "")}</textarea>`;
+  } else if (f.type === "choice") {
+    input = `<div class="act-options">${(f.options || []).map(o => `
+      <label class="act-option"><input type="radio" name="${name}" value="${esc(o)}" ${val === o ? "checked" : ""}><span>${esc(o)}</span></label>
+    `).join("")}</div>`;
+  } else if (f.type === "checklist") {
+    const picked = Array.isArray(val) ? val : [];
+    input = `<div class="act-options">${(f.options || []).map(o => `
+      <label class="act-option"><input type="checkbox" name="${name}" value="${esc(o)}" ${picked.includes(o) ? "checked" : ""}><span>${esc(o)}</span></label>
+    `).join("")}</div>`;
+  }
+
+  const answered = activityIsAnswered(f, val) ? "answered" : "";
+  return `<div class="act-q ${answered}" data-field="${name}">${head}${input}</div>`;
+}
+
+async function renderActivityPane(course, lesson, pane) {
+  await activityFlush();
+  pane.innerHTML = `<div class="admin-empty-state">Loading your worksheet...</div>`;
+
+  let saved = null;
+  try {
+    const snap = await getDoc(activityRef(lesson.id));
+    if (snap.exists()) saved = snap.data();
+  } catch (e) {
+    console.error("Couldn't load saved activity answers — check the Firestore rule for users/{uid}/activities:", e);
+  }
+
+  // They may have clicked away while that loaded.
+  if (currentUnitTab !== "activity" || currentLesson?.id !== lesson.id || !document.body.contains(pane)) return;
+
+  const local = activityLocalRead(lesson.id);
+  let answers = saved?.answers || {};
+  let unsyncedLocal = false;
+  if (local && local.updatedAt && (!saved?.updatedAt || local.updatedAt > saved.updatedAt)) {
+    answers = local.answers || {};
+    unsyncedLocal = true;
+  }
+
+  activityState = { lesson, courseId: course.id, answers: { ...answers }, timer: null, pending: false };
+
+  const isDone = unitPartDone(lesson);
+  let num = 0;
+  const fieldsHtml = (lesson.fields || []).map(f => {
+    if (f.type !== "section") num++;
+    return activityFieldHtml(f, answers[f.id], num);
+  }).join("");
+
+  pane.innerHTML = `
+    <div class="act-wrap">
+      <div class="act-head">
+        <div class="act-head-text">
+          <div class="act-title">${esc(lesson.activityTitle || stripUnitSuffix(lesson.title))}</div>
+          ${lesson.instructions ? `<div class="act-instructions">${esc(lesson.instructions)}</div>` : ""}
+        </div>
+        <div class="act-status" id="actStatus"></div>
+      </div>
+      <div class="act-progress">
+        <div class="act-progress-row"><span id="actProgressText"></span><span id="actProgressPct"></span></div>
+        <div class="quiz-pbar-outer"><div class="quiz-pbar-inner" id="actProgressBar" style="width:0%"></div></div>
+      </div>
+      <form class="act-form" id="actForm" onsubmit="return false;">
+        ${fieldsHtml}
+      </form>
+      <div class="vl-info act-footer">
+        <div class="vl-meta">Activity · ${lesson.duration} · +${lesson.xp} XP on completion · your answers save automatically</div>
+        <button class="complete-btn" id="completeBtn" onclick="submitActivity()" ${isDone ? "disabled" : ""}>
+          ${isDone ? "✓ Completed" : `Submit Activity (+${lesson.xp} XP)`}
+        </button>
+      </div>
+    </div>
+  `;
+
+  const form = document.getElementById("actForm");
+  form.addEventListener("input", activityChanged);
+  form.addEventListener("change", activityChanged);
+
+  activityUpdateProgress();
+  activitySetStatus("saved");
+
+  // Answers typed offline last time that never reached the database.
+  if (unsyncedLocal) {
+    activityState.pending = true;
+    activityFlush();
+  }
+}
+
+function activityCollect(form, lesson) {
+  const fd = new FormData(form);
+  const out = {};
+  activityAnswerable(lesson).forEach(f => {
+    out[f.id] = f.type === "checklist" ? fd.getAll(f.id) : (fd.get(f.id) || "");
+  });
+  return out;
+}
+
+function activityChanged() {
+  const st = activityState;
+  const form = document.getElementById("actForm");
+  if (!st || !form) return;
+
+  st.answers = activityCollect(form, st.lesson);
+  st.pending = true;
+  activityLocalWrite(st.lesson.id, { answers: st.answers, updatedAt: new Date().toISOString() });
+
+  activitySetStatus("saving");
+  activityUpdateProgress();
+
+  clearTimeout(st.timer);
+  st.timer = setTimeout(activityFlush, ACTIVITY_SAVE_DELAY);
+}
+
+// Writes whatever is waiting. Safe to call any time — it does nothing when
+// there's nothing new to save.
+async function activityFlush() {
+  const st = activityState;
+  if (!st || !st.pending || !currentUser) return;
+  clearTimeout(st.timer);
+  st.pending = false;
+
+  const answers = { ...st.answers };
+  const { done, total } = activityProgress(st.lesson, answers);
+
+  try {
+    await setDoc(activityRef(st.lesson.id), {
+      lessonId: st.lesson.id,
+      courseId: st.courseId,
+      title: stripUnitSuffix(st.lesson.title),
+      answers,
+      answeredCount: done,
+      totalCount: total,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    if (activityState === st && !st.pending) activitySetStatus("saved");
+  } catch (e) {
+    console.error("Couldn't save activity answers:", e);
+    st.pending = true; // try again on the next keystroke or Retry
+    if (activityState === st) activitySetStatus("error");
+  }
+}
+
+window.activityRetry = function() {
+  if (!activityState) return;
+  activityState.pending = true;
+  activitySetStatus("saving");
+  activityFlush();
+};
+
+function activitySetStatus(state) {
+  const el = document.getElementById("actStatus");
+  if (!el) return;
+  el.className = `act-status ${state}`;
+  if (state === "saving") el.innerHTML = `<span class="act-dot"></span> Saving...`;
+  else if (state === "error") el.innerHTML = `${icon("alert")} Not saved <button type="button" onclick="activityRetry()">Retry</button>`;
+  else el.innerHTML = `${icon("check")} Saved`;
+}
+
+function activityUpdateProgress() {
+  const st = activityState;
+  if (!st) return;
+  const { done, total } = activityProgress(st.lesson, st.answers);
+  const pct = total ? Math.round((done / total) * 100) : 0;
+
+  const text = document.getElementById("actProgressText");
+  const pctEl = document.getElementById("actProgressPct");
+  const bar = document.getElementById("actProgressBar");
+  if (text) text.textContent = `${done} of ${total} answered`;
+  if (pctEl) pctEl.textContent = `${pct}%`;
+  if (bar) bar.style.width = `${pct}%`;
+
+  activityAnswerable(st.lesson).forEach(f => {
+    const box = document.querySelector(`.act-q[data-field="${CSS.escape(f.id)}"]`);
+    if (!box) return;
+    const ok = activityIsAnswered(f, st.answers[f.id]);
+    box.classList.toggle("answered", ok);
+    if (ok) box.classList.remove("act-missing");
+  });
+}
+
+window.submitActivity = async function() {
+  const st = activityState;
+  if (!st) return;
+
+  const blanks = activityAnswerable(st.lesson).filter(f => !activityIsAnswered(f, st.answers[f.id]));
+  if (blanks.length) {
+    blanks.forEach(f => document.querySelector(`.act-q[data-field="${CSS.escape(f.id)}"]`)?.classList.add("act-missing"));
+    document.querySelector(`.act-q[data-field="${CSS.escape(blanks[0].id)}"]`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    f4gNotice("Almost there", `${blanks.length} ${blanks.length === 1 ? "question is" : "questions are"} still blank. Answer every question to submit.`);
+    return;
+  }
+
+  st.pending = true;
+  await activityFlush();
+  if (st.pending) {
+    return alert("Your answers couldn't be saved, so the activity wasn't submitted. Check your connection and try again.");
+  }
+
+  try {
+    await setDoc(activityRef(st.lesson.id), { submittedAt: new Date().toISOString() }, { merge: true });
+  } catch (e) {
+    console.error("Couldn't stamp the submission time:", e);
+  }
+
+  const btn = document.getElementById("completeBtn");
+  await completeLesson(st.lesson.id, st.lesson.xp);
+  if (btn) f4gBurstFrom(btn, 22);
+};
+
+// Leaving the page, switching apps on a phone, or closing the tab — save
+// whatever was typed in the last fraction of a second.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") activityFlush();
+});
+window.addEventListener("pagehide", () => activityFlush());
+
 // ========================= OPEN LESSON =========================
 // Kept for bookmarks and analytics links — it now routes into the unit view
 // and selects the right tab instead of opening a bare lesson page.
@@ -1460,7 +1798,9 @@ window.completeLesson = async function(lessonId, xp) {
     const newAnimal = getAnimalForXP(newXP);
 
     const completed = [...(userData.completedLessons || []), lessonId];
-    const type = currentLesson?.type === "article" ? "article" : "video";
+    const type = currentLesson?.type === "article" ? "article"
+               : currentLesson?.type === "activity" ? "activity"
+               : "video";
     const activityLog = [...(userData.activityLog || []), { date: new Date().toISOString().slice(0, 10), xp, lessonId, type }].slice(-300);
     await updateDoc(userRef, {
       xp: newXP,
@@ -2325,6 +2665,7 @@ function populateAssociationsDatalist() {
 // ========================= TABS =========================
 window.showTab = function(tabName) {
   if (tabName === "admin" && !isAdmin(currentUser)) return;
+  if (tabName !== "lessonView") activityFlush();
   if (tabName === "advisor" && !isAdvisor(currentUser)) return;
 
   document.querySelectorAll(".tab-content").forEach(el => {
@@ -2723,6 +3064,7 @@ function renderAdminCourseEditor() {
       </div>
     `;
 
+    const usesActivities = courseUsesActivities(course);
     return `
       <div class="admin-lesson-block admin-unit-block" id="admin-unit-${unit.key}">
               <div class="admin-lesson-head">
@@ -2735,14 +3077,25 @@ function renderAdminCourseEditor() {
           </div>
         </div>
         ${videoHtml}
+        ${usesActivities ? adminActivityEditorHtml(unit) : ""}
         ${articleHtml}
-        ${practiceHtml}
+        ${usesActivities ? "" : practiceHtml}
       </div>
     `;
   }).join("");
 
+  const modeIsActivity = courseUsesActivities(course);
   editor.innerHTML = `
-    <h3 style="margin-bottom:16px;">${course.title}</h3>
+    <h3 style="margin-bottom:12px;">${course.title}</h3>
+    <div class="admin-seed-banner admin-mode-banner">
+      <div>${modeIsActivity
+        ? "This course uses <strong>Activities</strong> — an interactive worksheet in each unit that saves students' answers automatically. Practice questions are hidden."
+        : "This course uses <strong>Practice questions</strong>, like the cluster exam courses."}
+        ${course.mode ? "" : `<span style="color:var(--muted);"> Set automatically from its category.</span>`}</div>
+      <button class="admin-btn-sm ghost" onclick="adminSetCourseMode('${course.id}', '${modeIsActivity ? "quiz" : "activity"}')">
+        Switch to ${modeIsActivity ? "practice questions" : "activities"}
+      </button>
+    </div>
     ${unitsHtml || `<div class="admin-empty-state">No units yet. Add the first one below.</div>`}
     <div class="admin-lesson-block" style="border-style:dashed;">
       <h4 style="margin-bottom:10px;">${icon("plus")} Add a new unit</h4>
@@ -2752,7 +3105,9 @@ function renderAdminCourseEditor() {
         <input type="number" placeholder="XP (default 25)" id="new-unit-xp" style="max-width:120px;">
         <button class="admin-btn-sm" onclick="adminAddUnit('${course.id}')">${icon("plus")} Add unit</button>
       </div>
-      <div style="font-size:12px;color:var(--muted);">A new unit starts with its video and an empty practice quiz. Add the PDF article and the questions from the unit block once it appears.</div>
+      <div style="font-size:12px;color:var(--muted);">${modeIsActivity
+        ? "A new unit starts with its video and an empty activity. Add the worksheet questions from the unit block once it appears."
+        : "A new unit starts with its video and an empty practice quiz. Add the PDF article and the questions from the unit block once it appears."}</div>
     </div>
   `;
 }
@@ -2782,7 +3137,7 @@ window.adminSaveVideo = async function(unitKey) {
   if (!title) return alert("Please give the unit a title.");
 
   let lessons = [...course.lessons];
-  const existing = lessons.find(l => unitKeyFor(l) === unitKey && l.type !== "quiz" && l.type !== "article");
+  const existing = lessons.find(l => unitKeyFor(l) === unitKey && !["quiz", "article", "activity"].includes(l.type));
 
   if (existing) {
     existing.title = title;
@@ -2853,10 +3208,12 @@ window.adminAddUnit = async function(courseId) {
 
   const unitKey = `${courseId}-u${Date.now()}`;
   const videoLesson = { id: `${unitKey}-video`, title, type: "youtube", url, xp, duration: "10 min" };
-  const quizLesson = { id: `${unitKey}-quiz`, title: `${title} — Practice Quiz`, type: "quiz", xp, duration: "5 min", questions: [] };
+  const secondPart = courseUsesActivities(course)
+    ? { id: `${unitKey}-activity`, title: `${title} — Activity`, type: "activity", xp, duration: "15 min", activityTitle: "", instructions: "", fields: [] }
+    : { id: `${unitKey}-quiz`, title: `${title} — Practice Quiz`, type: "quiz", xp, duration: "5 min", questions: [] };
 
   try {
-    await saveCourseLessons(courseId, [...course.lessons, videoLesson, quizLesson]);
+    await saveCourseLessons(courseId, [...course.lessons, videoLesson, secondPart]);
     renderAdminPanel();
     renderCourseGrid();
     renderFeaturedCourses();
@@ -2869,7 +3226,7 @@ window.adminAddUnit = async function(courseId) {
 window.adminDeleteUnit = async function(unitKey) {
   const course = courses.find(c => c.id === adminSelectedCourseId);
   if (!course) return;
-  if (!confirm("Delete this whole unit — video, article, and practice questions? This cannot be undone.")) return;
+  if (!confirm("Delete this whole unit — video, article, and practice questions or activity? This cannot be undone. Students' saved activity answers stay in the database but no longer show anywhere.")) return;
 
   const newLessons = course.lessons.filter(l => unitKeyFor(l) !== unitKey);
   try {
@@ -2893,7 +3250,8 @@ window.adminToggleComingSoon = async function(unitKey, scope) {
   const targets = scope === "unit" ? inUnit : inUnit.filter(l => {
     if (scope === "quiz") return l.type === "quiz";
     if (scope === "article") return l.type === "article";
-    return l.type !== "quiz" && l.type !== "article";
+    if (scope === "activity") return l.type === "activity";
+    return !["quiz", "article", "activity"].includes(l.type);
   });
   if (!targets.length) return;
 
@@ -2979,6 +3337,172 @@ window.adminDeleteQuestion = async function(unitKey, questionIndex) {
   } catch (e) {
     console.error(e);
     alert("Couldn't save — check the console.");
+  }
+};
+
+// ========================= ADMIN: ACTIVITY BUILDER =========================
+// Builds the worksheet for one unit. Each question is saved as its own field
+// with a permanent id, so editing or reordering questions later never mixes
+// up answers students have already typed.
+
+function adminActivityEditorHtml(unit) {
+  const a = unit.activity;
+  const key = unit.key;
+  let num = 0;
+
+  const fieldsHtml = a && (a.fields || []).length
+    ? a.fields.map((f, i) => {
+        if (f.type !== "section") num++;
+        const label = f.type === "section"
+          ? `<strong>Section:</strong> ${esc(f.label)}`
+          : `<strong>Q${num}:</strong> ${esc(f.label)}`;
+        const opts = (f.options || []).length
+          ? `<div style="margin-top:6px;font-size:13px;color:var(--muted);">${f.options.map(o => `· ${esc(o)}`).join("<br>")}</div>`
+          : "";
+        return `
+          <div class="admin-question-card">
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+              <div>
+                ${label}
+                <div style="font-size:12px;color:var(--muted);margin-top:2px;">${ACTIVITY_FIELD_TYPES[f.type] || f.type}${f.help ? ` · ${esc(f.help)}` : ""}</div>
+                ${opts}
+              </div>
+              <div style="display:flex;gap:6px;flex-shrink:0;">
+                <button class="admin-btn-sm ghost" title="Move up" onclick="adminMoveActivityField('${key}', ${i}, -1)" ${i === 0 ? "disabled" : ""}>↑</button>
+                <button class="admin-btn-sm ghost" title="Move down" onclick="adminMoveActivityField('${key}', ${i}, 1)" ${i === a.fields.length - 1 ? "disabled" : ""}>↓</button>
+                <button class="admin-btn-sm danger" onclick="adminDeleteActivityField('${key}', ${i})">${icon("trash")}</button>
+              </div>
+            </div>
+          </div>`;
+      }).join("")
+    : `<div style="color:var(--muted);font-size:13px;margin-bottom:10px;">No questions yet. Add the first one below — students won't see the Activity tab until there's at least one question.</div>`;
+
+  return `
+    <div class="admin-unit-part">
+      <div class="admin-unit-part-label">${icon("pencil")} Activity worksheet${a ? `<button class="admin-btn-sm ghost admin-soon-toggle" onclick="adminToggleComingSoon('${key}','activity')">${a.comingSoon ? "Make available" : "Coming soon"}</button>` : ""}</div>
+      <div class="admin-kpi-form">
+        <input type="text" id="act-title-${key}" placeholder="Worksheet title (e.g. Build Your Brand Identity)" value="${a ? esc(a.activityTitle || "") : ""}">
+        <textarea id="act-instr-${key}" rows="2" placeholder="Instructions shown at the top (e.g. Pick a local business and complete each section.)">${a ? esc(a.instructions || "") : ""}</textarea>
+        <div class="admin-field-row">
+          <input type="number" id="act-xp-${key}" placeholder="XP" style="max-width:110px;" value="${a ? a.xp : 25}">
+          <button class="admin-btn-sm" onclick="adminSaveActivityInfo('${key}')">Save title &amp; instructions</button>
+        </div>
+      </div>
+      ${fieldsHtml}
+      <div class="admin-add-question-form">
+        <div class="admin-field-row">
+          <select id="actf-type-${key}">
+            ${Object.entries(ACTIVITY_FIELD_TYPES).map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}
+          </select>
+        </div>
+        <textarea rows="2" placeholder="Question text (or the section heading)" id="actf-label-${key}"></textarea>
+        <input type="text" class="admin-act-help" placeholder="Hint shown under the question (optional)" id="actf-help-${key}">
+        <textarea rows="3" placeholder="Answer choices, one per line (only for multiple choice and checkboxes)" id="actf-opts-${key}"></textarea>
+        <button class="admin-btn-sm" onclick="adminAddActivityField('${key}')">${icon("plus")} Add to worksheet</button>
+      </div>
+    </div>
+  `;
+}
+
+// Finds the unit's activity lesson, creating it if this unit doesn't have one
+// yet (units made before activities existed).
+function adminEnsureActivity(course, unitKey) {
+  let lessons = [...course.lessons];
+  let act = lessons.find(l => unitKeyFor(l) === unitKey && l.type === "activity");
+  if (!act) {
+    const unit = buildUnits(course).find(u => u.key === unitKey);
+    act = {
+      id: `${unitKey}-activity`,
+      title: `${unit ? unit.title : "Unit"} — Activity`,
+      type: "activity", xp: 25, duration: "15 min",
+      activityTitle: "", instructions: "", fields: []
+    };
+    lessons = insertIntoUnit(lessons, unitKey, act);
+  }
+  return { lessons, act };
+}
+
+async function adminSaveActivityLessons(course, lessons) {
+  try {
+    await saveCourseLessons(course.id, lessons);
+    renderAdminPanel();
+    renderCourseGrid();
+  } catch (e) {
+    console.error(e);
+    alert("Couldn't save — check the console.");
+  }
+}
+
+window.adminSaveActivityInfo = async function(unitKey) {
+  const course = courses.find(c => c.id === adminSelectedCourseId);
+  if (!course) return;
+  const { lessons, act } = adminEnsureActivity(course, unitKey);
+  act.activityTitle = document.getElementById(`act-title-${unitKey}`).value.trim();
+  act.instructions = document.getElementById(`act-instr-${unitKey}`).value.trim();
+  act.xp = Number(document.getElementById(`act-xp-${unitKey}`).value) || 25;
+  await adminSaveActivityLessons(course, lessons);
+};
+
+window.adminAddActivityField = async function(unitKey) {
+  const course = courses.find(c => c.id === adminSelectedCourseId);
+  if (!course) return;
+
+  const type = document.getElementById(`actf-type-${unitKey}`).value;
+  const label = document.getElementById(`actf-label-${unitKey}`).value.trim();
+  const help = document.getElementById(`actf-help-${unitKey}`).value.trim();
+  const options = document.getElementById(`actf-opts-${unitKey}`).value
+    .split("\n").map(s => s.trim()).filter(Boolean);
+
+  if (!label) return alert("Type the question (or section heading) first.");
+  if ((type === "choice" || type === "checklist") && options.length < 2) {
+    return alert("Multiple choice and checkbox questions need at least two answer choices, one per line.");
+  }
+
+  const { lessons, act } = adminEnsureActivity(course, unitKey);
+  const field = { id: `f${Date.now().toString(36)}`, type, label };
+  if (help) field.help = help;
+  if (type === "choice" || type === "checklist") field.options = options;
+  act.fields = [...(act.fields || []), field];
+
+  await adminSaveActivityLessons(course, lessons);
+};
+
+window.adminDeleteActivityField = async function(unitKey, index) {
+  const course = courses.find(c => c.id === adminSelectedCourseId);
+  if (!course) return;
+  if (!confirm("Remove this from the worksheet? Answers students already gave to it stay saved but stop showing.")) return;
+  const { lessons, act } = adminEnsureActivity(course, unitKey);
+  act.fields = (act.fields || []).filter((_, i) => i !== index);
+  await adminSaveActivityLessons(course, lessons);
+};
+
+window.adminMoveActivityField = async function(unitKey, index, dir) {
+  const course = courses.find(c => c.id === adminSelectedCourseId);
+  if (!course) return;
+  const { lessons, act } = adminEnsureActivity(course, unitKey);
+  const fields = [...(act.fields || [])];
+  const to = index + dir;
+  if (to < 0 || to >= fields.length) return;
+  [fields[index], fields[to]] = [fields[to], fields[index]];
+  act.fields = fields;
+  await adminSaveActivityLessons(course, lessons);
+};
+
+// Flips a course between Activities and Practice questions. Nothing is
+// deleted either way — the other kind is just hidden until you switch back.
+window.adminSetCourseMode = async function(courseId, mode) {
+  if (!isAdmin(currentUser)) return;
+  const course = courses.find(c => c.id === courseId);
+  if (!course) return;
+  try {
+    await setDoc(doc(db, "courses", courseId), { mode }, { merge: true });
+    course.mode = mode;
+    renderAdminPanel();
+    renderCourseGrid();
+    renderFeaturedCourses();
+  } catch (e) {
+    console.error("Couldn't change course mode:", e);
+    alert("Couldn't save that — check the console.");
   }
 };
 
@@ -3753,6 +4277,7 @@ function plannerUnitLinksHtml(plan, session, rewatch) {
     return `
       ${unit.video ? `<button class="pl-link" onclick="openUnit('${session.courseId}','${unit.key}','video')">${icon("play")} ${stripUnitSuffix(unit.title)}${rewatch ? " — rewatch" : ""}</button>` : ""}
       ${unit.quiz ? `<button class="pl-link" onclick="openUnit('${session.courseId}','${unit.key}','practice')">${icon("quiz")} Practice questions</button>` : ""}
+      ${unit.activity && activityAnswerable(unit.activity).length ? `<button class="pl-link" onclick="openUnit('${session.courseId}','${unit.key}','activity')">${icon("pencil")} Activity</button>` : ""}
       ${unit.article ? `<button class="pl-link" onclick="openUnit('${session.courseId}','${unit.key}','article')">${icon("file")} Article</button>` : ""}
     `;
   }).join("");
@@ -4019,7 +4544,7 @@ function renderProfileBookmarks() {
     if (!lesson) return "";
     return `
       <div class="bookmark-row" onclick="openLesson('${course.id}', '${lesson.id}')">
-        ${icon(lesson.type === "quiz" ? "quiz" : lesson.type === "article" ? "file" : "play")}
+        ${icon(lesson.type === "quiz" ? "quiz" : lesson.type === "article" ? "file" : lesson.type === "activity" ? "pencil" : "play")}
         <span>${stripUnitSuffix(lesson.title)}</span>
         <span class="bookmark-row-sub">${course.title}</span>
       </div>

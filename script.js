@@ -1,3 +1,18 @@
+/* =========================================================================
+   FARM4GLASS — script.js
+   Security patch, October 2026:
+     - Every student-written field rendered as HTML now goes through esc()
+       (admin Members table, advisor dashboard, profile chips, blog, partners,
+       rubrics, prepared-event history).
+     - Display name, chapter, and association are length-limited and reject
+       < and > on save.
+     - The leaderboard reads a separate "leaderboard/{uid}" collection that
+       only holds name, chapter, XP, streak, lesson count, partner, and the
+       hidden flag — no emails, no quiz history. Each student keeps their own
+       entry in sync; Admin > Members has a button to rebuild everyone's.
+   Deploy this file BEFORE publishing the matching firestore.rules.
+   ========================================================================= */
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
 import {
   initializeAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
@@ -603,6 +618,46 @@ let partners = [];
 let partnersLoaded = false;
 let adminEditingPartnerId = null;
 let activityState = null;
+let adminMembersCache = new Map();
+
+// ========================= PROFILE TEXT LIMITS =========================
+// Enforced here on save AND in firestore.rules, so a student can't get around
+// them from the browser console.
+const MAX_DISPLAY_NAME = 60;
+const MAX_CHAPTER = 80;
+const MAX_ASSOCIATION = 80;
+const ANGLE_BRACKETS = /[<>]/;
+
+function cleanProfileText(s, max) {
+  return String(s || "").replace(/[<>]/g, "").trim().slice(0, max);
+}
+
+// ========================= LEADERBOARD PROJECTION =========================
+// Rankings read "leaderboard/{uid}" instead of the full user documents, so a
+// student opening devtools can't pull classmates' emails, quiz scores, or
+// exam history. Every field here mirrors the user doc exactly — the Firestore
+// rules check that, so a student can't post a fake XP total here either.
+function leaderboardEntryFor(u, uid) {
+  return {
+    uid,
+    displayName: u.displayName ?? "",
+    chapter: u.chapter ?? "",
+    xp: u.xp ?? 0,
+    streak: u.streak ?? 0,
+    lessons: (u.completedLessons || []).length,
+    partnerId: u.partnerId ?? "",
+    hidden: !!u.hiddenFromLeaderboard
+  };
+}
+
+async function syncLeaderboard() {
+  if (!currentUser || !userData) return;
+  try {
+    await setDoc(doc(db, "leaderboard", currentUser.uid), leaderboardEntryFor(userData, currentUser.uid));
+  } catch (e) {
+    console.error("Couldn't update your leaderboard entry:", e);
+  }
+}
 
 // ========================= LOGIN =========================
 async function loginWithGoogle() {
@@ -652,7 +707,7 @@ onAuthStateChanged(auth, async (user) => {
 
       if (!userSnap.exists()) {
         await setDoc(userRef, {
-          displayName: user.displayName || "DECA Student",
+          displayName: cleanProfileText(user.displayName, MAX_DISPLAY_NAME) || "DECA Student",
           email: user.email,
           photoURL: user.photoURL || "",
           chapter: "",
@@ -682,6 +737,10 @@ onAuthStateChanged(auth, async (user) => {
       userData.preparedEventReviews = userData.preparedEventReviews || [];
 
       await updateStreak(userRef);
+      // Re-read so the leaderboard entry mirrors exactly what's stored.
+      const synced = await getDoc(userRef);
+      Object.assign(userData, synced.data());
+      syncLeaderboard();
       renderAll();
     } catch (e) {
       console.error("Failed to load user data:", e);
@@ -838,13 +897,17 @@ window.redeemPartnerCode = async function() {
   // association code fills DECA Association; a district code fills neither,
   // since a district isn't either one. Both fields stay editable, and
   // redeeming a code overwrites whatever was typed there before.
-  const updates = { partnerId: match.id };
-  if (match.type === "association") updates.association = match.name;
-  else if (match.type !== "district") updates.chapter = match.name;
+  // partnerCode goes along with partnerId so the Firestore rules can confirm
+  // the student actually entered this partner's code — without it, anyone
+  // could set partnerId to any chapter's id from the console.
+  const updates = { partnerId: match.id, partnerCode: match.accessCode };
+  if (match.type === "association") updates.association = cleanProfileText(match.name, MAX_ASSOCIATION);
+  else if (match.type !== "district") updates.chapter = cleanProfileText(match.name, MAX_CHAPTER);
 
   try {
     await updateDoc(doc(db, "users", currentUser.uid), updates);
     Object.assign(userData, updates);
+    syncLeaderboard();
     document.getElementById("nav-advisor")?.classList.toggle("hidden", !isAdvisor(currentUser));
     input.value = "";
     renderProfile();
@@ -1193,8 +1256,8 @@ function renderFilteredCourses(list) {
     const activeCat = document.querySelector(".cat-btn.active")?.textContent || "All Courses";
     const q = document.getElementById("courseSearch")?.value.trim() || "";
     container.innerHTML = q
-      ? `<div class="lb-loading">No courses match "${q}".</div>`
-      : `<div class="lb-loading">No courses in ${activeCat} yet — we're building them out. Check back soon.</div>`;
+      ? `<div class="lb-loading">No courses match "${esc(q)}".</div>`
+      : `<div class="lb-loading">No courses in ${esc(activeCat)} yet — we're building them out. Check back soon.</div>`;
   }
 }
 
@@ -1446,7 +1509,7 @@ function unitVideoHtml(lesson) {
 
   return `
     <div class="video-container">
-      <iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>
+      <iframe src="https://www.youtube.com/embed/${esc(videoId)}" allowfullscreen></iframe>
     </div>
     <div class="vl-info">
       <div class="vl-meta">Video lesson · ${lesson.duration} · +${lesson.xp} XP on completion</div>
@@ -1462,7 +1525,7 @@ function unitVideoHtml(lesson) {
 // way in, not a fallback.
 function unitArticleHtml(lesson) {
   const isCompleted = unitPartDone(lesson);
-  const url = lesson.url;
+  const url = esc(lesson.url);
 
   return `
     <div class="unit-pdf-actions">
@@ -1811,6 +1874,7 @@ window.completeLesson = async function(lessonId, xp) {
     userData.xp = newXP;
     userData.completedLessons = completed;
     userData.activityLog = activityLog;
+    syncLeaderboard();
 
     showXPToast(xp);
 
@@ -1992,6 +2056,7 @@ async function renderQuizResults() {
     userData.completedQuizzes = (userData.completedQuizzes || 0) + 1;
     userData.activityLog = updates.activityLog;
     userData.quizScores = { ...(userData.quizScores || {}), [lesson.id]: pct };
+    syncLeaderboard();
 
     showXPToast(xpEarned);
     if (newAnimal.index > oldAnimal.index) {
@@ -2047,6 +2112,8 @@ async function checkAndAwardBadges() {
 }
 
 // ========================= LEADERBOARD =========================
+// Reads the "leaderboard" collection — the small public projection — never
+// the full user documents.
 async function renderLeaderboard() {
   const container = document.getElementById("leaderboardList");
   if (!container) return;
@@ -2058,11 +2125,11 @@ async function renderLeaderboard() {
       return;
     }
     try {
-      const q = query(collection(db, "users"), where("partnerId", "==", p.id));
+      const q = query(collection(db, "leaderboard"), where("partnerId", "==", p.id));
       const snap = await getDocs(q);
       let users = [];
       snap.forEach(d => users.push({ id: d.id, ...d.data() }));
-      lbUsers = users.filter(u => !u.hiddenFromLeaderboard).sort((a, b) => (b.xp || 0) - (a.xp || 0));
+      lbUsers = users.filter(u => !u.hidden).sort((a, b) => (b.xp || 0) - (a.xp || 0));
       lbPage = 0;
       renderLeaderboardPage();
     } catch (e) {
@@ -2072,18 +2139,13 @@ async function renderLeaderboard() {
     return;
   }
   try {
-    const q = query(collection(db, "users"), orderBy(lbMode === "lessons" ? "xp" : lbMode, "desc"));
+    const field = lbMode === "lessons" ? "lessons" : lbMode;
+    const q = query(collection(db, "leaderboard"), orderBy(field, "desc"));
     const snap = await getDocs(q);
     let users = [];
     snap.forEach(d => users.push({ id: d.id, ...d.data() }));
 
-    users = users.filter(u => !u.hiddenFromLeaderboard);
-
-    if (lbMode === "lessons") {
-      users.sort((a, b) => (b.completedLessons?.length || 0) - (a.completedLessons?.length || 0));
-    }
-
-    lbUsers = users;
+    lbUsers = users.filter(u => !u.hidden);
     lbPage = 0;
     renderLeaderboardPage();
   } catch (e) {
@@ -2094,7 +2156,6 @@ async function renderLeaderboard() {
 
 /* =========================================================================
    FARM4GLASS — LEADERBOARD: TOP 10 + YOUR RANK
-   REPLACES the whole renderLeaderboardPage() function in script.js.
    -------------------------------------------------------------------------
    Shows the top 10 only. Below that, where you actually sit:
 
@@ -2102,9 +2163,6 @@ async function renderLeaderboard() {
                              highlighted up there
      - outside it         -> your full row with your real rank
      - not on the board   -> a short explanation instead of silence
-
-   LB_PAGE_SIZE, lbPage and lbGoToPage are left unused by this. Harmless to
-   leave them; delete them if you want the file tidy.
    ========================================================================= */
 
 const LB_TOP_COUNT = 10;
@@ -2115,7 +2173,7 @@ function lbRowHtml(u, rank) {
   const rankClass = rank === 0 ? "gold" : rank === 1 ? "silver" : rank === 2 ? "bronze" : "";
   const val = lbMode === "xp" ? (u.xp || 0)
             : lbMode === "streak" ? (u.streak || 0)
-            : (u.completedLessons?.length || 0);
+            : (u.lessons ?? u.completedLessons?.length ?? 0);
   const unit = lbMode === "xp" ? "XP" : lbMode === "streak" ? "days" : "lessons";
   const animal = getAnimalForXP(u.xp || 0);
   const rankContent = rank === 0 ? icon("trophy")
@@ -2132,7 +2190,7 @@ function lbRowHtml(u, rank) {
         <div class="lb-chapter">${esc(u.chapter || "No chapter set")} · ${esc(animal.name)}</div>
       </div>
       <div>
-        <div class="lb-val">${val.toLocaleString()}</div>
+        <div class="lb-val">${Number(val).toLocaleString()}</div>
         <div class="lb-unit">${unit}</div>
       </div>
     </div>
@@ -2541,8 +2599,9 @@ function renderProfile() {
 
   const avatarEl = document.getElementById("profileAvatar");
   if (avatarEl) {
-    if (currentUser.photoURL) {
-      avatarEl.innerHTML = `<img src="${currentUser.photoURL}" alt="avatar">`;
+    const photo = safeUrl(currentUser.photoURL);
+    if (photo) {
+      avatarEl.innerHTML = `<img src="${esc(photo)}" alt="avatar">`;
     } else {
       avatarEl.textContent = (userData.displayName || "U")[0].toUpperCase();
     }
@@ -2561,9 +2620,16 @@ function renderProfile() {
   const p = partnerRecord();
   const statusEl = document.getElementById("partnerStatus");
   if (statusEl) statusEl.textContent = p ? `Linked to ${p.name}` : "Not linked yet.";
-  document.getElementById("editDisplayName").value = userData.displayName || "";
-  document.getElementById("editChapter").value = userData.chapter || "";
-  document.getElementById("editAssociation").value = userData.association || "";
+
+  const nameInput = document.getElementById("editDisplayName");
+  const chapterInput = document.getElementById("editChapter");
+  const assocInput = document.getElementById("editAssociation");
+  nameInput.value = userData.displayName || "";
+  chapterInput.value = userData.chapter || "";
+  assocInput.value = userData.association || "";
+  nameInput.maxLength = MAX_DISPLAY_NAME;
+  chapterInput.maxLength = MAX_CHAPTER;
+  assocInput.maxLength = MAX_ASSOCIATION;
 
   const rpSel = document.getElementById("editRoleplayEvent");
   const wrSel = document.getElementById("editWrittenEvent");
@@ -2581,7 +2647,7 @@ function renderProfile() {
     ].filter(Boolean);
 
     eventsEl.innerHTML = picked.length
-      ? picked.map(p => `<span class="profile-event-chip" title="${p.label}">${icon(p.iconName)}${p.value}</span>`).join("")
+      ? picked.map(p => `<span class="profile-event-chip" title="${esc(p.label)}">${icon(p.iconName)}${esc(p.value)}</span>`).join("")
       : `<span class="profile-event-empty">Set your events below so we can tailor your prep.</span>`;
   }
 
@@ -2634,6 +2700,12 @@ window.saveProfile = async function() {
   const writtenEvent = document.getElementById("editWrittenEvent")?.value || "";
   const clusterExam = document.getElementById("editClusterExam")?.value || "";
   if (!name) return alert("Display name can't be empty!");
+  if (name.length > MAX_DISPLAY_NAME) return alert(`Keep your display name to ${MAX_DISPLAY_NAME} characters or fewer.`);
+  if (chapter.length > MAX_CHAPTER) return alert(`Keep your chapter name to ${MAX_CHAPTER} characters or fewer.`);
+  if (association.length > MAX_ASSOCIATION) return alert(`Keep your association to ${MAX_ASSOCIATION} characters or fewer.`);
+  if (ANGLE_BRACKETS.test(name) || ANGLE_BRACKETS.test(chapter) || ANGLE_BRACKETS.test(association)) {
+    return alert("Names can't contain < or > characters.");
+  }
 
   try {
     await updateDoc(doc(db, "users", currentUser.uid), {
@@ -2645,6 +2717,7 @@ window.saveProfile = async function() {
     userData.roleplayEvent = roleplayEvent;
     userData.writtenEvent = writtenEvent;
     userData.clusterExam = clusterExam;
+    syncLeaderboard();
 
     renderSidebar();
     renderDashboard();
@@ -2764,15 +2837,14 @@ function renderAdminPanel() {
   else renderAdminCoursesSection();
 }
 
-// The editor itself lives in guest-speakers.js, so this just hands off to it.
-// If that file didn't load, say so plainly instead of showing an empty panel.
+// The editor itself lives further down this file, so this just hands off to it.
 function renderAdminGuestSpeakersSection() {
   const body = document.getElementById("adminSubtabBody");
   if (!body) return;
   if (typeof window.renderGuestSpeakerAdmin === "function") {
     window.renderGuestSpeakerAdmin();
   } else {
-    body.innerHTML = `<div class="admin-empty-state">The guest speaker editor didn't load. Check that guest-speakers.js is in the repo next to index.html, spelled exactly that way.</div>`;
+    body.innerHTML = `<div class="admin-empty-state">The guest speaker editor didn't load.</div>`;
   }
 }
 
@@ -2901,7 +2973,7 @@ function renderAdminKPISection() {
     <div class="admin-layout">
       <div>
         <div class="admin-kpi-form">
-          <input type="text" id="adminKpiSearch" placeholder="Search PIs by title, code, or cluster..." value="${adminKpiQuery.replace(/"/g, "&quot;")}" oninput="adminFilterKPIs()">
+          <input type="text" id="adminKpiSearch" placeholder="Search PIs by title, code, or cluster..." value="${esc(adminKpiQuery)}" oninput="adminFilterKPIs()">
         </div>
         <div class="admin-course-list" id="adminKpiList">${adminKpiListHtml()}</div>
       </div>
@@ -3006,7 +3078,7 @@ function renderAdminCourseEditor() {
         <div class="admin-unit-part-label">${icon("play")} Video${v ? `<button class="admin-btn-sm ghost admin-soon-toggle" onclick="adminToggleComingSoon('${unit.key}','video')">${v.comingSoon ? "Make available" : "Coming soon"}</button>` : ""}</div>
         <div class="admin-field-row">
           <input type="text" id="v-title-${unit.key}" placeholder="Unit title (e.g. Unit 1: Business Law)" value="${(v ? v.title : unit.title).replace(/"/g, "&quot;")}">
-          <input type="text" id="v-url-${unit.key}" placeholder="YouTube URL" value="${v ? (v.url || "") : ""}">
+          <input type="text" id="v-url-${unit.key}" placeholder="YouTube URL" value="${v ? esc(v.url || "") : ""}">
           <input type="number" id="v-xp-${unit.key}" placeholder="XP" style="max-width:90px;" value="${v ? v.xp : 25}">
           <button class="admin-btn-sm" onclick="adminSaveVideo('${unit.key}')">Save</button>
         </div>
@@ -3017,7 +3089,7 @@ function renderAdminCourseEditor() {
       <div class="admin-unit-part">
         <div class="admin-unit-part-label">${icon("file")} Article (PDF)${a ? `<button class="admin-btn-sm ghost admin-soon-toggle" onclick="adminToggleComingSoon('${unit.key}','article')">${a.comingSoon ? "Make available" : "Coming soon"}</button>` : ""}</div>
         <div class="admin-field-row">
-          <input type="text" id="art-url-${unit.key}" placeholder="PDF URL (e.g. pdfs/unit-1-business-law.pdf)" value="${a ? (a.url || "") : ""}">
+          <input type="text" id="art-url-${unit.key}" placeholder="PDF URL (e.g. pdfs/unit-1-business-law.pdf)" value="${a ? esc(a.url || "") : ""}">
           <input type="number" id="art-xp-${unit.key}" placeholder="XP" style="max-width:90px;" value="${a ? a.xp : 15}">
           <button class="admin-btn-sm" onclick="adminSaveArticle('${unit.key}')">Save</button>
           ${a ? `<button class="admin-btn-sm danger" onclick="adminDeleteLesson('${a.id}')">${icon("trash")}</button>` : ""}
@@ -3364,7 +3436,7 @@ function adminActivityEditorHtml(unit) {
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
               <div>
                 ${label}
-                <div style="font-size:12px;color:var(--muted);margin-top:2px;">${ACTIVITY_FIELD_TYPES[f.type] || f.type}${f.help ? ` · ${esc(f.help)}` : ""}</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:2px;">${ACTIVITY_FIELD_TYPES[f.type] || esc(f.type)}${f.help ? ` · ${esc(f.help)}` : ""}</div>
                 ${opts}
               </div>
               <div style="display:flex;gap:6px;flex-shrink:0;">
@@ -3941,7 +4013,7 @@ function renderPlannerForm() {
     <button class="pl-mode ${plannerMode === mode ? "active" : ""} ${value ? "" : "empty"}"
             onclick="${value ? `plannerPickMode('${mode}')` : `showTab('profile')`}">
       <span class="pl-mode-label">${label}</span>
-      <span class="pl-mode-value">${value || "Not set — tap to add it on your Profile"}</span>
+      <span class="pl-mode-value">${value ? esc(value) : "Not set — tap to add it on your Profile"}</span>
       <span class="pl-mode-blurb">${blurb}</span>
     </button>
   `;
@@ -3963,7 +4035,7 @@ function renderPlannerForm() {
       <h3>${plannerMode === "exam" ? "Exam prep plan" : plannerMode === "roleplay" ? "Roleplay prep plan" : "Written entry plan"}</h3>
       <div class="form-group">
         <label>Conference / Test Date</label>
-        <input type="date" id="plannerDate" value="${saved?.conferenceDate || ""}">
+        <input type="date" id="plannerDate" value="${esc(saved?.conferenceDate || "")}">
       </div>
       <div class="form-group">
         <label>Study Days Per Week</label>
@@ -4317,9 +4389,9 @@ function plannerRoleplayHtml(plan, session) {
 function plannerWrittenHtml(session) {
   return (session.sections || []).map(s => `
     <div class="pl-written">
-      <div class="pl-written-name">${s.section}</div>
-      <p class="pl-written-goal">${s.goal}</p>
-      ${(s.checklist || []).length ? `<ul class="pl-rp-check">${s.checklist.map(c => `<li>${c}</li>`).join("")}</ul>` : ""}
+      <div class="pl-written-name">${esc(s.section)}</div>
+      <p class="pl-written-goal">${esc(s.goal)}</p>
+      ${(s.checklist || []).length ? `<ul class="pl-rp-check">${s.checklist.map(c => `<li>${esc(c)}</li>`).join("")}</ul>` : ""}
     </div>
   `).join("");
 }
@@ -4415,7 +4487,7 @@ function plannerSessionHtml(plan, session) {
       <div class="pl-head">
         <div class="pl-num">${session.done ? icon("check") : session.num}</div>
         <div class="pl-head-info">
-          <div class="pl-title">${session.title}</div>
+          <div class="pl-title">${esc(session.title)}</div>
           <div class="pl-date">${plannerDateLabel(session.date)}${session.kpiIds?.length ? ` · ${session.kpiIds.length} ${session.kpiIds.length === 1 ? "PI" : "PIs"}` : ""}</div>
         </div>
         <button class="admin-btn-sm ${session.done ? "ghost" : ""}" onclick="plannerToggleSession(${session.num})">
@@ -4451,13 +4523,13 @@ function renderPlanResults(plan) {
 
   const notes = [];
   if (plan.borrowedFrom) {
-    notes.push(`<div class="planner-warning">${icon("alert")} Your event's own course doesn't have units yet, so this plan uses <strong>${plan.borrowedFrom}</strong> — the same material your event's exam draws from. It'll switch over automatically once the event course has content.</div>`);
+    notes.push(`<div class="planner-warning">${icon("alert")} Your event's own course doesn't have units yet, so this plan uses <strong>${esc(plan.borrowedFrom)}</strong> — the same material your event's exam draws from. It'll switch over automatically once the event course has content.</div>`);
   }
   if (plan.mode === "prepared" && plan.sectionSource === "template") {
-    notes.push(`<div class="planner-warning">${icon("alert")} No rubric has been entered for ${plan.eventLabel} yet, so these sections come from a general template. Check them against your event's current guidelines — and once an admin adds the rubric under Admin &gt; Rubrics, rebuilding this plan will use the real one.</div>`);
+    notes.push(`<div class="planner-warning">${icon("alert")} No rubric has been entered for ${esc(plan.eventLabel)} yet, so these sections come from a general template. Check them against your event's current guidelines — and once an admin adds the rubric under Admin &gt; Rubrics, rebuilding this plan will use the real one.</div>`);
   }
   if (plan.mode === "roleplay" && plan.kpiTotal && plan.kpiCovered < plan.kpiTotal) {
-    notes.push(`<div class="planner-warning">${icon("alert")} This covers the ${plan.kpiCovered} highest-priority indicators out of ${plan.kpiTotal} in ${plan.clusterLabel}. Add a study day or raise PIs per session to cover more.</div>`);
+    notes.push(`<div class="planner-warning">${icon("alert")} This covers the ${plan.kpiCovered} highest-priority indicators out of ${plan.kpiTotal} in ${esc(plan.clusterLabel)}. Add a study day or raise PIs per session to cover more.</div>`);
   }
 
   const statsHtml = plan.mode === "prepared" ? `
@@ -4485,8 +4557,8 @@ function renderPlanResults(plan) {
 
   container.innerHTML = `
     <div class="planner-summary">
-      <h3>${plan.eventLabel}</h3>
-      <div class="pl-summary-sub">${plan.courseTitle ? `Built from ${plan.courseTitle}` : "Built from your performance indicators"}</div>
+      <h3>${esc(plan.eventLabel)}</h3>
+      <div class="pl-summary-sub">${plan.courseTitle ? `Built from ${esc(plan.courseTitle)}` : "Built from your performance indicators"}</div>
       <div class="planner-summary-grid">${statsHtml}</div>
       <div class="pl-progress-row"><span>${doneCount} of ${plan.sessions.length} sessions done</span><span>${pct}%</span></div>
       <div class="xp-bar-outer" style="margin-bottom:0;"><div class="xp-bar-inner" style="width:${pct}%"></div></div>
@@ -4811,7 +4883,7 @@ window.downloadCertificate = async function(courseId) {
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     }, "image/png");
 
-    f4gNotice("Certificate downloaded", `${course.title} — nice work finishing it.`);
+    f4gNotice("Certificate downloaded", `${esc(course.title)} — nice work finishing it.`);
   } catch (e) {
     console.error("Certificate failed:", e);
     alert("Couldn't build the certificate — check the browser console for the error.");
@@ -4821,6 +4893,9 @@ window.downloadCertificate = async function(courseId) {
 // ========================================================================
 // ========================= ADMIN: MEMBERS ===============================
 // ========================================================================
+// Every field here was typed by a student, so every one goes through esc().
+// This table runs with admin privileges — it's the one place an unescaped
+// name would do the most damage.
 
 async function renderAdminMembersSection() {
   const body = document.getElementById("adminSubtabBody");
@@ -4832,12 +4907,17 @@ async function renderAdminMembersSection() {
     const members = [];
     snap.forEach(d => members.push({ id: d.id, ...d.data() }));
     members.sort((a, b) => (b.xp || 0) - (a.xp || 0));
+    adminMembersCache = new Map(members.map(m => [m.id, m]));
 
     body.innerHTML = `
       <div class="admin-panel-body">
         <h3 style="margin-bottom:16px;">${members.length} Members</h3>
         <div class="admin-seed-banner">
           <div>Hiding a member from the leaderboard keeps all their data and progress intact — it just skips them when the rankings are built. They can still be un-hidden any time.</div>
+        </div>
+        <div class="admin-seed-banner">
+          <div>The leaderboard reads its own collection so students can't see each other's emails. <strong>Rebuild</strong> copies every member into it — run it once after deploying this update, and any time rankings look out of date.</div>
+          <button class="admin-btn-sm" onclick="adminRebuildLeaderboard()">Rebuild leaderboard</button>
         </div>
         <div class="admin-members-table">
           <div class="admin-members-row admin-members-head">
@@ -4847,12 +4927,12 @@ async function renderAdminMembersSection() {
             const hidden = !!m.hiddenFromLeaderboard;
             return `
             <div class="admin-members-row">
-              <span>${m.displayName || "DECA Student"}</span>
-              <span>${m.email || "—"}</span>
-              <span>${m.chapter || "—"}</span>
-              <span>${m.association || "—"}</span>
-              <span>${m.xp || 0}</span>
-              <span><button class="admin-btn-sm ${hidden ? "ghost" : "danger"}" onclick="adminToggleLeaderboardVisibility('${m.id}', ${hidden})">
+              <span>${esc(m.displayName || "DECA Student")}</span>
+              <span>${esc(m.email || "—")}</span>
+              <span>${esc(m.chapter || "—")}</span>
+              <span>${esc(m.association || "—")}</span>
+              <span>${Number(m.xp) || 0}</span>
+              <span><button class="admin-btn-sm ${hidden ? "ghost" : "danger"}" onclick="adminToggleLeaderboardVisibility('${esc(m.id)}', ${hidden})">
                 ${hidden ? "Unhide" : "Hide"}
               </button></span>
             </div>
@@ -4871,11 +4951,38 @@ window.adminToggleLeaderboardVisibility = async function(uid, currentlyHidden) {
   if (!isAdmin(currentUser)) return;
   try {
     await updateDoc(doc(db, "users", uid), { hiddenFromLeaderboard: !currentlyHidden });
+    const m = adminMembersCache.get(uid);
+    if (m) {
+      m.hiddenFromLeaderboard = !currentlyHidden;
+      await setDoc(doc(db, "leaderboard", uid), leaderboardEntryFor(m, uid));
+    } else {
+      await setDoc(doc(db, "leaderboard", uid), { hidden: !currentlyHidden }, { merge: true });
+    }
     renderAdminMembersSection();
     if (document.getElementById("leaderboard")?.classList.contains("active")) renderLeaderboard();
   } catch (e) {
     console.error("Failed to update leaderboard visibility:", e);
     alert("Couldn't update that — check the console.");
+  }
+};
+
+// Copies every user into the public leaderboard projection. Safe to run any
+// number of times — each entry is overwritten from the user doc.
+window.adminRebuildLeaderboard = async function() {
+  if (!isAdmin(currentUser)) return;
+  if (!confirm("Copy every member into the leaderboard? This only writes rankings data — names, chapters, XP, streaks, and lesson counts. No emails.")) return;
+  try {
+    const snap = await getDocs(collection(db, "users"));
+    let n = 0;
+    for (const d of snap.docs) {
+      await setDoc(doc(db, "leaderboard", d.id), leaderboardEntryFor(d.data(), d.id));
+      n++;
+    }
+    f4gNotice("Leaderboard rebuilt", `${n} members copied.`);
+    if (document.getElementById("leaderboard")?.classList.contains("active")) renderLeaderboard();
+  } catch (e) {
+    console.error("Leaderboard rebuild failed:", e);
+    alert("Rebuild failed — check the console. If it's a permissions error, the new Firestore rules aren't published yet, or the admin account isn't matching.");
   }
 };
 
@@ -4889,13 +4996,13 @@ function renderAdminPartnersSection() {
   const listHtml = partners.map(p => `
     <div class="admin-lesson-block">
       <div class="admin-lesson-head">
-        <h4>${p.name}</h4>
+        <h4>${esc(p.name)}</h4>
         <div style="display:flex;gap:8px;">
-          <button class="admin-btn-sm ghost" onclick="adminEditPartner('${p.id}')">Edit</button>
-          <button class="admin-btn-sm danger" onclick="adminDeletePartner('${p.id}')">${icon("trash")} Delete</button>
+          <button class="admin-btn-sm ghost" onclick="adminEditPartner('${esc(p.id)}')">Edit</button>
+          <button class="admin-btn-sm danger" onclick="adminDeletePartner('${esc(p.id)}')">${icon("trash")} Delete</button>
         </div>
       </div>
-        <div style="font-size:12px;color:var(--muted);">${p.type ? p.type.charAt(0).toUpperCase() + p.type.slice(1) + " · " : ""}Code: ${p.accessCode} · ${(p.advisorEmails || []).length} advisor(s)</div>
+        <div style="font-size:12px;color:var(--muted);">${p.type ? esc(p.type.charAt(0).toUpperCase() + p.type.slice(1)) + " · " : ""}Code: ${esc(p.accessCode)} · ${(p.advisorEmails || []).length} advisor(s)</div>
     </div>
   `).join("") || `<div class="admin-empty-state">No partners yet.</div>`;
 
@@ -4908,14 +5015,14 @@ function renderAdminPartnersSection() {
       <div class="admin-panel-body">
         <h3 style="margin-bottom:16px;">${editing ? "Edit Partner" : "Add a Partner"}</h3>
         <div class="admin-kpi-form">
-          <input type="text" id="partner-name" placeholder="Chapter/association name" value="${editing ? editing.name.replace(/"/g, "&quot;") : ""}">
+          <input type="text" id="partner-name" placeholder="Chapter/association name" value="${editing ? esc(editing.name) : ""}">
                     <select id="partner-type">
             <option value="chapter" ${!editing || editing.type === "chapter" ? "selected" : ""}>Chapter</option>
             <option value="district" ${editing && editing.type === "district" ? "selected" : ""}>District</option>
             <option value="association" ${editing && editing.type === "association" ? "selected" : ""}>Association</option>
           </select>
-          <input type="text" id="partner-code" placeholder="Access code (e.g. NORCAL2026)" value="${editing ? editing.accessCode : ""}">
-          <textarea id="partner-advisors" rows="3" placeholder="Advisor emails, one per line">${editing ? (editing.advisorEmails || []).join("\n") : ""}</textarea>
+          <input type="text" id="partner-code" placeholder="Access code (e.g. NORCAL2026)" value="${editing ? esc(editing.accessCode) : ""}">
+          <textarea id="partner-advisors" rows="3" placeholder="Advisor emails, one per line">${editing ? esc((editing.advisorEmails || []).join("\n")) : ""}</textarea>
           <div style="display:flex;gap:10px;">
             <button class="admin-btn-sm" onclick="adminSavePartner()">${editing ? "Save Changes" : "Add Partner"}</button>
             ${editing ? `<button class="admin-btn-sm ghost" onclick="adminCancelEditPartner()">Cancel</button>` : ""}
@@ -4967,6 +5074,7 @@ window.adminDeletePartner = async function(id) {
 };
 
 // ========================= ADVISOR DASHBOARD =========================
+// Same rule as the admin Members table: student text is escaped, always.
 async function renderAdvisorDashboard() {
   const container = document.getElementById("advisorContent");
   if (!container) return;
@@ -4976,7 +5084,7 @@ async function renderAdvisorDashboard() {
     return;
   }
 
-  container.innerHTML = `<div class="lb-loading">Loading ${partner.name}...</div>`;
+  container.innerHTML = `<div class="lb-loading">Loading ${esc(partner.name)}...</div>`;
 
   try {
     const snap = await getDocs(query(collection(db, "users"), where("partnerId", "==", partner.id)));
@@ -4987,7 +5095,7 @@ async function renderAdvisorDashboard() {
     container.innerHTML = `
       <div class="stats-grid" style="margin-bottom:24px;">
         <div class="stat-card"><div class="stat-value">${members.length}</div><div class="stat-label">Members</div></div>
-        <div class="stat-card"><div class="stat-value">${members.reduce((s, m) => s + (m.xp || 0), 0).toLocaleString()}</div><div class="stat-label">Total XP</div></div>
+        <div class="stat-card"><div class="stat-value">${members.reduce((s, m) => s + (Number(m.xp) || 0), 0).toLocaleString()}</div><div class="stat-label">Total XP</div></div>
         <div class="stat-card"><div class="stat-value">${members.filter(m => m.streak > 0).length}</div><div class="stat-label">Active Streaks</div></div>
         <div class="stat-card"><div class="stat-value">${members.reduce((s, m) => s + (m.completedLessons?.length || 0), 0)}</div><div class="stat-label">Lessons Completed</div></div>
       </div>
@@ -4997,12 +5105,12 @@ async function renderAdvisorDashboard() {
         </div>
         ${members.map(m => `
           <div class="admin-members-row">
-            <span>${m.displayName || "DECA Student"}</span>
-            <span>${m.email || "—"}</span>
-            <span>${m.xp || 0}</span>
-            <span>${m.streak || 0}</span>
+            <span>${esc(m.displayName || "DECA Student")}</span>
+            <span>${esc(m.email || "—")}</span>
+            <span>${Number(m.xp) || 0}</span>
+            <span>${Number(m.streak) || 0}</span>
             <span>${m.completedLessons?.length || 0}</span>
-            <span>${m.chapter || "—"}</span>
+            <span>${esc(m.chapter || "—")}</span>
           </div>
         `).join("") || `<div class="admin-empty-state">No members have redeemed this chapter's code yet.</div>`}
       </div>
@@ -5019,9 +5127,6 @@ async function renderAdvisorDashboard() {
 // Events carry a start date and an optional end date, a free-text type, and
 // an optional link. Older docs only had { date, type } — eventStart/eventEnd
 // read through to those, so nothing already in Firestore needs migrating.
-//
-// REPLACES: everything from the old "CALENDAR" banner through the end of
-// window.adminDeleteEvent. Nothing outside that block changes.
 async function loadCalendarEvents() {
   try {
     const snap = await getDocs(collection(db, "calendarEvents"));
@@ -5074,8 +5179,8 @@ function knownEventTypes() {
   return [...new Set([...CALENDAR_BUILT_IN_TYPES, ...used])].sort();
 }
 
-// Admin-entered text goes straight into innerHTML, so escape it. A stray
-// apostrophe in an event title would otherwise break the markup around it.
+// Escapes text before it goes into innerHTML. Use this for ANY value that
+// came from the database or a form — especially anything a student typed.
 function esc(s) {
   return String(s ?? "")
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -5348,12 +5453,13 @@ function blogPreview(text, max = 220) {
 }
 
 // Full body: blank lines become paragraphs, single newlines become breaks.
+// Text is escaped first, so a post can never carry markup or script.
 function blogBodyHtml(text) {
   return String(text || "")
     .split(/\n\s*\n/)
     .map(p => p.trim())
     .filter(Boolean)
-    .map(p => `<p>${p.replace(/\n/g, "<br>")}</p>`)
+    .map(p => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`)
     .join("");
 }
 
@@ -5376,12 +5482,12 @@ function renderBlogList() {
         const cover = blogImageUrl(post.coverImage);
         return `
           <article class="blog-card">
-            ${cover ? `<img class="blog-cover" src="${cover}" alt="${post.title}" onerror="this.style.display='none'">` : ""}
+            ${cover ? `<img class="blog-cover" src="${esc(cover)}" alt="${esc(post.title)}" onerror="this.style.display='none'">` : ""}
             <div class="blog-card-body">
-              <div class="blog-meta">${post.authorName || "Farm4Glass Team"} · ${post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}</div>
-              <h3>${post.title}</h3>
-              <p>${blogPreview(post.body)}</p>
-              <button class="admin-btn-sm" style="margin-top:12px;" onclick="openBlogPost('${post.id}')">Read More →</button>
+              <div class="blog-meta">${esc(post.authorName || "Farm4Glass Team")} · ${post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}</div>
+              <h3>${esc(post.title)}</h3>
+              <p>${esc(blogPreview(post.body))}</p>
+              <button class="admin-btn-sm" style="margin-top:12px;" onclick="openBlogPost('${esc(post.id)}')">Read More →</button>
             </div>
           </article>
         `;
@@ -5400,16 +5506,17 @@ window.openBlogPost = function(id) {
 
   const cover = blogImageUrl(post.coverImage);
   const ytId = youtubeEmbedId(post.videoUrl);
+  const reelLink = safeUrl(post.videoUrl);
 
   container.innerHTML = `
     <div class="blog-post-view">
       <div class="lv-back" onclick="closeBlogPost()">← Back to Blog</div>
-      ${cover ? `<img class="blog-cover" src="${cover}" alt="${post.title}" style="width:100%;border-radius:14px;margin-bottom:20px;" onerror="this.style.display='none'">` : ""}
-      <h1 style="margin-bottom:8px;">${post.title}</h1>
-      <div class="blog-meta" style="margin-bottom:24px;">${post.authorName || "Farm4Glass Team"} · ${post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}</div>
+      ${cover ? `<img class="blog-cover" src="${esc(cover)}" alt="${esc(post.title)}" style="width:100%;border-radius:14px;margin-bottom:20px;" onerror="this.style.display='none'">` : ""}
+      <h1 style="margin-bottom:8px;">${esc(post.title)}</h1>
+      <div class="blog-meta" style="margin-bottom:24px;">${esc(post.authorName || "Farm4Glass Team")} · ${post.createdAt ? new Date(post.createdAt).toLocaleDateString() : ""}</div>
       <div class="blog-post-body">${blogBodyHtml(post.body)}</div>
-      ${ytId ? `<div class="blog-video" style="margin-top:24px;"><iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen></iframe></div>` : ""}
-      ${post.videoUrl && !ytId ? `<a class="blog-reel-link" href="${post.videoUrl}" target="_blank" rel="noopener">${icon("play")} Watch Reel ↗</a>` : ""}
+      ${ytId ? `<div class="blog-video" style="margin-top:24px;"><iframe src="https://www.youtube.com/embed/${esc(ytId)}" allowfullscreen></iframe></div>` : ""}
+      ${reelLink && !ytId ? `<a class="blog-reel-link" href="${esc(reelLink)}" target="_blank" rel="noopener">${icon("play")} Watch Reel ↗</a>` : ""}
     </div>
   `;
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -5428,13 +5535,13 @@ function renderAdminBlogSection() {
   const listHtml = blogs.map(post => `
     <div class="admin-lesson-block">
       <div class="admin-lesson-head">
-        <h4>${post.title}</h4>
+        <h4>${esc(post.title)}</h4>
         <div style="display:flex;gap:8px;">
-          <button class="admin-btn-sm ghost" onclick="adminEditBlog('${post.id}')">Edit</button>
-          <button class="admin-btn-sm danger" onclick="adminDeleteBlog('${post.id}')">${icon("trash")} Delete</button>
+          <button class="admin-btn-sm ghost" onclick="adminEditBlog('${esc(post.id)}')">Edit</button>
+          <button class="admin-btn-sm danger" onclick="adminDeleteBlog('${esc(post.id)}')">${icon("trash")} Delete</button>
         </div>
       </div>
-      <div style="font-size:12px;color:var(--muted);">${post.authorName || "Farm4Glass Team"}</div>
+      <div style="font-size:12px;color:var(--muted);">${esc(post.authorName || "Farm4Glass Team")}</div>
     </div>
   `).join("") || `<div class="admin-empty-state">No posts yet.</div>`;
 
@@ -5444,11 +5551,11 @@ function renderAdminBlogSection() {
       <div class="admin-panel-body">
         <h3 style="margin-bottom:16px;">${editing ? "Edit Post" : "Write a New Post"}</h3>
         <div class="admin-kpi-form">
-          <input type="text" id="blog-title" placeholder="Post title" value="${editing ? editing.title.replace(/"/g, "&quot;") : ""}">
-          <input type="text" id="blog-author" placeholder="Author name" value="${editing ? (editing.authorName || "") : ""}">
-          <input type="text" id="blog-cover" placeholder="Cover image URL (optional)" value="${editing ? (editing.coverImage || "") : ""}">
-          <input type="text" id="blog-video" placeholder="Video/Reel URL (optional — YouTube embeds, others link out)" value="${editing ? (editing.videoUrl || "") : ""}">
-          <textarea id="blog-body" rows="5" placeholder="Post content">${editing ? editing.body : ""}</textarea>
+          <input type="text" id="blog-title" placeholder="Post title" value="${editing ? esc(editing.title) : ""}">
+          <input type="text" id="blog-author" placeholder="Author name" value="${editing ? esc(editing.authorName || "") : ""}">
+          <input type="text" id="blog-cover" placeholder="Cover image URL (optional)" value="${editing ? esc(editing.coverImage || "") : ""}">
+          <input type="text" id="blog-video" placeholder="Video/Reel URL (optional — YouTube embeds, others link out)" value="${editing ? esc(editing.videoUrl || "") : ""}">
+          <textarea id="blog-body" rows="5" placeholder="Post content">${editing ? esc(editing.body) : ""}</textarea>
           <div style="display:flex;gap:10px;">
             <button class="admin-btn-sm" onclick="adminSaveBlog()">${editing ? "Save Changes" : "Publish Post"}</button>
             ${editing ? `<button class="admin-btn-sm ghost" onclick="adminCancelEditBlog()">Cancel</button>` : ""}
@@ -5691,6 +5798,7 @@ window.submitPracticeExam = async function() {
       await updateDoc(doc(db, "users", currentUser.uid), { examAttempts: attempts, xp: newXP });
       userData.examAttempts = attempts;
       userData.xp = newXP;
+      syncLeaderboard();
       showXPToast(xpEarned);
       renderSidebar();
       await checkAndAwardBadges();
@@ -5840,12 +5948,14 @@ window.rpBackToAreas = function() {
   rpSelectedArea = null; rpSelectedId = null; renderRoleplaysTab();
 };
 window.rpSelect = function(id) { rpSelectedId = id; renderRoleplaysTab(); };
-// Only the results block is rebuilt, so the search box keeps focus as you type.
+
+// Only the results block re-renders, so the search box keeps focus as you type.
 window.rpSearch = function(value) {
   rpQuery = String(value || "").toLowerCase().trim();
   const el = document.getElementById("rpResults");
   if (el) el.innerHTML = rpResultsHtml();
 };
+
 // Jump straight to a roleplay from a search hit.
 window.rpJumpTo = function(id) {
   const r = roleplays.find(x => x.id === id);
@@ -5863,33 +5973,6 @@ function rpMatches(r, q) {
   return `${r.title || ""} ${r.description || ""} ${rpAreaOf(r)} ${r.eventCode || ""} ${ev ? ev.name : ""}`
     .toLowerCase().includes(q);
 }
-
-/* ---- rendering ---- */
-/* ---- navigation ---- */
-window.rpFilterCategory = function(cat) { rpCategory = cat; renderRoleplaysTab(); };
-window.rpOpenEvent = function(code) {
-  rpSelectedEvent = code; rpSelectedArea = null; rpSelectedId = null; rpQuery = "";
-  renderRoleplaysTab(); window.scrollTo({ top: 0, behavior: "smooth" });
-};
-window.rpOpenArea = function(encoded) {
-  rpSelectedArea = decodeURIComponent(encoded); rpSelectedId = null;
-  renderRoleplaysTab(); window.scrollTo({ top: 0, behavior: "smooth" });
-};
-window.rpBackToEvents = function() {
-  rpSelectedEvent = null; rpSelectedArea = null; rpSelectedId = null; rpQuery = "";
-  renderRoleplaysTab();
-};
-window.rpBackToAreas = function() {
-  rpSelectedArea = null; rpSelectedId = null; renderRoleplaysTab();
-};
-window.rpSelect = function(id) { rpSelectedId = id; renderRoleplaysTab(); };
-
-// Only the results block re-renders, so the search box keeps focus as you type.
-window.rpSearch = function(value) {
-  rpQuery = String(value || "").toLowerCase().trim();
-  const el = document.getElementById("rpResults");
-  if (el) el.innerHTML = rpResultsHtml();
-};
 
 // Search matches the competitive event itself — name, code, and category —
 // not individual roleplay titles, descriptions, or instructional areas.
@@ -6212,6 +6295,7 @@ function f4gCountUp(el, to, dur = 800) {
 window.f4gCountUp = f4gCountUp;
 
 // Small slide-in card for milestones (streaks, first review, etc).
+// title and sub are treated as HTML — escape anything that came from a user.
 function f4gNotice(title, sub = "", ms = 4200) {
   const el = document.createElement("div");
   el.className = "f4g-notice";
@@ -6568,6 +6652,7 @@ async function awardPreparedEventXP() {
     userData.xp = newXP;
     userData.activityLog = activityLog;
     userData.lastPreparedEventXPDate = today;
+    syncLeaderboard();
 
     showXPToast(xp);
     if (newAnimal.index > oldAnimal.index) setTimeout(() => showLevelUpModal(newAnimal), 800);
@@ -6608,13 +6693,13 @@ function renderPreparedEventTab() {
 
   const optionsHtml = [`<option value="">Select your event...</option>`]
     .concat(rubrics.map(r =>
-      `<option value="${r.id}" ${r.id === peSelectedEventId ? "selected" : ""}>${r.eventName}${rubricHasChecks(r) ? "" : " — checks not set up yet"}</option>`
+      `<option value="${esc(r.id)}" ${r.id === peSelectedEventId ? "selected" : ""}>${esc(r.eventName)}${rubricHasChecks(r) ? "" : " — checks not set up yet"}</option>`
     )).join("");
 
   const fileHtml = peFile
     ? `<div class="pe-file">
          ${icon("check")}
-         <span>${peFile.name}</span>
+         <span>${esc(peFile.name)}</span>
          <span class="pe-file-size">${(peFile.size / 1048576).toFixed(1)} MB</span>
          <button class="admin-btn-sm ghost" onclick="peClearFile()">Remove</button>
        </div>`
@@ -6633,7 +6718,7 @@ function renderPreparedEventTab() {
             <select id="peEvent" onchange="peSelectEvent(this.value)">${optionsHtml}</select>
           </div>
 
-          ${selected && !ready ? `<div class="planner-warning">${icon("alert")} No checks have been set up for ${selected.eventName} yet. An admin can add its page limit and required sections under Admin &gt; Rubrics.</div>` : ""}
+          ${selected && !ready ? `<div class="planner-warning">${icon("alert")} No checks have been set up for ${esc(selected.eventName)} yet. An admin can add its page limit and required sections under Admin &gt; Rubrics.</div>` : ""}
 
           <div class="form-group">
             <label>Written Entry (PDF)</label>
@@ -6670,7 +6755,7 @@ function renderPreparedEventPlaceholder(selected) {
     <div class="widget">
       <div class="widget-header"><span>What gets checked</span></div>
       <div class="pe-list">
-        <div class="pe-list-row">${icon("file")}<span>Page count, measured against ${selected && selected.pageLimit ? `the ${selected.pageLimit}-page limit for ${selected.eventName}` : "your event's page limit"}.</span></div>
+        <div class="pe-list-row">${icon("file")}<span>Page count, measured against ${selected && selected.pageLimit ? `the ${selected.pageLimit}-page limit for ${esc(selected.eventName)}` : "your event's page limit"}.</span></div>
         <div class="pe-list-row">${icon("search")}<span>Word count across the whole entry, including headings and captions.</span></div>
         <div class="pe-list-row">${icon("check")}<span>Whether required text is actually in the document — section headings, the Statement of Assurances, anything your guidelines demand by name.</span></div>
         <div class="pe-list-row">${icon("alert")}<span>Each miss comes back with the penalty points on file for it, and where in your entry to look.</span></div>
@@ -6702,7 +6787,7 @@ function renderPreparedEventResult() {
   const checksHtml = r.checks.map(c => `
     <div class="pe-flag ${c.status}">
       <div style="flex:1;">
-        <div class="pe-flag-title">${c.label}</div>
+        <div class="pe-flag-title">${esc(c.label)}</div>
         <div class="pe-flag-body">${c.detail || ""}</div>
         ${c.fix ? `<div class="pe-flag-fix"><strong>Fix:</strong> ${c.fix}</div>` : ""}
       </div>
@@ -6747,8 +6832,8 @@ function renderPreparedEventHistory() {
       ${reviews.map(rev => `
         <div class="pe-history-row">
           ${icon("clipboard")}
-          <span>${rev.eventName}</span>
-          <span class="pe-history-meta">${rev.failCount ?? 0} issue${(rev.failCount ?? 0) === 1 ? "" : "s"} · ${new Date(rev.date).toLocaleDateString()}</span>
+          <span>${esc(rev.eventName)}</span>
+          <span class="pe-history-meta">${Number(rev.failCount) || 0} issue${(rev.failCount ?? 0) === 1 ? "" : "s"} · ${new Date(rev.date).toLocaleDateString()}</span>
         </div>
       `).join("")}
     </div>
@@ -6925,14 +7010,14 @@ function renderAdminRubricsSection() {
   const listHtml = rubrics.map(r => `
     <div class="admin-lesson-block">
       <div class="admin-lesson-head">
-        <h4>${r.eventName}</h4>
+        <h4>${esc(r.eventName)}</h4>
         <div style="display:flex;gap:8px;">
-          <button class="admin-btn-sm ghost" onclick="adminEditRubric('${r.id}')">Edit</button>
-          <button class="admin-btn-sm danger" onclick="adminDeleteRubric('${r.id}')">${icon("trash")} Delete</button>
+          <button class="admin-btn-sm ghost" onclick="adminEditRubric('${esc(r.id)}')">Edit</button>
+          <button class="admin-btn-sm danger" onclick="adminDeleteRubric('${esc(r.id)}')">${icon("trash")} Delete</button>
         </div>
       </div>
       <div style="font-size:12px;color:var(--muted);">
-        ${r.category || ""} · ${r.pageLimit ? `${r.pageLimit}-page limit · ` : ""}${(r.requiredText || []).length} required · ${(r.penaltyRules || []).length} penalty rules
+        ${esc(r.category || "")} · ${r.pageLimit ? `${Number(r.pageLimit)}-page limit · ` : ""}${(r.requiredText || []).length} required · ${(r.penaltyRules || []).length} penalty rules
         ${rubricHasChecks(r) ? "" : " · <strong>no checks set up</strong>"}
       </div>
     </div>
@@ -6957,15 +7042,15 @@ function renderAdminRubricsSection() {
       <div class="admin-panel-body">
         <h3 style="margin-bottom:16px;">${editing ? "Edit Event Rubric" : "Add an Event Rubric"}</h3>
         <div class="admin-kpi-form">
-          <input type="text" id="rubric-name" placeholder="Event name (e.g. Business Growth Plan)" value="${editing ? editing.eventName.replace(/"/g, "&quot;") : ""}">
-          <input type="text" id="rubric-code" placeholder="Event code (e.g. EBG)" value="${editing ? (editing.eventCode || "") : ""}">
-          <input type="text" id="rubric-category" placeholder="Category (e.g. Entrepreneurship Written Event)" value="${editing ? (editing.category || "") : ""}">
-          <input type="number" id="rubric-pagelimit" placeholder="Page limit (leave blank if none)" value="${editing && editing.pageLimit != null ? editing.pageLimit : ""}">
-          <input type="number" id="rubric-wordlimit" placeholder="Word limit (leave blank if none)" value="${editing && editing.wordLimit != null ? editing.wordLimit : ""}">
-          <textarea id="rubric-required" rows="7" placeholder="Text the entry MUST contain, one per line. Add penalty points after || if you know them:&#10;Statement of Assurances || 5&#10;Executive Summary&#10;Bibliography || 5&#10;&#10;Matched on exact wording (case and spacing don't matter), so use the heading as students actually type it.">${requiredText}</textarea>
-          <textarea id="rubric-penalties" rows="7" placeholder="One penalty rule per line. Add the point value after || if you know it:&#10;Written entry exceeds the page limit || 5&#10;Statement of Assurances missing or unsigned || 5&#10;Sections not in the required order">${penaltyText}</textarea>
-          <textarea id="rubric-sections" rows="9" placeholder="One rubric section per line, as:  Section name || what the judge is looking for&#10;Executive Summary || Concise overview of the whole entry; hooks the reader; states the ask">${sectionText}</textarea>
-          <textarea id="rubric-notes" rows="3" placeholder="Any extra guideline notes (formatting, appendix rules, etc.)">${editing ? (editing.notes || "") : ""}</textarea>
+          <input type="text" id="rubric-name" placeholder="Event name (e.g. Business Growth Plan)" value="${editing ? esc(editing.eventName) : ""}">
+          <input type="text" id="rubric-code" placeholder="Event code (e.g. EBG)" value="${editing ? esc(editing.eventCode || "") : ""}">
+          <input type="text" id="rubric-category" placeholder="Category (e.g. Entrepreneurship Written Event)" value="${editing ? esc(editing.category || "") : ""}">
+          <input type="number" id="rubric-pagelimit" placeholder="Page limit (leave blank if none)" value="${editing && editing.pageLimit != null ? esc(editing.pageLimit) : ""}">
+          <input type="number" id="rubric-wordlimit" placeholder="Word limit (leave blank if none)" value="${editing && editing.wordLimit != null ? esc(editing.wordLimit) : ""}">
+          <textarea id="rubric-required" rows="7" placeholder="Text the entry MUST contain, one per line. Add penalty points after || if you know them:&#10;Statement of Assurances || 5&#10;Executive Summary&#10;Bibliography || 5&#10;&#10;Matched on exact wording (case and spacing don't matter), so use the heading as students actually type it.">${esc(requiredText)}</textarea>
+          <textarea id="rubric-penalties" rows="7" placeholder="One penalty rule per line. Add the point value after || if you know it:&#10;Written entry exceeds the page limit || 5&#10;Statement of Assurances missing or unsigned || 5&#10;Sections not in the required order">${esc(penaltyText)}</textarea>
+          <textarea id="rubric-sections" rows="9" placeholder="One rubric section per line, as:  Section name || what the judge is looking for&#10;Executive Summary || Concise overview of the whole entry; hooks the reader; states the ask">${esc(sectionText)}</textarea>
+          <textarea id="rubric-notes" rows="3" placeholder="Any extra guideline notes (formatting, appendix rules, etc.)">${editing ? esc(editing.notes || "") : ""}</textarea>
           <div style="display:flex;gap:10px;">
             <button class="admin-btn-sm" onclick="adminSaveRubric()">${editing ? "Save Changes" : "Add Event"}</button>
             ${editing ? `<button class="admin-btn-sm ghost" onclick="adminCancelEditRubric()">Cancel</button>` : ""}
@@ -7261,19 +7346,14 @@ window.adminSeedRubrics = async function() {
 
 /* =========================================================================
    FARM4GLASS — GUEST SPEAKER VIDEOS
-   PASTE THIS AT THE VERY END OF script.js.
    -------------------------------------------------------------------------
    Self-contained. It reuses script.js's own Firebase handles (db, doc,
    setDoc, deleteDoc, collection, getDocs) and its own helpers (icon, esc,
    safeUrl, isAdmin, currentUser, f4gNotice), so there is no second file to
    load and nothing to go wrong with script order.
 
-   Once this is in, guest-speakers.js is dead weight — you can delete it and
-   remove its <script> tag from index.html. Keep guest-speakers.css: it's
-   what styles the student-facing cards.
-
-   Your existing renderAdminGuestSpeakersSection() stub still works unchanged,
-   because this defines window.renderGuestSpeakerAdmin for it to call.
+   guest-speakers.js is no longer needed — delete it and remove its <script>
+   tag from index.html. Keep guest-speakers.css: it styles the student cards.
 
    Speakers live in the Firestore "guestSpeakers" collection:
      { id, name, role, area, videoUrl, notesUrl, notesLabel,
@@ -7540,7 +7620,7 @@ window.gsSave = async function () {
     gsEditingId = null;
     window.renderGuestSpeakerAdmin();
     renderGuestSpeakersTab();
-    f4gNotice(editing ? "Talk updated" : "Talk published", `${name} is live on the Guest Speaker Videos tab.`);
+    f4gNotice(editing ? "Talk updated" : "Talk published", `${esc(name)} is live on the Guest Speaker Videos tab.`);
   } catch (e) {
     console.error("Couldn't save that speaker:", e);
     alert("Couldn't save — check the console. A permissions error means you need a Firestore rule for the \"guestSpeakers\" collection.");

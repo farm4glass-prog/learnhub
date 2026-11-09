@@ -330,7 +330,7 @@ function unitPartDone(lesson) {
 //   - admins can open everything
 //   - activity-mode courses aren't gated
 // This is a study-flow rule in the browser, not security.
-const UNIT_LOCKING = true;
+const UNIT_LOCKING = false;
 
 function unitGateQuiz(unit) {
   const q = unit?.quiz;

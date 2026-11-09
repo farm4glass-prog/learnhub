@@ -320,6 +320,67 @@ function unitPartDone(lesson) {
   return !!lesson && (userData?.completedLessons || []).includes(lesson.id);
 }
 
+// ========================= UNIT LOCKING =========================
+// In courses that use practice questions, a unit's video stays locked until
+// the practice questions of every earlier unit have been passed (60%+), or
+// are waiting on admin review. Rules of thumb:
+//   - units with no practice questions (or flagged "coming soon") never block
+//   - a unit someone has already started stays open, so nobody loses access
+//     to work they'd done before this rule existed
+//   - admins can open everything
+//   - activity-mode courses aren't gated
+// This is a study-flow rule in the browser, not security.
+const UNIT_LOCKING = true;
+
+function unitGateQuiz(unit) {
+  const q = unit?.quiz;
+  return q && !q.comingSoon && (q.questions || []).length ? q : null;
+}
+
+function unitGateSatisfied(unit) {
+  const q = unitGateQuiz(unit);
+  if (!q) return true;
+  return unitPartDone(q) || xpPending("quiz", q.id);
+}
+
+// -> { locked: bool, blocker: the earlier unit that has to be finished first }
+function unitLockInfo(course, unit) {
+  const open = { locked: false, blocker: null };
+  if (!UNIT_LOCKING || !course || !unit) return open;
+  if (isAdmin(currentUser) || courseUsesActivities(course)) return open;
+  if (unit.lessons.some(unitPartDone)) return open;
+
+  const units = buildUnits(course);
+  const idx = units.findIndex(u => u.key === unit.key);
+  for (let i = 0; i < idx; i++) {
+    if (units[i].comingSoon) continue;
+    if (!unitGateSatisfied(units[i])) return { locked: true, blocker: units[i] };
+  }
+  return open;
+}
+
+window.unitLockedNotice = function(courseId, unitKey) {
+  const course = courses.find(c => c.id === courseId);
+  const unit = findUnit(courseId, unitKey);
+  const lock = unitLockInfo(course, unit);
+  if (!lock.locked) return;
+  f4gNotice("Locked", `Pass the practice questions in ${esc(lock.blocker.title)} to unlock this unit.`);
+};
+
+// After a practice quiz: say whether the next unit just opened.
+function unitGateNotice(course, lesson, passed, completedBefore) {
+  if (completedBefore || !UNIT_LOCKING || isAdmin(currentUser) || courseUsesActivities(course)) return;
+  const units = buildUnits(course);
+  const i = units.findIndex(u => u.quiz && u.quiz.id === lesson.id);
+  const next = i >= 0 ? units.slice(i + 1).find(u => !u.comingSoon) : null;
+  if (!next) return;
+  if (unitGateSatisfied(units[i])) {
+    f4gNotice("Next unit unlocked", `${esc(next.title)} is open.`);
+  } else if (!passed) {
+    f4gNotice("Almost", `Score 60% or higher on these practice questions to unlock ${esc(next.title)}.`);
+  }
+}
+
 // ========================= FARM ANIMALS =========================
 const ANIMALS = [
   { name: "Chick",    tagline: "Just hatched! Every champion starts somewhere.",           xpNeeded: 100,  level: 1 },
@@ -1656,6 +1717,21 @@ function unitRowHtml(course, unit, bookmarked) {
     `;
   }
 
+  // Locked until the earlier units' practice questions are passed.
+  const lock = unitLockInfo(course, unit);
+  if (lock.locked) {
+    return `
+      <div class="lesson-row unit-row coming-soon" onclick="unitLockedNotice('${course.id}', '${unit.key}')">
+        <div class="lr-status pending">${unit.number}</div>
+        <div class="lr-info">
+          <div class="lr-title">${unit.title}</div>
+          <div class="unit-chips"><span class="unit-chip soon">Pass the practice questions in ${esc(lock.blocker.title)} to unlock</span></div>
+        </div>
+        <span class="lr-soon">Locked</span>
+      </div>
+    `;
+  }
+
   const allDone = unit.lessons.length > 0 && unit.lessons.filter(l => !l.comingSoon).every(l => unitPartDone(l));
   const bookmarkTarget = (unit.video || unit.activity || unit.quiz || unit.article)?.id || "";
   const isBookmarked = bookmarked.includes(bookmarkTarget);
@@ -1687,6 +1763,7 @@ window.openUnit = function(courseId, unitKey, tab) {
   const unit = findUnit(courseId, unitKey);
   if (!course || !unit) return;
   if (unit.comingSoon) return unitComingSoonNotice();
+  if (unitLockInfo(course, unit).locked) return unitLockedNotice(courseId, unitKey);
 
   currentCourseId = courseId;
   currentUnitKey = unitKey;
@@ -2395,6 +2472,7 @@ async function renderQuizResults() {
       if (line && text) line.textContent = text;
     }
 
+    unitGateNotice(course, lesson, passed, completedBefore);
     renderSidebar();
     if (currentUnitKey) renderUnitTabs();
     renderDashboard();

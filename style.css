@@ -684,12 +684,11 @@ h1, h2, .logo-text, .nav-links a, .hero-title,
 }
 
 .team-card img {
-  width: 130px;
-  height: 130px;
-  border-radius: 50%;
+  width: 100%;
+  height: 220px;
   object-fit: cover;
-  margin: 0 auto 20px;
-  margin-bottom: 20px;
+  object-position: center center;
+  display: block;
 }
 
 .team-card h3 {

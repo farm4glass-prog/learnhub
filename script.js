@@ -21,7 +21,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc,
-  collection, getDocs, orderBy, query, limit, where
+  collection, getDocs, orderBy, query, limit, where, serverTimestamp, writeBatch
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app-check.js";
 import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-ai.js";
@@ -659,6 +659,310 @@ async function syncLeaderboard() {
   }
 }
 
+// ========================================================================
+// ========================= XP GUARD =====================================
+// ========================================================================
+// Every way of earning XP goes through awardXP(). It measures how long the
+// student actually spent, checks the award for signs of farming, and either
+// counts it right away or parks it in the "xpReviews" collection until an
+// admin approves it under Admin > Review. Change the numbers below to make
+// it stricter or looser — nothing else needs to change.
+const XPG = {
+  MIN_WATCH_FRACTION: 0.15,    // video / article: at least this share of its listed duration
+  MIN_WATCH_FLOOR_SEC: 20,     // ...and never less than this many seconds
+  MIN_SEC_PER_QUESTION: 2,     // practice questions and practice exams
+  MIN_SEC_PER_FIELD: 6,        // activity worksheets, per answerable field
+  BURST_COUNT: 5,              // this many XP awards...
+  BURST_WINDOW_SEC: 60,        // ...inside this many seconds counts as a burst
+  DAILY_REVIEW_THRESHOLD: 600, // XP in one (UTC) day before further XP is held
+  SINGLE_AWARD_MAX: 100,       // a single award above this is always held (matches the Firestore rule)
+  HOLD_ALL_AT: 3,              // with this many reviews pending, every new award is held too
+  MAX_PENDING: 8               // no new reviews are created past this, so the queue can't be flooded
+};
+
+function xpgRandomId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function xpgFmt(sec) {
+  sec = Math.max(0, Math.round(Number(sec) || 0));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (h) return `${h}h ${String(m).padStart(2, "0")}m`;
+  if (m) return `${m}m ${String(s).padStart(2, "0")}s`;
+  return `${s}s`;
+}
+
+function durationMinutes(text) {
+  const m = String(text || "").match(/(\d+(?:\.\d+)?)/);
+  return m ? Number(m[1]) : 0;
+}
+
+function findLessonById(id) {
+  for (const course of courses) {
+    const lesson = (course.lessons || []).find(l => l.id === id);
+    if (lesson) return { lesson, course };
+  }
+  return null;
+}
+
+/* ---------- time on task ----------
+   Counts seconds a lesson (video, article, activity, practice questions) was
+   open AND the browser tab was visible. It can't tell whether a video is
+   playing or paused, so treat it as "time spent on the page", not proof of
+   watching. Totals are also kept in localStorage so a refresh mid-video
+   doesn't throw the time away. */
+const timeTracker = { entries: {}, active: null };
+
+function ttStoreKey() { return `f4g-time-${currentUser?.uid || "anon"}`; }
+function ttRead() {
+  try { return JSON.parse(localStorage.getItem(ttStoreKey()) || "{}"); } catch (e) { return {}; }
+}
+function ttWrite(map) {
+  try {
+    const keys = Object.keys(map);
+    if (keys.length > 200) keys.slice(0, keys.length - 200).forEach(k => delete map[k]);
+    localStorage.setItem(ttStoreKey(), JSON.stringify(map));
+  } catch (e) { /* storage off — time just won't survive a refresh */ }
+}
+
+function trackerSuspend() {
+  const key = timeTracker.active;
+  const e = timeTracker.entries[key];
+  if (!e || !e.since) return;
+  e.ms += Date.now() - e.since;
+  e.since = null;
+  const map = ttRead();
+  map[key] = Math.round(e.ms / 1000);
+  ttWrite(map);
+}
+function trackerStop() {
+  trackerSuspend();
+  timeTracker.active = null;
+}
+function trackerStart(key) {
+  trackerStop();
+  if (!key) return;
+  const e = timeTracker.entries[key] || (timeTracker.entries[key] = { ms: (ttRead()[key] || 0) * 1000, since: null });
+  timeTracker.active = key;
+  if (document.visibilityState === "visible") e.since = Date.now();
+}
+function trackerReset(key) {
+  if (timeTracker.active === key) timeTracker.active = null;
+  delete timeTracker.entries[key];
+  const map = ttRead();
+  delete map[key];
+  ttWrite(map);
+}
+function trackerSeconds(key) {
+  const e = timeTracker.entries[key];
+  if (!e) return Math.round(ttRead()[key] || 0);
+  return Math.round((e.ms + (e.since ? Date.now() - e.since : 0)) / 1000);
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    trackerSuspend();
+  } else {
+    const e = timeTracker.entries[timeTracker.active];
+    if (e && !e.since) e.since = Date.now();
+  }
+});
+
+/* ---------- held awards (this student's side) ---------- */
+let myReviews = [];
+const xpgInFlight = new Set();
+
+function xpPending(type, lessonId) {
+  return myReviews.some(r => r.status === "pending" && r.type === type && r.lessonId === lessonId);
+}
+function xpPendingLesson(lessonId) {
+  return myReviews.some(r => r.status === "pending" && r.lessonId === lessonId);
+}
+function xpPendingCount() {
+  return myReviews.filter(r => r.status === "pending").length;
+}
+
+async function loadMyReviews() {
+  if (!currentUser) return;
+  try {
+    const snap = await getDocs(query(collection(db, "xpReviews"), where("uid", "==", currentUser.uid)));
+    myReviews = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    xpAnnounceDecisions();
+  } catch (e) {
+    console.error("Couldn't load your held awards — check the Firestore rule for \"xpReviews\":", e);
+  }
+}
+
+// Tells the student once when an admin has decided on something they had held.
+function xpAnnounceDecisions() {
+  if (!currentUser) return;
+  const key = `f4g-reviews-seen-${currentUser.uid}`;
+  let seen = [];
+  try { seen = JSON.parse(localStorage.getItem(key) || "[]"); } catch (e) { seen = []; }
+
+  const fresh = myReviews.filter(r => r.status !== "pending" && !seen.includes(r.id));
+  if (!fresh.length) return;
+
+  const approved = fresh.filter(r => r.status === "approved");
+  const rejected = fresh.filter(r => r.status === "rejected");
+  const xp = approved.reduce((sum, r) => sum + (Number(r.xp) || 0), 0);
+  const parts = [];
+  if (approved.length) parts.push(`${approved.length} approved (+${xp} XP)`);
+  if (rejected.length) parts.push(`${rejected.length} not approved`);
+
+  setTimeout(() => f4gNotice("Review update", `Your held awards: ${parts.join(", ")}.`), 1200);
+  try { localStorage.setItem(key, JSON.stringify([...seen, ...fresh.map(r => r.id)].slice(-200))); } catch (e) { /* ignore */ }
+}
+
+/* ---------- the checks ---------- */
+function xpgEvaluate({ xp, durationSec, minSec }) {
+  const flags = [];
+  const now = Date.now();
+  const log = userData.activityLog || [];
+  const today = new Date().toISOString().slice(0, 10);
+
+  if (xp > XPG.SINGLE_AWARD_MAX) {
+    flags.push(`One award of ${xp} XP is above the ${XPG.SINGLE_AWARD_MAX} XP single-award limit`);
+  }
+  if (minSec > 0 && durationSec < minSec) {
+    flags.push(`Only ${xpgFmt(durationSec)} spent on it; at least ${xpgFmt(minSec)} expected`);
+  }
+  const recent = log.filter(e => (e.xp || 0) > 0 && e.at && now - Date.parse(e.at) < XPG.BURST_WINDOW_SEC * 1000).length;
+  if (recent >= XPG.BURST_COUNT) {
+    flags.push(`${recent} XP awards in the last ${XPG.BURST_WINDOW_SEC} seconds`);
+  }
+  const todayXp = log.filter(e => e.date === today).reduce((sum, e) => sum + (e.xp || 0), 0);
+  if (todayXp + xp > XPG.DAILY_REVIEW_THRESHOLD) {
+    flags.push(`Would bring today's XP to ${todayXp + xp} (review threshold ${XPG.DAILY_REVIEW_THRESHOLD})`);
+  }
+  return flags;
+}
+
+// The single door for XP. Returns { status } where status is one of:
+//   "counted"  XP (and any lesson completion) was applied
+//   "held"     sent to the admin review queue, nothing applied yet
+//   "pending"  this exact item is already waiting in the queue
+//   "blocked"  too many reviews already pending
+//   "none" / "busy" / "error"
+async function awardXP(a) {
+  const xp = Math.max(0, Math.round(Number(a.xp) || 0));
+  const flightKey = `${a.type}:${a.lessonId}`;
+  if (!currentUser || !userData) return { status: "error" };
+  if (xpgInFlight.has(flightKey)) return { status: "busy" };
+  xpgInFlight.add(flightKey);
+
+  try {
+    const userRef = doc(db, "users", currentUser.uid);
+
+    // Start from what is really stored, so an admin approval that landed while
+    // this tab was open is never overwritten by stale numbers.
+    const stored = (await getDoc(userRef)).data();
+    if (stored) Object.assign(userData, stored);
+
+    const completeId = a.completeLessonId || null;
+    const needsCompletion = !!completeId && !(userData.completedLessons || []).includes(completeId);
+    if (xp === 0 && !needsCompletion) return { status: "none" };
+
+    const ctx = {
+      xp,
+      type: a.type,
+      lessonId: a.lessonId,
+      title: a.title || "",
+      detail: a.detail || "",
+      durationSec: Math.max(0, Math.round(a.durationSec || 0)),
+      minSec: Math.max(0, Math.round(a.minSec || 0)),
+      score: a.score == null ? null : a.score,
+      completeLessonId: completeId
+    };
+
+    const flags = xp > 0 ? xpgEvaluate(ctx) : [];
+    if (xp > 0 && !flags.length && xpPendingCount() >= XPG.HOLD_ALL_AT) {
+      flags.push(`${xpPendingCount()} earlier awards are still waiting on review`);
+    }
+
+    return flags.length ? await xpgHold(ctx, flags) : await xpgApply(ctx, userRef, needsCompletion);
+  } finally {
+    xpgInFlight.delete(flightKey);
+  }
+}
+
+async function xpgApply(ctx, userRef, needsCompletion) {
+  const nowIso = new Date().toISOString();
+  const entry = { date: nowIso.slice(0, 10), at: nowIso, xp: ctx.xp, lessonId: ctx.lessonId, type: ctx.type, durationSec: ctx.durationSec };
+  if (ctx.score != null) entry.score = ctx.score;
+
+  const activityLog = [...(userData.activityLog || []), entry].slice(-300);
+  const updates = { activityLog };
+  if (ctx.xp > 0) {
+    updates.xp = (userData.xp || 0) + ctx.xp;
+    updates.lastXpAt = serverTimestamp();
+  }
+  if (needsCompletion) updates.completedLessons = [...(userData.completedLessons || []), ctx.completeLessonId];
+
+  const oldAnimal = getAnimalForXP(userData.xp || 0);
+  await updateDoc(userRef, updates);
+
+  userData.activityLog = activityLog;
+  if (ctx.xp > 0) userData.xp = updates.xp;
+  if (needsCompletion) userData.completedLessons = updates.completedLessons;
+  syncLeaderboard();
+
+  if (ctx.xp > 0) {
+    showXPToast(ctx.xp);
+    const newAnimal = getAnimalForXP(userData.xp);
+    if (newAnimal.index > oldAnimal.index) setTimeout(() => showLevelUpModal(newAnimal), 800);
+  }
+  await checkAndAwardBadges();
+  return { status: "counted", xp: ctx.xp };
+}
+
+async function xpgHold(ctx, flags) {
+  if (xpPending(ctx.type, ctx.lessonId)) {
+    f4gNotice("Already waiting on review", "This one is already in the review queue — you don't need to do it again.");
+    return { status: "pending" };
+  }
+  if (xpPendingCount() >= XPG.MAX_PENDING) {
+    f4gNotice("Too many awards waiting", "Several of your awards are still waiting on review. New XP counts again once an admin clears them.");
+    return { status: "blocked" };
+  }
+
+  const id = xpgRandomId("rev");
+  const review = {
+    id,
+    uid: currentUser.uid,
+    displayName: userData.displayName || "",
+    email: currentUser.email || "",
+    chapter: userData.chapter || "",
+    type: ctx.type,
+    lessonId: ctx.lessonId,
+    title: ctx.title,
+    detail: ctx.detail,
+    xp: ctx.xp,
+    score: ctx.score,
+    durationSec: ctx.durationSec,
+    minSec: ctx.minSec,
+    flags,
+    payload: { completeLessonId: ctx.completeLessonId },
+    status: "pending",
+    createdAt: new Date().toISOString()
+  };
+
+  await setDoc(doc(db, "xpReviews", id), review);
+  myReviews.push(review);
+  // The reasons stay with the admin — students just hear it's being checked.
+  f4gNotice("Held for review", `${esc(ctx.title || "This activity")}: +${ctx.xp} XP will be added once an admin approves it.`);
+  return { status: "held", flags };
+}
+
+function xpgOutcomeText(award, xp) {
+  if (award.status === "held") return `+${xp} XP held for admin review`;
+  if (award.status === "pending") return "XP for this is already waiting on admin review";
+  if (award.status === "blocked") return "Too many awards are waiting on review — XP not added";
+  return "";
+}
+
 // ========================= LOGIN =========================
 async function loginWithGoogle() {
   try {
@@ -735,6 +1039,8 @@ onAuthStateChanged(auth, async (user) => {
       userData.bookmarkedKPIs = userData.bookmarkedKPIs || [];
       userData.examAttempts = userData.examAttempts || [];
       userData.preparedEventReviews = userData.preparedEventReviews || [];
+      loadMyReviews();
+      if (isAdmin(currentUser)) adminRefreshPendingCount();
 
       await updateStreak(userRef);
       // Re-read so the leaderboard entry mirrors exactly what's stored.
@@ -1265,6 +1571,7 @@ function renderFilteredCourses(list) {
 // One row per unit. Everything inside a unit — video, practice questions or
 // activity, article — opens together in the unit view, behind a tab bar.
 window.openCourse = function(id) {
+  trackerStop();
   currentCourseId = id;
   currentUnitKey = null;
   const course = courses.find(c => c.id === id);
@@ -1441,6 +1748,7 @@ function renderUnitTabs() {
 }
 
 function renderUnitPane() {
+  trackerStop();
   const pane = document.getElementById("unitPane");
   const course = courses.find(c => c.id === currentCourseId);
   const unit = findUnit(currentCourseId, currentUnitKey);
@@ -1453,6 +1761,7 @@ function renderUnitPane() {
       return;
     }
     currentLesson = unit.activity;
+    trackerStart(`activity:${unit.activity.id}`);
     renderActivityPane(course, unit.activity, pane);
     return;
   }
@@ -1475,6 +1784,7 @@ function renderUnitPane() {
       return;
     }
     currentLesson = unit.article;
+    trackerStart(`article:${unit.article.id}`);
     pane.innerHTML = unitArticleHtml(unit.article);
     return;
   }
@@ -1485,6 +1795,7 @@ function renderUnitPane() {
     return;
   }
   currentLesson = unit.video;
+  trackerStart(`video:${unit.video.id}`);
   pane.innerHTML = unitVideoHtml(unit.video);
 }
 
@@ -1513,8 +1824,8 @@ function unitVideoHtml(lesson) {
     </div>
     <div class="vl-info">
       <div class="vl-meta">Video lesson · ${lesson.duration} · +${lesson.xp} XP on completion</div>
-      <button class="complete-btn" id="completeBtn" onclick="completeLesson('${lesson.id}', ${lesson.xp})" ${isCompleted ? "disabled" : ""}>
-        ${isCompleted ? "✓ Completed" : "Mark as Complete (+" + lesson.xp + " XP)"}
+      <button class="complete-btn" id="completeBtn" onclick="completeLesson('${lesson.id}', ${lesson.xp})" ${isCompleted || xpPendingLesson(lesson.id) ? "disabled" : ""}>
+        ${isCompleted ? "✓ Completed" : xpPendingLesson(lesson.id) ? "Pending review" : "Mark as Complete (+" + lesson.xp + " XP)"}
       </button>
     </div>
   `;
@@ -1537,8 +1848,8 @@ function unitArticleHtml(lesson) {
     </object>
     <div class="vl-info">
       <div class="vl-meta">Article · ${lesson.duration} · +${lesson.xp} XP on completion</div>
-      <button class="complete-btn" id="completeBtn" onclick="completeLesson('${lesson.id}', ${lesson.xp})" ${isCompleted ? "disabled" : ""}>
-        ${isCompleted ? "✓ Completed" : "Mark as Read (+" + lesson.xp + " XP)"}
+      <button class="complete-btn" id="completeBtn" onclick="completeLesson('${lesson.id}', ${lesson.xp})" ${isCompleted || xpPendingLesson(lesson.id) ? "disabled" : ""}>
+        ${isCompleted ? "✓ Completed" : xpPendingLesson(lesson.id) ? "Pending review" : "Mark as Read (+" + lesson.xp + " XP)"}
       </button>
     </div>
   `;
@@ -1687,8 +1998,8 @@ async function renderActivityPane(course, lesson, pane) {
       </form>
       <div class="vl-info act-footer">
         <div class="vl-meta">Activity · ${lesson.duration} · +${lesson.xp} XP on completion · your answers save automatically</div>
-        <button class="complete-btn" id="completeBtn" onclick="submitActivity()" ${isDone ? "disabled" : ""}>
-          ${isDone ? "✓ Completed" : `Submit Activity (+${lesson.xp} XP)`}
+        <button class="complete-btn" id="completeBtn" onclick="submitActivity()" ${isDone || xpPendingLesson(lesson.id) ? "disabled" : ""}>
+          ${isDone ? "✓ Completed" : xpPendingLesson(lesson.id) ? "Pending review" : `Submit Activity (+${lesson.xp} XP)`}
         </button>
       </div>
     </div>
@@ -1826,8 +2137,8 @@ window.submitActivity = async function() {
   }
 
   const btn = document.getElementById("completeBtn");
-  await completeLesson(st.lesson.id, st.lesson.xp);
-  if (btn) f4gBurstFrom(btn, 22);
+  const awarded = await completeLesson(st.lesson.id, st.lesson.xp);
+  if (btn && awarded?.status === "counted") f4gBurstFrom(btn, 22);
 };
 
 // Leaving the page, switching apps on a phone, or closing the tab — save
@@ -1849,49 +2160,52 @@ window.openLesson = function(courseId, lessonId) {
 };
 
 // ========================= COMPLETE LESSON =========================
-window.completeLesson = async function(lessonId, xp) {
-  if (!currentUser || !userData) return;
-  const already = (userData.completedLessons || []).includes(lessonId);
-  if (already) return;
+// Goes through awardXP(): time on the lesson is measured, and a suspiciously
+// quick or bursty completion is held for admin review instead of counting.
+// The XP always comes from the course data, never from the button's argument,
+// so calling this from the console with a bigger number does nothing.
+window.completeLesson = async function(lessonId) {
+  if (!currentUser || !userData) return { status: "error" };
+  if ((userData.completedLessons || []).includes(lessonId)) return { status: "done" };
+  if (xpPendingLesson(lessonId)) return { status: "pending" };
+
+  const found = findLessonById(lessonId);
+  if (!found) return { status: "error" };
+  const { lesson, course } = found;
+
+  const kind = lesson.type === "article" ? "article" : lesson.type === "activity" ? "activity" : "video";
+  const seconds = trackerSeconds(`${kind}:${lessonId}`);
+  const minSec = kind === "activity"
+    ? activityAnswerable(lesson).length * XPG.MIN_SEC_PER_FIELD
+    : Math.max(XPG.MIN_WATCH_FLOOR_SEC, Math.round(durationMinutes(lesson.duration) * 60 * XPG.MIN_WATCH_FRACTION));
 
   try {
-    const userRef = doc(db, "users", currentUser.uid);
-    const newXP = userData.xp + xp;
-    const oldAnimal = getAnimalForXP(userData.xp);
-    const newAnimal = getAnimalForXP(newXP);
-
-    const completed = [...(userData.completedLessons || []), lessonId];
-    const type = currentLesson?.type === "article" ? "article"
-               : currentLesson?.type === "activity" ? "activity"
-               : "video";
-    const activityLog = [...(userData.activityLog || []), { date: new Date().toISOString().slice(0, 10), xp, lessonId, type }].slice(-300);
-    await updateDoc(userRef, {
-      xp: newXP,
-      completedLessons: completed,
-      activityLog
+    const result = await awardXP({
+      xp: Number(lesson.xp) || 0,
+      type: kind,
+      lessonId,
+      title: `${stripUnitSuffix(lesson.title)} — ${course.title}`,
+      detail: lesson.duration ? `Listed length ${lesson.duration}` : "",
+      durationSec: seconds,
+      minSec,
+      completeLessonId: lessonId
     });
 
-    userData.xp = newXP;
-    userData.completedLessons = completed;
-    userData.activityLog = activityLog;
-    syncLeaderboard();
+    if (result.status === "busy") return result;
 
-    showXPToast(xp);
-
-    if (newAnimal.index > oldAnimal.index) {
-      setTimeout(() => showLevelUpModal(newAnimal), 800);
-    }
-
-    await checkAndAwardBadges();
-
-    renderSidebar();
     const btn = document.querySelector("#completeBtn");
-    if (btn) { btn.disabled = true; btn.textContent = "✓ Completed"; }
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = result.status === "counted" ? "✓ Completed" : "Pending review";
+    }
+    renderSidebar();
     if (currentUnitKey) renderUnitTabs();
     renderDashboard();
+    return result;
   } catch (e) {
     console.error("Failed to save lesson completion:", e);
     alert("Couldn't save your progress — check the console for details.");
+    return { status: "error" };
   }
 };
 
@@ -1907,6 +2221,8 @@ function quizMount() {
 }
 
 function openQuiz(course, lesson, inUnit) {
+  trackerReset(`quiz:${lesson.id}`);
+  trackerStart(`quiz:${lesson.id}`);
   quizState = {
     course, lesson,
     questions: lesson.questions || [],
@@ -2009,14 +2325,35 @@ async function renderQuizResults() {
   const { score, questions, lesson, course } = quizState;
   const pct = Math.round((score / questions.length) * 100);
   const passed = pct >= 60;
-  const xpEarned = passed ? lesson.xp : Math.round(lesson.xp * 0.3);
+
+  // How long this attempt took (time the quiz was open with the tab visible).
+  const trackKey = `quiz:${lesson.id}`;
+  const secs = trackerSeconds(trackKey);
+  trackerStop();
+
+  // XP is earned once per quiz: in full the first time you pass it, or a small
+  // participation amount on a first attempt that fails. Replays still save
+  // your score, they just don't add XP again.
+  const completedBefore = (userData?.completedLessons || []).includes(lesson.id);
+  const attemptedBefore = userData?.quizScores?.[lesson.id] != null;
+  const waiting = xpPending("quiz", lesson.id);
+  const partial = Math.round(lesson.xp * 0.3);
+  let xpEarned = 0;
+  if (!completedBefore && !waiting) {
+    if (passed) xpEarned = Math.max(0, lesson.xp - (attemptedBefore ? partial : 0));
+    else xpEarned = attemptedBefore ? 0 : partial;
+  }
+  const xpNote = completedBefore ? "You've already earned XP on this quiz — replays don't add more."
+    : waiting ? "XP for this quiz is waiting on admin review."
+    : xpEarned === 0 ? "XP for this quiz was already counted on an earlier attempt."
+    : "";
 
   const mount = quizMount();
   const results = `
     <div class="quiz-results">
       <div class="results-title">${pct === 100 ? "Perfect Score!" : pct >= 80 ? "Great Job!" : pct >= 60 ? "Good Work!" : "Keep Studying!"}</div>
       <div class="results-score">${score} / ${questions.length} correct (${pct}%)</div>
-      <div class="results-xp">+${xpEarned} XP Earned </div>
+      <div class="results-xp" id="quizXpLine">${xpEarned > 0 ? `+${xpEarned} XP Earned ` : esc(xpNote)}</div>
       <div class="results-btns">
         <button class="btn-primary" onclick="retakeQuiz()">Retake Quiz</button>
         <button class="btn-primary" onclick="openCourse('${course.id}')">Back to Course</button>
@@ -2031,38 +2368,33 @@ async function renderQuizResults() {
   }
 
   if (!userData) return;
-  const already = (userData.completedLessons || []).includes(lesson.id);
 
   try {
+    // Progress that doesn't touch XP is saved straight away.
     const userRef = doc(db, "users", currentUser.uid);
-    const newXP = userData.xp + xpEarned;
-    const oldAnimal = getAnimalForXP(userData.xp);
-    const newAnimal = getAnimalForXP(newXP);
-
-    const updates = {
-      xp: newXP,
-      completedQuizzes: (userData.completedQuizzes || 0) + 1,
-      [`quizScores.${lesson.id}`]: pct,
-      activityLog: [...(userData.activityLog || []), { date: new Date().toISOString().slice(0, 10), xp: xpEarned, lessonId: lesson.id, type: "quiz", score: pct }].slice(-300)
-    };
-
-    if (!already && passed) {
-      updates.completedLessons = [...(userData.completedLessons || []), lesson.id];
-      userData.completedLessons = updates.completedLessons;
-    }
-
-    await updateDoc(userRef, updates);
-    userData.xp = newXP;
-    userData.completedQuizzes = (userData.completedQuizzes || 0) + 1;
-    userData.activityLog = updates.activityLog;
+    const attempts = (userData.completedQuizzes || 0) + 1;
+    await updateDoc(userRef, { completedQuizzes: attempts, [`quizScores.${lesson.id}`]: pct });
+    userData.completedQuizzes = attempts;
     userData.quizScores = { ...(userData.quizScores || {}), [lesson.id]: pct };
-    syncLeaderboard();
 
-    showXPToast(xpEarned);
-    if (newAnimal.index > oldAnimal.index) {
-      setTimeout(() => showLevelUpModal(newAnimal), 800);
+    const completesIt = !completedBefore && !waiting && passed;
+    if (xpEarned > 0 || completesIt) {
+      const award = await awardXP({
+        xp: xpEarned,
+        type: "quiz",
+        lessonId: lesson.id,
+        title: `${stripUnitSuffix(lesson.title)} — ${course.title}`,
+        detail: `${score}/${questions.length} correct (${pct}%)`,
+        durationSec: secs,
+        minSec: questions.length * XPG.MIN_SEC_PER_QUESTION,
+        score: pct,
+        completeLessonId: completesIt ? lesson.id : null
+      });
+      const line = document.getElementById("quizXpLine");
+      const text = xpgOutcomeText(award, xpEarned);
+      if (line && text) line.textContent = text;
     }
-    await checkAndAwardBadges();
+
     renderSidebar();
     if (currentUnitKey) renderUnitTabs();
     renderDashboard();
@@ -2072,6 +2404,8 @@ async function renderQuizResults() {
 }
 
 window.retakeQuiz = function() {
+  trackerReset(`quiz:${quizState.lesson.id}`);
+  trackerStart(`quiz:${quizState.lesson.id}`);
   quizState.current = 0;
   quizState.score = 0;
   quizState.answered = false;
@@ -2738,7 +3072,7 @@ function populateAssociationsDatalist() {
 // ========================= TABS =========================
 window.showTab = function(tabName) {
   if (tabName === "admin" && !isAdmin(currentUser)) return;
-  if (tabName !== "lessonView") activityFlush();
+  if (tabName !== "lessonView") { activityFlush(); trackerStop(); }
   if (tabName === "advisor" && !isAdvisor(currentUser)) return;
 
   document.querySelectorAll(".tab-content").forEach(el => {
@@ -2816,6 +3150,7 @@ function renderAdminPanel() {
       <button class="admin-subtab-btn ${adminActiveSubTab === "courses" ? "active" : ""}" onclick="adminSwitchSubTab('courses')">Courses</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "kpi" ? "active" : ""}" onclick="adminSwitchSubTab('kpi')">KPI Database</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "members" ? "active" : ""}" onclick="adminSwitchSubTab('members')">Members</button>
+      <button id="adminReviewTabBtn" class="admin-subtab-btn ${adminActiveSubTab === "review" ? "active" : ""}" onclick="adminSwitchSubTab('review')">Review${adminPendingCount ? ` (${adminPendingCount})` : ""}</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "calendar" ? "active" : ""}" onclick="adminSwitchSubTab('calendar')">Calendar</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "roleplays" ? "active" : ""}" onclick="adminSwitchSubTab('roleplays')">Roleplays</button>
       <button class="admin-subtab-btn ${adminActiveSubTab === "blog" ? "active" : ""}" onclick="adminSwitchSubTab('blog')">Blog</button>
@@ -2829,6 +3164,7 @@ function renderAdminPanel() {
   if (adminActiveSubTab === "partners") renderAdminPartnersSection();
   else if (adminActiveSubTab === "kpi") renderAdminKPISection();
   else if (adminActiveSubTab === "members") renderAdminMembersSection();
+  else if (adminActiveSubTab === "review") renderAdminReviewSection();
   else if (adminActiveSubTab === "calendar") renderAdminCalendarSection();
   else if (adminActiveSubTab === "roleplays") renderAdminRoleplaysSection();
   else if (adminActiveSubTab === "blog") renderAdminBlogSection();
@@ -4912,6 +5248,7 @@ async function renderAdminMembersSection() {
     body.innerHTML = `
       <div class="admin-panel-body">
         <h3 style="margin-bottom:16px;">${members.length} Members</h3>
+        <div id="adminMemberActivity"></div>
         <div class="admin-seed-banner">
           <div>Hiding a member from the leaderboard keeps all their data and progress intact — it just skips them when the rankings are built. They can still be un-hidden any time.</div>
         </div>
@@ -4932,7 +5269,7 @@ async function renderAdminMembersSection() {
               <span>${esc(m.chapter || "—")}</span>
               <span>${esc(m.association || "—")}</span>
               <span>${Number(m.xp) || 0}</span>
-              <span><button class="admin-btn-sm ${hidden ? "ghost" : "danger"}" onclick="adminToggleLeaderboardVisibility('${esc(m.id)}', ${hidden})">
+              <span><button class="admin-btn-sm ghost" onclick="adminShowMemberActivity('${esc(m.id)}')">Activity</button> <button class="admin-btn-sm ${hidden ? "ghost" : "danger"}" onclick="adminToggleLeaderboardVisibility('${esc(m.id)}', ${hidden})">
                 ${hidden ? "Unhide" : "Hide"}
               </button></span>
             </div>
@@ -4951,6 +5288,7 @@ window.adminToggleLeaderboardVisibility = async function(uid, currentlyHidden) {
   if (!isAdmin(currentUser)) return;
   try {
     await updateDoc(doc(db, "users", uid), { hiddenFromLeaderboard: !currentlyHidden });
+    adminAudit(currentlyHidden ? "unhide_member" : "hide_member", { uid, name: adminMembersCache.get(uid)?.displayName || "" });
     const m = adminMembersCache.get(uid);
     if (m) {
       m.hiddenFromLeaderboard = !currentlyHidden;
@@ -4979,6 +5317,7 @@ window.adminRebuildLeaderboard = async function() {
       n++;
     }
     f4gNotice("Leaderboard rebuilt", `${n} members copied.`);
+    adminAudit("rebuild_leaderboard", { name: `${n} members` });
     if (document.getElementById("leaderboard")?.classList.contains("active")) renderLeaderboard();
   } catch (e) {
     console.error("Leaderboard rebuild failed:", e);
@@ -5682,6 +6021,9 @@ window.startPracticeExam = function(courseId) {
   };
 
   if (examTimerInterval) clearInterval(examTimerInterval);
+  const examKey = `exam:${course.id}`;
+  trackerReset(examKey);
+  trackerStart(examKey);
   examTimerInterval = setInterval(() => {
     if (!examState) return clearInterval(examTimerInterval);
     examState.secondsLeft--;
@@ -5762,6 +6104,10 @@ window.submitPracticeExam = async function() {
   if (examTimerInterval) clearInterval(examTimerInterval);
 
   const { questions, answers, course } = examState;
+  const examKey = `exam:${course.id}`;
+  const secs = trackerSeconds(examKey);
+  trackerStop();
+
   const scored = questions.map((q, i) => ({ ...q, userAnswer: answers[i], correct: answers[i] === q.answer }));
   const numCorrect = scored.filter(s => s.correct).length;
   const pct = Math.round((numCorrect / questions.length) * 100);
@@ -5773,7 +6119,7 @@ window.submitPracticeExam = async function() {
       <div class="quiz-results">
         <div class="results-title">${pct >= 80 ? "Great Job!" : pct >= 60 ? "Good Work!" : "Keep Studying!"}</div>
         <div class="results-score">${numCorrect} / ${questions.length} correct (${pct}%)</div>
-        <div class="results-xp">+${xpEarned} XP Earned</div>
+        <div class="results-xp" id="examXpLine">+${xpEarned} XP Earned</div>
         <div class="results-btns">
           <button class="btn-primary" onclick="reviewExam()">Review Answers</button>
           <button class="btn-primary" onclick="openCourse('${course.id}')">Back to Course</button>
@@ -5791,17 +6137,27 @@ window.submitPracticeExam = async function() {
     try {
       const attempt = {
         courseId: course.id, courseTitle: course.title,
-        date: new Date().toISOString(), score: numCorrect, total: questions.length, pct
+        date: new Date().toISOString(), score: numCorrect, total: questions.length, pct,
+        durationSec: secs
       };
       const attempts = [...(userData.examAttempts || []), attempt].slice(-50);
-      const newXP = userData.xp + xpEarned;
-      await updateDoc(doc(db, "users", currentUser.uid), { examAttempts: attempts, xp: newXP });
+      await updateDoc(doc(db, "users", currentUser.uid), { examAttempts: attempts });
       userData.examAttempts = attempts;
-      userData.xp = newXP;
-      syncLeaderboard();
-      showXPToast(xpEarned);
+
+      const award = await awardXP({
+        xp: xpEarned,
+        type: "exam",
+        lessonId: `exam-${course.id}`,
+        title: `${course.title} practice exam`,
+        detail: `${numCorrect}/${questions.length} correct (${pct}%)`,
+        durationSec: secs,
+        minSec: questions.length * XPG.MIN_SEC_PER_QUESTION,
+        score: pct
+      });
+      const line = document.getElementById("examXpLine");
+      const text = xpgOutcomeText(award, xpEarned);
+      if (line && text) line.textContent = text;
       renderSidebar();
-      await checkAndAwardBadges();
     } catch (e) {
       console.error("Failed to save exam attempt:", e);
     }
@@ -6636,27 +6992,17 @@ async function awardPreparedEventXP() {
   const today = new Date().toISOString().slice(0, 10);
   if (userData.lastPreparedEventXPDate === today) return;
 
-  const xp = 40;
   try {
-    const newXP = userData.xp + xp;
-    const oldAnimal = getAnimalForXP(userData.xp);
-    const newAnimal = getAnimalForXP(newXP);
-    const activityLog = [...(userData.activityLog || []), { date: today, xp, lessonId: "prepared-event-check", type: "review" }].slice(-300);
-
-    await updateDoc(doc(db, "users", currentUser.uid), {
-      xp: newXP,
-      activityLog,
-      lastPreparedEventXPDate: today
-    });
-
-    userData.xp = newXP;
-    userData.activityLog = activityLog;
+    await updateDoc(doc(db, "users", currentUser.uid), { lastPreparedEventXPDate: today });
     userData.lastPreparedEventXPDate = today;
-    syncLeaderboard();
-
-    showXPToast(xp);
-    if (newAnimal.index > oldAnimal.index) setTimeout(() => showLevelUpModal(newAnimal), 800);
-    await checkAndAwardBadges();
+    await awardXP({
+      xp: 40,
+      type: "review",
+      lessonId: "prepared-event-check",
+      title: "Prepared event entry check",
+      durationSec: 0,
+      minSec: 0
+    });
     renderSidebar();
   } catch (e) {
     console.error("Couldn't award check XP:", e);
@@ -7650,4 +7996,286 @@ const gsPrevShowTab = window.showTab;
 window.showTab = function (tabName) {
   gsPrevShowTab(tabName);
   if (tabName === "speakers") renderGuestSpeakersTab();
+};
+
+// ========================================================================
+// ========================= ADMIN: XP REVIEW + AUDIT LOG =================
+// ========================================================================
+// Held awards land in "xpReviews" as status "pending". Approving one adds the
+// XP (and any lesson completion) to the member and their leaderboard entry in
+// a single atomic write; rejecting just closes it. Every decision, and every
+// hide / unhide / rebuild, is written to the append-only "auditLog".
+
+let adminReviews = [];
+let adminReviewFilter = "pending";
+let adminAuditEntries = [];
+let adminPendingCount = 0;
+let adminPendingAnnounced = false;
+
+const AUDIT_LABELS = {
+  approve_xp: "approved held XP",
+  reject_xp: "rejected held XP",
+  hide_member: "hid a member from the leaderboard",
+  unhide_member: "un-hid a member",
+  rebuild_leaderboard: "rebuilt the leaderboard"
+};
+const XP_TYPE_LABELS = {
+  video: "Video", article: "Article", activity: "Activity",
+  quiz: "Practice questions", exam: "Practice exam", review: "Entry check"
+};
+
+async function adminAudit(action, fields = {}) {
+  if (!isAdmin(currentUser)) return;
+  try {
+    const id = xpgRandomId("audit");
+    await setDoc(doc(db, "auditLog", id), { id, action, by: currentUser.email, at: new Date().toISOString(), ...fields });
+  } catch (e) {
+    console.error("Couldn't write the audit log entry:", e);
+  }
+}
+
+function adminUpdateReviewTab() {
+  const btn = document.getElementById("adminReviewTabBtn");
+  if (btn) btn.textContent = `Review${adminPendingCount ? ` (${adminPendingCount})` : ""}`;
+}
+
+// Runs once when an admin signs in, so a waiting queue doesn't go unnoticed.
+async function adminRefreshPendingCount() {
+  if (!isAdmin(currentUser)) return;
+  try {
+    const snap = await getDocs(query(collection(db, "xpReviews"), where("status", "==", "pending")));
+    adminPendingCount = snap.size;
+    adminUpdateReviewTab();
+    if (adminPendingCount && !adminPendingAnnounced) {
+      adminPendingAnnounced = true;
+      setTimeout(() => f4gNotice(
+        "XP waiting for review",
+        `${adminPendingCount} held ${adminPendingCount === 1 ? "award is" : "awards are"} waiting under Admin &gt; Review.`
+      ), 1500);
+    }
+  } catch (e) {
+    console.error("Couldn't count pending XP reviews — publish the xpReviews Firestore rule:", e);
+  }
+}
+
+async function adminLoadAudit() {
+  try {
+    const snap = await getDocs(query(collection(db, "auditLog"), orderBy("at", "desc"), limit(30)));
+    adminAuditEntries = snap.docs.map(d => d.data());
+  } catch (e) {
+    console.error("Couldn't load the audit log — publish the auditLog Firestore rule:", e);
+    adminAuditEntries = [];
+  }
+}
+
+async function adminLoadReviews() {
+  const snap = await getDocs(query(collection(db, "xpReviews"), orderBy("createdAt", "desc"), limit(300)));
+  adminReviews = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  adminPendingCount = adminReviews.filter(r => r.status === "pending").length;
+  adminUpdateReviewTab();
+  await adminLoadAudit();
+}
+
+async function renderAdminReviewSection() {
+  const body = document.getElementById("adminSubtabBody");
+  if (!body || !isAdmin(currentUser)) return;
+  body.innerHTML = `<div class="admin-empty-state">Loading the review queue...</div>`;
+
+  try {
+    await adminLoadReviews();
+  } catch (e) {
+    console.error("Failed to load XP reviews:", e);
+    body.innerHTML = `<div class="admin-empty-state">${icon("alert")} Couldn't load the review queue — publish the new Firestore rules for "xpReviews" and "auditLog" first.</div>`;
+    return;
+  }
+  if (adminActiveSubTab !== "review" || !document.getElementById("adminSubtabBody")) return;
+  adminRenderReviewBody();
+}
+
+window.adminSetReviewFilter = function(filter) {
+  adminReviewFilter = filter;
+  adminRenderReviewBody();
+};
+
+function adminReviewCardHtml(r) {
+  const pending = r.status === "pending";
+  const when = r.createdAt ? new Date(r.createdAt).toLocaleString() : "";
+  const decided = pending ? "" : ` · <strong>${esc(r.status)}</strong> by ${esc(r.decidedBy || "")}${r.note ? ` — ${esc(r.note)}` : ""}`;
+  const buttons = pending ? `
+    <button class="admin-btn-sm" onclick="adminDecideReview('${esc(r.id)}', 'approved')">Approve</button>
+    <button class="admin-btn-sm danger" onclick="adminDecideReview('${esc(r.id)}', 'rejected')">Reject</button>` : "";
+
+  return `
+    <div class="admin-lesson-block">
+      <div class="admin-lesson-head">
+        <h4>${esc(r.displayName || "DECA Student")} <span style="font-weight:600;color:var(--muted);font-size:12px;">— +${Number(r.xp) || 0} XP</span></h4>
+        <div style="display:flex;gap:8px;">${buttons}</div>
+      </div>
+      <div style="font-size:13px;margin-bottom:6px;">${esc(XP_TYPE_LABELS[r.type] || r.type || "Activity")}: ${esc(r.title || r.lessonId || "")}${r.detail ? ` · ${esc(r.detail)}` : ""}</div>
+      <div style="font-size:12px;color:var(--muted);">
+        Time spent ${esc(xpgFmt(r.durationSec))}${r.minSec ? ` (expected at least ${esc(xpgFmt(r.minSec))})` : ""}
+        · ${esc(r.email || "")} · ${esc(r.chapter || "No chapter")} · ${esc(when)}${decided}
+      </div>
+      <div style="font-size:12px;margin-top:8px;">${(r.flags || []).map(f => `${icon("alert")} ${esc(f)}`).join("<br>")}</div>
+    </div>
+  `;
+}
+
+function adminRenderReviewBody() {
+  const body = document.getElementById("adminSubtabBody");
+  if (!body) return;
+
+  const count = s => adminReviews.filter(r => r.status === s).length;
+  const filters = [
+    ["pending", `Pending (${count("pending")})`],
+    ["approved", `Approved (${count("approved")})`],
+    ["rejected", `Rejected (${count("rejected")})`],
+    ["all", `All (${adminReviews.length})`]
+  ];
+  const shown = adminReviews.filter(r => adminReviewFilter === "all" || r.status === adminReviewFilter);
+
+  const auditHtml = adminAuditEntries.map(a => `
+    <div style="font-size:12px;color:var(--muted);padding:6px 0;border-top:1px solid var(--border, rgba(0,0,0,.08));">
+      ${esc(new Date(a.at).toLocaleString())} — ${esc(a.by || "")} ${esc(AUDIT_LABELS[a.action] || a.action)}${a.name ? `: ${esc(a.name)}` : ""}${a.xp ? ` (+${Number(a.xp)} XP)` : ""}${a.title ? ` · ${esc(a.title)}` : ""}${a.note ? ` · "${esc(a.note)}"` : ""}
+    </div>`).join("") || `<div style="font-size:12px;color:var(--muted);">No decisions logged yet.</div>`;
+
+  body.innerHTML = `
+    <div class="admin-seed-banner">
+      <div>XP that looks off — too fast, too many in a row, or a very big day — is held here instead of counting. Nothing is added to the student or the leaderboard until you approve it. The checks and their limits live in the <code>XPG</code> block near the top of script.js.</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+      ${filters.map(([key, label]) => `<button class="admin-btn-sm ${adminReviewFilter === key ? "" : "ghost"}" onclick="adminSetReviewFilter('${key}')">${esc(label)}</button>`).join("")}
+    </div>
+    ${shown.map(adminReviewCardHtml).join("") || `<div class="admin-empty-state">Nothing ${adminReviewFilter === "all" ? "here yet" : adminReviewFilter} right now.</div>`}
+    <h3 style="margin:28px 0 10px;">Audit log</h3>
+    <div class="admin-panel-body">${auditHtml}</div>
+  `;
+}
+
+async function adminApproveReview(rev) {
+  const userRef = doc(db, "users", rev.uid);
+  const snap = await getDoc(userRef);
+  if (!snap.exists()) throw new Error("That member no longer exists.");
+  const u = snap.data();
+
+  const xp = Number(rev.xp) || 0;
+  const nowIso = new Date().toISOString();
+  const entry = {
+    date: String(rev.createdAt || nowIso).slice(0, 10),
+    at: nowIso,
+    xp,
+    lessonId: rev.lessonId,
+    type: rev.type,
+    durationSec: Number(rev.durationSec) || 0,
+    approvedBy: currentUser.email
+  };
+  if (rev.score != null) entry.score = rev.score;
+
+  const updates = {
+    xp: (u.xp || 0) + xp,
+    activityLog: [...(u.activityLog || []), entry].slice(-300),
+    lastXpAt: serverTimestamp()
+  };
+  const completeId = rev.payload?.completeLessonId;
+  if (completeId && !(u.completedLessons || []).includes(completeId)) {
+    updates.completedLessons = [...(u.completedLessons || []), completeId];
+  }
+
+  // One atomic write: the member, their leaderboard entry, and the review.
+  const batch = writeBatch(db);
+  batch.update(userRef, updates);
+  batch.set(doc(db, "leaderboard", rev.uid), leaderboardEntryFor({ ...u, ...updates }, rev.uid));
+  batch.update(doc(db, "xpReviews", rev.id), {
+    status: "approved", decidedBy: currentUser.email, decidedAt: nowIso, note: ""
+  });
+  await batch.commit();
+}
+
+window.adminDecideReview = async function(id, decision) {
+  if (!isAdmin(currentUser)) return;
+  const rev = adminReviews.find(r => r.id === id);
+  if (!rev || rev.status !== "pending") return;
+
+  let note = "";
+  if (decision === "rejected") {
+    const answer = prompt(`Reject +${Number(rev.xp) || 0} XP for ${rev.displayName || "this member"}? Add a reason (optional):`, "");
+    if (answer === null) return;
+    note = answer.trim().slice(0, 200);
+  }
+
+  try {
+    if (decision === "approved") {
+      await adminApproveReview(rev);
+    } else {
+      await updateDoc(doc(db, "xpReviews", id), {
+        status: "rejected", decidedBy: currentUser.email, decidedAt: new Date().toISOString(), note
+      });
+    }
+    Object.assign(rev, { status: decision, decidedBy: currentUser.email, decidedAt: new Date().toISOString(), note });
+    adminPendingCount = adminReviews.filter(r => r.status === "pending").length;
+    adminUpdateReviewTab();
+
+    await adminAudit(decision === "approved" ? "approve_xp" : "reject_xp", {
+      reviewId: rev.id, uid: rev.uid, name: rev.displayName || "",
+      xp: Number(rev.xp) || 0, title: rev.title || "", note
+    });
+    await adminLoadAudit();
+    adminRenderReviewBody();
+    if (document.getElementById("leaderboard")?.classList.contains("active")) renderLeaderboard();
+  } catch (e) {
+    console.error("Couldn't record that decision:", e);
+    alert("Couldn't save that decision — check the console.");
+  }
+};
+
+/* ---------- per-member activity, with time spent ---------- */
+function adminLessonLabel(id) {
+  if (String(id).startsWith("exam-")) {
+    const course = courses.find(c => `exam-${c.id}` === id);
+    return course ? `${course.title} practice exam` : id;
+  }
+  if (id === "prepared-event-check") return "Prepared event entry check";
+  const found = findLessonById(id);
+  return found ? `${stripUnitSuffix(found.lesson.title)} — ${found.course.title}` : String(id || "");
+}
+
+window.adminShowMemberActivity = function(uid) {
+  const box = document.getElementById("adminMemberActivity");
+  const m = adminMembersCache.get(uid);
+  if (!box || !m) return;
+
+  const all = m.activityLog || [];
+  const log = all.slice().reverse().slice(0, 60);
+  const today = new Date().toISOString().slice(0, 10);
+  const todayXp = all.filter(e => e.date === today).reduce((sum, e) => sum + (e.xp || 0), 0);
+
+  const rows = log.map(e => `
+    <div class="admin-members-row">
+      <span>${esc(e.at ? new Date(e.at).toLocaleString() : e.date || "")}</span>
+      <span>${esc(adminLessonLabel(e.lessonId))}</span>
+      <span>${esc(XP_TYPE_LABELS[e.type] || e.type || "")}${e.approvedBy ? " (approved)" : ""}</span>
+      <span>+${Number(e.xp) || 0}</span>
+      <span>${e.durationSec != null ? esc(xpgFmt(e.durationSec)) : "—"}</span>
+      <span>${e.score != null ? esc(e.score) + "%" : "—"}</span>
+    </div>`).join("");
+
+  box.innerHTML = `
+    <div class="admin-lesson-block">
+      <div class="admin-lesson-head">
+        <h4>${esc(m.displayName || "DECA Student")} — recent activity</h4>
+        <button class="admin-btn-sm ghost" onclick="document.getElementById('adminMemberActivity').innerHTML = ''">Close</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);">
+        ${todayXp} XP logged today · showing the latest ${log.length} of ${all.length} entries (the log keeps the most recent 300).
+        Entries from before this update have no time recorded.
+      </div>
+    </div>
+    <div class="admin-members-table" style="margin-bottom:24px;">
+      <div class="admin-members-row admin-members-head">
+        <span>When</span><span>What</span><span>Type</span><span>XP</span><span>Time spent</span><span>Score</span>
+      </div>
+      ${rows || `<div class="admin-empty-state">No activity logged yet.</div>`}
+    </div>
+  `;
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
 };

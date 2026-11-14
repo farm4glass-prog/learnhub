@@ -1,3 +1,8 @@
+
+
+
+
+
 /* =========================================================================
    FARM4GLASS — script.js
    Security patch, October 2026:
@@ -3173,6 +3178,7 @@ window.showTab = function(tabName) {
   if (tabName === "courses") renderCourseGrid();
   if (tabName === "planner") renderPlannerForm();
   if (tabName === "roleplays") renderRoleplaysTab();
+  if (tabName === "practiceExams") renderPracticeExamsTab();
   if (tabName === "analytics") renderAnalytics();
   if (tabName === "kpi") renderKPIList();
   if (tabName === "calendar") renderCalendarList();
@@ -6267,6 +6273,298 @@ window.reviewExam = function() {
   `;
 };
 
+
+/* =========================================================================
+   FARM4GLASS — PRACTICE EXAMS
+   Browse: cluster → District / Association / ICDC → Exam 1–5.
+   Firestore "practiceExams" documents:
+     { id, cluster, level, examNumber, title, url, description, addedAt }
+   ========================================================================= */
+
+const PRACTICE_EXAM_CLUSTERS = [
+  "Business Administration Core",
+  "Business Management + Administration",
+  "Entrepreneurship",
+  "Finance",
+  "Hospitality + Tourism",
+  "Marketing",
+  "Personal Financial Literacy"
+];
+const PRACTICE_EXAM_LEVELS = ["District", "Association", "ICDC"];
+
+let practiceExams = [];
+let practiceExamsLoaded = false;
+let practiceExamsLoading = false;
+let peSelectedCluster = null;
+let peSelectedLevel = null;
+let peSelectedExamId = null;
+let peEditingId = null;
+
+function practiceExamSort() {
+  practiceExams.sort((a, b) =>
+    PRACTICE_EXAM_CLUSTERS.indexOf(a.cluster) - PRACTICE_EXAM_CLUSTERS.indexOf(b.cluster) ||
+    PRACTICE_EXAM_LEVELS.indexOf(a.level) - PRACTICE_EXAM_LEVELS.indexOf(b.level) ||
+    Number(a.examNumber) - Number(b.examNumber)
+  );
+}
+
+async function loadPracticeExams() {
+  if (practiceExamsLoading || practiceExamsLoaded) return;
+  practiceExamsLoading = true;
+  try {
+    const snap = await getDocs(collection(db, "practiceExams"));
+    practiceExams = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    practiceExamSort();
+  } catch (e) {
+    console.error('Failed to load practice exams — check Firestore rules for "practiceExams":', e);
+    practiceExams = [];
+  }
+  practiceExamsLoaded = true;
+  practiceExamsLoading = false;
+  if (document.getElementById("practiceExams")?.classList.contains("active")) {
+    renderPracticeExamsTab();
+  }
+}
+
+function practiceExamsForSelection() {
+  return practiceExams.filter(e =>
+    e.cluster === peSelectedCluster && e.level === peSelectedLevel
+  );
+}
+
+function practiceExamByNumber(number) {
+  return practiceExamsForSelection().find(e => Number(e.examNumber) === Number(number)) || null;
+}
+
+window.peChooseCluster = function(cluster) {
+  if (!PRACTICE_EXAM_CLUSTERS.includes(cluster)) return;
+  peSelectedCluster = cluster;
+  peSelectedLevel = null;
+  peSelectedExamId = null;
+  renderPracticeExamsTab();
+};
+
+window.peChooseLevel = function(level) {
+  if (!PRACTICE_EXAM_LEVELS.includes(level)) return;
+  peSelectedLevel = level;
+  peSelectedExamId = null;
+  renderPracticeExamsTab();
+};
+
+window.peBackToClusters = function() {
+  peSelectedCluster = null;
+  peSelectedLevel = null;
+  peSelectedExamId = null;
+  renderPracticeExamsTab();
+};
+
+window.peBackToLevels = function() {
+  peSelectedLevel = null;
+  peSelectedExamId = null;
+  renderPracticeExamsTab();
+};
+
+window.peOpenExam = function(id) {
+  peSelectedExamId = peSelectedExamId === id ? null : id;
+  renderPracticeExamsTab();
+};
+
+window.peEdit = function(id) {
+  if (!isAdmin(currentUser)) return;
+  peEditingId = id;
+  renderPracticeExamsTab();
+};
+
+window.peCancelEdit = function() {
+  peEditingId = null;
+  renderPracticeExamsTab();
+};
+
+window.peSave = async function() {
+  if (!isAdmin(currentUser)) return;
+  const val = id => (document.getElementById(id)?.value || "").trim();
+  const cluster = val("pe-admin-cluster");
+  const level = val("pe-admin-level");
+  const examNumber = Number(val("pe-admin-number"));
+  const title = val("pe-admin-title");
+  const url = val("pe-admin-url");
+  const description = val("pe-admin-desc");
+
+  if (!PRACTICE_EXAM_CLUSTERS.includes(cluster) ||
+      !PRACTICE_EXAM_LEVELS.includes(level) ||
+      !Number.isInteger(examNumber) || examNumber < 1 || examNumber > 5 ||
+      !title || !url) {
+    return alert("Choose a cluster, level, exam number (1–5), and enter a title and link.");
+  }
+  if (!safeUrl(url)) return alert("The exam link needs to start with https://");
+
+  const duplicate = practiceExams.find(e =>
+    e.id !== peEditingId && e.cluster === cluster &&
+    e.level === level && Number(e.examNumber) === examNumber
+  );
+  if (duplicate) return alert("That exam slot already has a link. Edit the existing exam instead.");
+
+  const old = peEditingId ? practiceExams.find(e => e.id === peEditingId) : null;
+  const id = peEditingId || `pe-${Date.now()}`;
+  const examDoc = {
+    id, cluster, level, examNumber, title, url, description,
+    addedAt: old?.addedAt || new Date().toISOString()
+  };
+
+  try {
+    await setDoc(doc(db, "practiceExams", id), examDoc);
+    const index = practiceExams.findIndex(e => e.id === id);
+    if (index >= 0) practiceExams[index] = examDoc;
+    else practiceExams.push(examDoc);
+    practiceExamSort();
+    peEditingId = null;
+    renderPracticeExamsTab();
+    f4gNotice(old ? "Practice exam updated" : "Practice exam published",
+      `${title} is available under ${cluster} · ${level}.`);
+  } catch (e) {
+    console.error("Couldn't save practice exam:", e);
+    alert('Could not save. Check the console and Firestore rules for the "practiceExams" collection.');
+  }
+};
+
+window.peDelete = async function(id) {
+  if (!isAdmin(currentUser)) return;
+  const exam = practiceExams.find(e => e.id === id);
+  if (!exam || !confirm(`Remove ${exam.title}? The linked file itself will not be deleted.`)) return;
+  try {
+    await deleteDoc(doc(db, "practiceExams", id));
+    practiceExams = practiceExams.filter(e => e.id !== id);
+    if (peSelectedExamId === id) peSelectedExamId = null;
+    if (peEditingId === id) peEditingId = null;
+    renderPracticeExamsTab();
+  } catch (e) {
+    console.error("Couldn't delete practice exam:", e);
+    alert("Could not remove that exam. Check the console.");
+  }
+};
+
+function practiceExamViewerHtml(exam) {
+  const preview = drivePreviewUrl(exam.url);
+  const open = driveOpenUrl(exam.url);
+  const frame = preview
+    ? `<iframe class="rp-frame" src="${esc(preview)}" title="${esc(exam.title)}"></iframe>`
+    : `<div class="admin-empty-state">This file may not preview inline. Use the button above to open it.</div>`;
+  return `
+    <div class="rp-viewer-head">
+      <div>
+        <div class="rp-viewer-title">${esc(exam.title)}</div>
+        ${exam.description ? `<div class="rp-viewer-desc">${esc(exam.description)}</div>` : ""}
+      </div>
+      <a class="btn-primary rp-open-btn" href="${esc(open)}" target="_blank" rel="noopener">${icon("external")} Open exam</a>
+    </div>
+    ${frame}
+    <div class="pe-disclaimer">Practice exam materials are for study purposes and are not official DECA materials unless explicitly identified as such.</div>
+  `;
+}
+
+function practiceExamAdminHtml() {
+  if (!isAdmin(currentUser)) return "";
+  const editing = peEditingId ? practiceExams.find(e => e.id === peEditingId) : null;
+  const cluster = editing?.cluster || peSelectedCluster || PRACTICE_EXAM_CLUSTERS[0];
+  const level = editing?.level || peSelectedLevel || PRACTICE_EXAM_LEVELS[0];
+  const number = editing?.examNumber || 1;
+  const records = practiceExams.map(e => `
+    <div class="admin-field-row" style="align-items:center;">
+      <span style="flex:1;font-size:13px;">
+        <strong>${esc(e.cluster)}</strong> · ${esc(e.level)} · Exam ${Number(e.examNumber)} — ${esc(e.title)}
+      </span>
+      <button class="admin-btn-sm ghost" onclick="peEdit('${esc(e.id)}')">Edit</button>
+      <button class="admin-btn-sm danger" onclick="peDelete('${esc(e.id)}')">${icon("trash")}</button>
+    </div>
+  `).join("") || `<div class="admin-empty-state">No practice exams have been published yet.</div>`;
+
+  return `
+    <div class="widget" style="margin-top:28px;">
+      <div class="widget-header"><span>${editing ? "Edit practice exam" : "Admin · Add a practice exam"}</span></div>
+      <p class="page-sub">Publish one link into a cluster, competition level, and numbered exam slot. Each level has five slots.</p>
+      <div class="admin-kpi-form">
+        <select id="pe-admin-cluster">${PRACTICE_EXAM_CLUSTERS.map(c => `<option ${c === cluster ? "selected" : ""}>${esc(c)}</option>`).join("")}</select>
+        <select id="pe-admin-level">${PRACTICE_EXAM_LEVELS.map(l => `<option ${l === level ? "selected" : ""}>${l}</option>`).join("")}</select>
+        <select id="pe-admin-number">${[1,2,3,4,5].map(n => `<option value="${n}" ${n === Number(number) ? "selected" : ""}>Exam ${n}</option>`).join("")}</select>
+        <input type="text" id="pe-admin-title" placeholder="Exam title (e.g. Marketing District Exam 1)" value="${editing ? esc(editing.title) : ""}">
+        <input type="url" id="pe-admin-url" placeholder="Google Drive share link or PDF URL" value="${editing ? esc(editing.url) : ""}">
+        <textarea id="pe-admin-desc" rows="2" placeholder="Short description (optional)">${editing ? esc(editing.description || "") : ""}</textarea>
+        <div style="display:flex;gap:10px;">
+          <button class="admin-btn-sm" onclick="peSave()">${editing ? "Save changes" : "Publish exam"}</button>
+          ${editing ? `<button class="admin-btn-sm ghost" onclick="peCancelEdit()">Cancel</button>` : ""}
+        </div>
+      </div>
+      <div style="margin-top:18px;">${records}</div>
+    </div>
+  `;
+}
+
+function renderPracticeExamsTab() {
+  const container = document.getElementById("practiceExamsContent");
+  if (!container) return;
+  if (!practiceExamsLoaded) {
+    container.innerHTML = `<div class="admin-empty-state">Loading practice exams...</div>`;
+    loadPracticeExams();
+    return;
+  }
+
+  let content = "";
+  if (!peSelectedCluster) {
+    content = `
+      <div class="course-grid">
+        ${PRACTICE_EXAM_CLUSTERS.map((cluster, i) => {
+          const count = practiceExams.filter(e => e.cluster === cluster).length;
+          return `
+            <button class="course-card-new" style="text-align:left;border:0;cursor:pointer;" onclick="peChooseCluster('${esc(cluster)}')">
+              <div class="cc-body">
+                <div class="cc-icon">${icon("book")}</div>
+                <div class="cc-title">${esc(cluster)}</div>
+                <div class="cc-footer"><span class="cc-pct">${count} ${count === 1 ? "exam" : "exams"} available</span><span class="cc-start">Choose ›</span></div>
+              </div>
+            </button>`;
+        }).join("")}
+      </div>`;
+  } else if (!peSelectedLevel) {
+    content = `
+      <div class="lv-back" onclick="peBackToClusters()">← All clusters</div>
+      <div class="rp-event-head"><h2>${esc(peSelectedCluster)}</h2><div class="page-sub">Choose your competition level</div></div>
+      <div class="course-grid">
+        ${PRACTICE_EXAM_LEVELS.map(level => {
+          const count = practiceExams.filter(e => e.cluster === peSelectedCluster && e.level === level).length;
+          return `
+            <button class="course-card-new" style="text-align:left;border:0;cursor:pointer;" onclick="peChooseLevel('${level}')">
+              <div class="cc-body">
+                <div class="cc-title">${level}</div>
+                <div class="cc-footer"><span class="cc-pct">${count} of 5 exams available</span><span class="cc-start">Open ›</span></div>
+              </div>
+            </button>`;
+        }).join("")}
+      </div>`;
+  } else {
+    const selected = peSelectedExamId ? practiceExams.find(e => e.id === peSelectedExamId) : null;
+    const cards = [1,2,3,4,5].map(n => {
+      const exam = practiceExamByNumber(n);
+      return `
+        <button class="course-card-new" style="text-align:left;border:0;cursor:${exam ? "pointer" : "default"};${exam ? "" : "opacity:.62;"}"
+                ${exam ? `onclick="peOpenExam('${esc(exam.id)}')"` : "disabled"}>
+          <div class="cc-body">
+            <div class="cc-icon">${icon(exam ? "file" : "clipboard")}</div>
+            <div class="cc-title">${exam ? esc(exam.title) : `Exam ${n}`}</div>
+            <div class="cc-footer"><span class="cc-pct">${exam ? "Ready to practice" : "Coming soon"}</span><span class="cc-start">${exam ? "Open ›" : "Not published"}</span></div>
+          </div>
+        </button>`;
+    }).join("");
+    content = `
+      <div class="lv-back" onclick="peBackToLevels()">← ${esc(peSelectedCluster)}</div>
+      <div class="rp-event-head"><h2>${esc(peSelectedLevel)} Exams</h2><div class="page-sub">${esc(peSelectedCluster)} · choose one of the five exams</div></div>
+      <div class="course-grid">${cards}</div>
+      ${selected ? `<div class="rp-viewer" style="margin-top:24px;">${practiceExamViewerHtml(selected)}</div>` : ""}
+    `;
+  }
+
+  container.innerHTML = `${content}${practiceExamAdminHtml()}`;
+}
+
 /* =========================================================================
    FARM4GLASS — PRACTICE ROLEPLAYS
    Browse: search + category → event bubble → instructional area → roleplay.
@@ -8357,3 +8655,7 @@ window.adminShowMemberActivity = function(uid) {
   `;
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 };
+
+
+
+

@@ -196,3 +196,140 @@
   #portal .ac-name { font-size: 24px; }
   #portal .stat-card, #portal .widget, #portal .course-card-new { border-radius: 22px; }
 }
+
+
+/* =========================================================================
+   FARM4GLASS — MODERN LANDING PAGE (pre-login)
+   Cleaner, and matches the portal: same gradient canvas, floating pill nav,
+   big-radius soft cards, gradient pill buttons.
+   Scoped to #landingPage. Removes the busy decoration (floating glossy
+   shapes, bee, walking animals, hill/animal footer, fence, goat, tilted
+   marquee). Keeps the wheat-sprig eyebrows.
+   ========================================================================= */
+
+html { scroll-padding-top: 96px; }
+
+#landingPage {
+  --l-ink: #0a1a2b;
+  --l-muted: #5b6f8a;
+  --l-grad: linear-gradient(135deg, #2394d4 0%, #167db5 45%, #0f5f8c 100%);
+  --l-glow: 0 12px 28px rgba(22,125,181,.34);
+  --l-shadow: 0 20px 50px rgba(52,82,150,.10);
+  background:
+    radial-gradient(900px 600px at 85% -5%, rgba(120,150,255,.18), transparent 60%),
+    radial-gradient(700px 520px at 0% 55%, rgba(56,189,248,.14), transparent 60%),
+    linear-gradient(135deg, #e8edfb 0%, #f2f6fd 48%, #e9f2fb 100%);
+}
+
+/* ---------- declutter ---------- */
+#landingPage .float-shapes,
+#landingPage .landing-hero::before,
+#landingPage .landing-hero::after,
+#landingPage .marquee::before,
+#landingPage .marquee::after,
+#landingPage .landing-footer::before,
+#landingPage .landing-footer::after,
+#landingPage .cta-inner::after,
+#landingPage .about-section::before { display: none !important; }
+#landingPage .aurora span { opacity: .25; }
+
+/* ---------- floating pill nav ---------- */
+#landingPage .top-nav {
+  top: calc(14px + env(safe-area-inset-top)); left: 16px; right: 16px;
+  max-width: 1120px; margin: 0 auto;
+  height: 60px; min-height: 0; padding: 0 10px 0 22px;
+  border-radius: 999px; border: 1px solid rgba(255,255,255,.95);
+  background: rgba(255,255,255,.78); backdrop-filter: saturate(1.6) blur(20px);
+  box-shadow: var(--l-shadow);
+}
+#landingPage .top-nav .nav-links { gap: 4px; }
+#landingPage .top-nav .nav-links a {
+  font-size: 14.5px; font-weight: 600; color: #4a5d7a;
+  padding: 9px 16px; border-radius: 999px; transition: background .2s, color .2s;
+}
+#landingPage .top-nav .nav-links a:hover { background: rgba(22,125,181,.08); color: var(--l-ink); }
+#landingPage .top-nav .nav-login-btn {
+  background: var(--l-grad); box-shadow: var(--l-glow), inset 0 1px 0 rgba(255,255,255,.28);
+  padding: 11px 22px;
+}
+#landingPage .top-nav .nav-login-btn:hover { background: linear-gradient(135deg, #34a3e4, #1a87c2 50%, #12699a); }
+
+/* ---------- buttons ---------- */
+#landingPage .btn-primary {
+  background: var(--l-grad); color: #fff;
+  box-shadow: var(--l-glow), inset 0 1px 0 rgba(255,255,255,.28);
+}
+#landingPage .btn-primary:hover { background: linear-gradient(135deg, #34a3e4, #1a87c2 50%, #12699a); }
+#landingPage .btn-ghost { background: rgba(255,255,255,.8); border: 1px solid rgba(255,255,255,.95); box-shadow: 0 10px 30px rgba(52,82,150,.08); }
+
+/* ---------- hero ---------- */
+#landingPage .landing-hero { padding-top: 70px; }
+#landingPage .hero-title { font-weight: 800; letter-spacing: -.045em; }
+#landingPage .hero-photo {
+  border-radius: 36px; border: 6px solid rgba(255,255,255,.92);
+  box-shadow: 0 26px 60px rgba(52,82,150,.18); animation: none;
+}
+#landingPage .hero-badge {
+  border-radius: 24px; animation: none;
+  background: rgba(255,255,255,.82); box-shadow: var(--l-shadow);
+}
+
+/* ---------- marquee: a calm strip instead of a tilted bar ---------- */
+#landingPage .marquee {
+  transform: none; clip-path: none; overflow: hidden;
+  background: rgba(255,255,255,.55);
+  border-top: 1px solid rgba(255,255,255,.95); border-bottom: 1px solid rgba(255,255,255,.95);
+  padding: 15px 0; margin: 0 0 88px;
+}
+#landingPage .marquee-track span { color: var(--l-muted); font-size: 15px; font-weight: 700; letter-spacing: .02em; }
+
+/* ---------- section headings ---------- */
+#landingPage .section-head h2,
+#landingPage .story-section h2,
+#landingPage .cta-inner h2 { font-weight: 800; letter-spacing: -.04em; }
+#landingPage .section-tag { border-color: rgba(255,255,255,.95); background: rgba(255,255,255,.8); box-shadow: 0 6px 18px rgba(52,82,150,.07); }
+
+/* ---------- cards: same recipe as the portal ---------- */
+#landingPage .feature-card,
+#landingPage .team-card,
+#landingPage .guest-card {
+  background: rgba(255,255,255,.72); border: 1px solid rgba(255,255,255,.95);
+  border-radius: 28px; box-shadow: var(--l-shadow);
+}
+#landingPage .feature-card:hover,
+#landingPage .team-card:hover,
+#landingPage .guest-card:hover { box-shadow: 0 30px 70px rgba(52,82,150,.18); }
+#landingPage .feature-card.accent { background: var(--l-grad); }
+#landingPage .team-card img, #landingPage .guest-card img {
+  box-shadow: 0 0 0 3px rgba(22,125,181,.25), 0 14px 30px rgba(52,82,150,.16);
+}
+
+/* ---------- closing CTA: blue hero card, like the portal level card ---------- */
+#landingPage .cta-inner {
+  background: linear-gradient(140deg, #1c8ac7 0%, #167db5 40%, #0f5f8c 100%);
+  border: 1px solid rgba(255,255,255,.2); border-radius: 36px;
+  box-shadow: 0 26px 60px rgba(22,125,181,.30);
+}
+#landingPage .cta-inner h2 { color: #fff; }
+#landingPage .cta-inner p { color: rgba(255,255,255,.85); }
+#landingPage .cta-inner .btn-primary { background: #fff; color: var(--l-ink); box-shadow: 0 12px 28px rgba(0,0,0,.16); }
+#landingPage .cta-inner .btn-primary:hover { background: #eef6fd; }
+
+/* ---------- footer ---------- */
+#landingPage .landing-footer { padding-top: 28px; border-top: 1px solid rgba(15,95,140,.12); }
+
+/* ---------- mobile ---------- */
+@media (max-width: 860px) {
+  #landingPage .top-nav { padding: 0 6px 0 18px; }
+  #landingPage .top-nav .nav-links {
+    top: calc(100% + 10px); border-radius: 24px;
+    border: 1px solid rgba(255,255,255,.95); box-shadow: var(--l-shadow);
+  }
+  #landingPage .top-nav .nav-links a { border-radius: 0; padding: 15px 2px; }
+}
+@media (max-width: 700px) {
+  #landingPage .landing-hero { padding-top: 36px; }
+  #landingPage .hero-photo { border-radius: 26px; border-width: 5px; }
+  #landingPage .cta-inner { border-radius: 28px; }
+  #landingPage .marquee { margin-bottom: 56px; }
+}

@@ -1,159 +1,198 @@
 /* =========================================================================
-   FARM4GLASS — GUEST SPEAKER VIDEOS
-   Additive only. Every selector here is new, and the card treatment borrows
-   the same glass surface, radii and blue the portal already uses, so the tab
-   reads as part of the site rather than a bolt-on.
+   FARM4GLASS — MODERN PORTAL LOOK
+   Drop-in replacement for guest-speakers.css (already linked LAST in
+   index.html, and its old rules are duplicated in style.css).
+
+   Pure CSS. Same fonts, same blue, no emoji, no HTML or JS changes.
+   Scoped to #portal, so the landing page is untouched.
+   Delete this file and the portal goes back to how it looked before.
    ========================================================================= */
 
-/* ---------- grid ---------- */
-
-.gs-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 22px;
-  align-items: start;
+#portal {
+  --m-ink: #0a1a2b;
+  --m-muted: #5b6f8a;
+  --m-card: rgba(255,255,255,.72);
+  --m-line: rgba(255,255,255,.95);
+  --m-shadow: 0 20px 50px rgba(52,82,150,.10);
+  --m-shadow-hover: 0 30px 70px rgba(52,82,150,.18);
+  --m-grad: linear-gradient(135deg, #2394d4 0%, #167db5 45%, #0f5f8c 100%);
+  --m-glow: 0 12px 28px rgba(22,125,181,.34);
 }
 
-/* A card with its player open takes the full row, so the video is watchable
-   instead of squeezed into a third of the screen. */
-.gs-card.gs-open { grid-column: 1 / -1; }
-
-.gs-card {
-  background: rgba(255,255,255,.86);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,.92);
-  border-radius: 26px;
-  box-shadow: 0 14px 38px rgba(15,95,140,.12);
-  overflow: hidden;
-  transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s;
+/* ---------- canvas ---------- */
+#portal {
+  background:
+    radial-gradient(900px 600px at 85% -5%, rgba(120,150,255,.18), transparent 60%),
+    radial-gradient(700px 520px at 0% 60%, rgba(56,189,248,.14), transparent 60%),
+    linear-gradient(135deg, #e8edfb 0%, #f2f6fd 48%, #e9f2fb 100%);
+  background-attachment: fixed;
 }
-.gs-card:hover { transform: translateY(-5px); box-shadow: 0 28px 62px rgba(15,95,140,.2); }
-.gs-card.gs-open:hover { transform: none; }
 
-/* ---------- thumbnail ---------- */
-
-.gs-thumb {
-  display: block; width: 100%; aspect-ratio: 16 / 9;
-  border: none; padding: 0; margin: 0; cursor: pointer;
-  background-color: #0a1a2b;
-  background-size: cover; background-position: center;
-  position: relative;
+/* ---------- floating sidebar card ---------- */
+#portal .sidebar {
+  left: 16px; top: 16px; bottom: 16px; width: 244px;
+  padding: 20px 14px 16px;
+  border-radius: 30px;
+  background: rgba(255,255,255,.78);
+  backdrop-filter: saturate(1.6) blur(20px);
+  border: 1px solid var(--m-line);
+  box-shadow: var(--m-shadow);
 }
-.gs-thumb::after {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(160deg, rgba(10,26,43,.1), rgba(10,26,43,.55));
-  transition: background .25s;
+#portal .main { margin-left: 292px; padding: 36px 44px 48px; }
+
+#portal .sidebar-logo { border-bottom: 1px solid rgba(15,95,140,.10); padding-bottom: 18px; margin-bottom: 8px; }
+#portal .sidebar .logo-text { color: var(--m-ink); font-size: 19px; letter-spacing: -.03em; }
+
+/* nav: scrolls on its own, grouped with small labels (see ordering below) */
+#portal .sidebar-nav {
+  flex: 1; min-height: 0; overflow-y: auto; gap: 3px;
+  padding: 4px 2px 10px; scrollbar-width: thin;
 }
-.gs-thumb:hover::after { background: linear-gradient(160deg, rgba(10,26,43,.05), rgba(10,26,43,.35)); }
-.gs-thumb-blank {
-  background-image: linear-gradient(140deg, #0f5f8c 0%, #167db5 58%, #38bdf8 130%);
+#portal .nav-btn {
+  border-radius: 16px; padding: 11px 16px; font-size: 14.5px; font-weight: 600;
+  color: #4a5d7a; letter-spacing: -.01em; background: transparent;
 }
-.gs-thumb-static { cursor: default; }
-.gs-thumb-static::after { background: none; }
-
-.gs-thumb-play {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  z-index: 1; width: 56px; height: 56px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,.94); color: var(--blue-dark);
-  box-shadow: 0 12px 28px rgba(10,26,43,.32);
-  transition: transform .25s cubic-bezier(.2,.8,.2,1);
+#portal .nav-btn:hover { background: rgba(22,125,181,.08); color: var(--m-ink); }
+#portal .nav-btn.active {
+  background: var(--m-grad); color: #fff; font-weight: 700;
+  box-shadow: var(--m-glow), inset 0 1px 0 rgba(255,255,255,.28);
 }
-.gs-thumb-play .icon-svg { width: 26px; height: 26px; }
-.gs-thumb:hover .gs-thumb-play { transform: translate(-50%, -50%) scale(1.08); }
 
-/* ---------- player ---------- */
+/* grouping: flex `order` rearranges the existing buttons, no HTML edits */
+#nav-dashboard { order: 0; }
+#nav-courses { order: 10; }  #nav-speakers { order: 11; }  #nav-kpi { order: 12; }
+#nav-roleplays { order: 20; } #nav-practiceExams { order: 21; } #nav-prepared { order: 22; }
+#nav-planner { order: 30; }  #nav-analytics { order: 31; } #nav-calendar { order: 32; }
+#nav-leaderboard { order: 40; } #nav-blog { order: 41; } #nav-profile { order: 42; }
+#nav-advisor { order: 43; }  #nav-admin { order: 44; }
 
-.gs-player { width: 100%; aspect-ratio: 16 / 9; background: #0a1a2b; }
-.gs-player iframe { display: block; width: 100%; height: 100%; border: none; }
-
-/* ---------- body ---------- */
-
-.gs-card-body { padding: 22px 24px 24px; }
-.gs-name { font-size: 20px; font-weight: 800; letter-spacing: -.02em; color: #0a1a2b; margin-bottom: 4px; }
-.gs-role { font-size: 13.5px; font-weight: 700; color: var(--blue); line-height: 1.45; }
-
-.gs-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
-.gs-area-tag {
-  background: rgba(22,125,181,.11); color: var(--blue-dark);
-  border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 700;
+#nav-courses, #nav-roleplays, #nav-planner, #nav-leaderboard { margin-top: 30px; }
+#nav-courses::after, #nav-roleplays::after, #nav-planner::after, #nav-leaderboard::after {
+  position: absolute; left: 14px; top: -22px;
+  font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+  color: #8a9bb5; pointer-events: none;
 }
-.gs-recorded { font-size: 12px; font-weight: 600; color: var(--muted); }
+#nav-courses::after { content: "Learn"; }
+#nav-roleplays::after { content: "Practice"; }
+#nav-planner::after { content: "Plan"; }
+#nav-leaderboard::after { content: "More"; }
 
-.gs-desc { font-size: 14px; line-height: 1.65; color: #3d5f80; margin-top: 14px; }
-
-.gs-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 18px; }
-
-.gs-play-btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: linear-gradient(135deg, #167db5, #0f5f8c); color: #fff;
-  border: none; border-radius: 999px; padding: 10px 20px;
-  font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer;
-  box-shadow: 0 10px 24px rgba(15,95,140,.26);
-  transition: transform .15s cubic-bezier(.2,.8,.2,1), box-shadow .2s;
+/* level card at the bottom of the sidebar */
+#portal .sidebar-animal {
+  background: linear-gradient(135deg, rgba(22,125,181,.10), rgba(56,189,248,.16));
+  border: 1px solid rgba(22,125,181,.14);
+  border-radius: 20px; backdrop-filter: none;
 }
-.gs-play-btn:hover { transform: translateY(-2px); box-shadow: 0 16px 32px rgba(15,95,140,.3); }
-.gs-play-btn:active { transform: translateY(1px) scale(.985); }
+#portal .sa-name { color: var(--m-ink); }
+#portal .sa-xp { color: var(--m-muted); }
+#portal .sa-bar { background: rgba(22,125,181,.16); height: 6px; }
+#portal .sa-fill { background: var(--m-grad); }
 
-/* The takeaways doc gets the amber treatment the site already uses for XP and
-   badges, so it reads as the study material next to the blue "watch" action
-   rather than a second video button. */
-.gs-notes-link {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  border: 1.5px solid rgba(245,158,11,.55); color: #92400e;
-  border-radius: 999px; padding: 9px 18px;
-  font-size: 13px; font-weight: 700; text-decoration: none;
-  transition: all .15s;
+#portal .logout-btn { color: #6b7f99; border-radius: 16px; }
+#portal .logout-btn:hover { background: rgba(239,68,68,.09); color: #dc2626; }
+
+/* ---------- headings ---------- */
+#portal h1 { color: var(--m-ink); letter-spacing: -.04em; font-weight: 800; }
+#portal .dash-header h1 { font-size: clamp(32px, 3.8vw, 46px); }
+#portal .page-sub, #portal .dash-sub { color: var(--m-muted); }
+#portal .section-title { font-size: 20px; letter-spacing: -.02em; }
+
+/* ---------- cards: big radius, tinted soft shadow ---------- */
+#portal .stat-card, #portal .widget, #portal .course-card-new, #portal .quiz-header,
+#portal .quiz-question-card, #portal .quiz-results, #portal .vl-info, #portal .profile-card,
+#portal .planner-summary, #portal .kpi-detail, #portal .admin-panel-body, #portal .exam-setup-card,
+#portal .blog-card, #portal .gs-card, #portal .act-head, #portal .pl-session {
+  background: var(--m-card);
+  border: 1px solid var(--m-line);
+  border-radius: 28px;
+  box-shadow: var(--m-shadow);
 }
-.gs-notes-link:hover { background: #fde68a; border-color: #f59e0b; }
-.gs-notes-link .icon-svg { color: #b45309; }
-
-.gs-open-link {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(255,255,255,.9); border: 1.5px solid rgba(15,95,140,.18);
-  border-radius: 999px; padding: 9px 18px; font-size: 13px; font-weight: 700;
-  color: var(--text); text-decoration: none; transition: all .15s;
+#portal .pasture-row, #portal .lesson-row, #portal .lb-row, #portal .planner-week-card,
+#portal .analytics-course-row, #portal .rec-card, #portal .calendar-event-card,
+#portal .kpi-list-item, #portal .admin-course-btn, #portal .act-q, #portal .pl-mode {
+  background: var(--m-card);
+  border: 1px solid var(--m-line);
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(52,82,150,.07);
 }
-.gs-open-link:hover { border-color: var(--blue); color: var(--blue-dark); background: #fff; }
-.gs-open-link .icon-svg { color: var(--blue); }
-
-/* ---------- admin form ---------- */
-
-/* Groups the admin fields so the video link, the doc link and the extras
-   don't read as one undifferentiated stack of boxes. */
-.gs-field-label {
-  display: block;
-  font-size: 11.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--blue-dark);
-  margin: 18px 0 8px;
+#portal .stat-card:hover, #portal .course-card-new:hover, #portal .blog-card:hover, #portal .gs-card:hover {
+  box-shadow: var(--m-shadow-hover);
 }
-.gs-field-label:first-child { margin-top: 0; }
 
-/* ---------- keyboard focus ---------- */
+/* stats read like small dashboard chips */
+#portal .stat-card { padding: 22px 20px; text-align: left; }
+#portal .stat-value { font-size: 34px; letter-spacing: -.04em; color: var(--m-ink); }
+#portal .stat-label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--m-muted); font-weight: 800; }
 
-.gs-thumb:focus-visible,
-.gs-play-btn:focus-visible,
-.gs-notes-link:focus-visible,
-.gs-open-link:focus-visible {
-  outline: 3px solid var(--blue-light);
-  outline-offset: 3px;
+/* ---------- hero: level card with spotlight ---------- */
+#portal .animal-card {
+  min-height: 190px; padding: 32px 36px; border-radius: 32px;
+  background: linear-gradient(140deg, #1c8ac7 0%, #167db5 40%, #0f5f8c 100%);
+  box-shadow: 0 26px 60px rgba(22,125,181,.30);
 }
+#portal .animal-card::after {
+  /* spotlight cone, like the stage in the reference */
+  content: ""; position: absolute; right: 14%; top: 0; width: 280px; height: 100%;
+  background: linear-gradient(180deg, rgba(255,255,255,.30), rgba(255,255,255,0) 88%);
+  clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);
+  border-radius: 0; z-index: 0; pointer-events: none;
+}
+#portal .ac-name { font-size: 30px; letter-spacing: -.035em; }
+#portal .ac-level {
+  display: inline-block; margin-top: 8px; padding: 5px 14px; border-radius: 999px;
+  background: rgba(255,255,255,.18); color: #fff; font-size: 12px; letter-spacing: .06em;
+}
+#portal .ac-right { background: rgba(255,255,255,.14); border-radius: 20px; padding: 14px 22px; }
+
+#portal .xp-bar-row { font-size: 12.5px; font-weight: 800; color: var(--m-muted); margin: 16px 4px 8px; }
+#portal .xp-bar-outer { height: 9px; background: rgba(22,125,181,.14); }
+#portal .xp-bar-inner { background: var(--m-grad); }
+
+/* ---------- buttons: gradient pills with glow ---------- */
+#portal .btn-primary, #portal .barn-btn, #portal .next-btn {
+  background: var(--m-grad); border-radius: 999px; padding: 14px 30px; font-weight: 700;
+  box-shadow: var(--m-glow), inset 0 1px 0 rgba(255,255,255,.28);
+}
+#portal .btn-primary:hover, #portal .barn-btn:hover, #portal .next-btn:hover {
+  background: linear-gradient(135deg, #34a3e4, #1a87c2 50%, #12699a);
+  transform: translateY(-2px);
+}
+#portal .exam-cta .btn-primary { background: #fff; color: var(--m-ink); box-shadow: 0 10px 24px rgba(0,0,0,.14); }
+
+/* filter pills: active state is the brand blue, not navy */
+#portal .cat-btn.active, #portal .lb-tab.active, #portal .admin-subtab-btn.active {
+  background: var(--m-grad); border-color: transparent; color: #fff; box-shadow: var(--m-glow);
+}
+
+/* ---------- small details ---------- */
+#portal .widget-header { letter-spacing: -.01em; }
+#portal .widget-badge { background: rgba(22,125,181,.10); color: #0f5f8c; }
+#portal .streak-circle.today { background: var(--m-grad); border-color: transparent; }
+#portal .form-group label { font-size: 11px; letter-spacing: .12em; font-weight: 800; }
+#portal input[type="text"], #portal input[type="number"], #portal input[type="date"],
+#portal input[type="url"], #portal select, #portal textarea, #portal #courseSearch {
+  border-radius: 16px; background: rgba(255,255,255,.85);
+}
+#portal .profile-event-chip { border-radius: 999px; }
 
 /* ---------- mobile ---------- */
-
 @media (max-width: 768px) {
-  .gs-grid { grid-template-columns: 1fr; gap: 16px; }
-  .gs-card { border-radius: 20px; }
-  .gs-card:hover { transform: none; }
-  .gs-card-body { padding: 18px 18px 20px; }
-  .gs-name { font-size: 18px; }
-  .gs-thumb-play { width: 48px; height: 48px; }
-  .gs-thumb-play .icon-svg { width: 22px; height: 22px; }
-  .gs-actions { flex-direction: column; align-items: stretch; }
-  .gs-play-btn, .gs-notes-link, .gs-open-link { justify-content: center; }
-}
+  #portal .sidebar {
+    left: 10px; top: 10px; bottom: 10px; border-radius: 26px;
+    transform: translateX(calc(-100% - 24px));
+  }
+  #portal .sidebar.open { transform: none; }
+  #portal .main { margin-left: 0; padding: 16px 16px calc(28px + env(safe-area-inset-bottom)); }
 
-@media (prefers-reduced-motion: reduce) {
-  .gs-card, .gs-thumb-play, .gs-play-btn { transition: none !important; }
+  #portal .mobile-header {
+    background: rgba(255,255,255,.82); backdrop-filter: blur(16px);
+    color: var(--m-ink); border-radius: 0 0 24px 24px;
+    box-shadow: 0 10px 30px rgba(52,82,150,.10);
+  }
+  #portal .hamburger span { background: var(--m-ink); }
+
+  #portal .animal-card { padding: 24px 22px; min-height: 0; border-radius: 26px; }
+  #portal .animal-card::after { right: 4%; width: 180px; }
+  #portal .ac-name { font-size: 24px; }
+  #portal .stat-card, #portal .widget, #portal .course-card-new { border-radius: 22px; }
 }
